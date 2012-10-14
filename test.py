@@ -30,6 +30,14 @@ class ParseTest( unittest.TestCase ):
         self.assertEqual( foo_parsed, foo.parse() )
 
 
+class MergeTest( unittest.TestCase ):
+    def test_merge(self):
+        """
+        merge should replace properties values, but not add any new value. 
+        """
+        #  TODO
+
+
 class GetterTest( unittest.TestCase ):
     def test_get_parsed(self):
         """
