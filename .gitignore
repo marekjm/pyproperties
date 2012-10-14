@@ -1,0 +1,6 @@
+.*
+!.gitignore
+build/
+modules/__pycache__/
+scitesession
+x.properties

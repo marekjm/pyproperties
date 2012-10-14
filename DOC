@@ -1,0 +1,166 @@
+Help on module pyproperties:
+
+NAME
+    pyproperties - Working with *.properties files.
+
+DESCRIPTION
+    pyproperites aims to ease manipulation, interaction and use of *.properties files in Python 3.x programs
+    by providing methods like merge(), complete(), join(), parse() and store(). 
+    
+    It features:
+        *   merging different properties with merge() method,
+        *   comleteing different properties with complete() method,
+        *   getter for single and multiple ('foo.*') properties,
+        *   setter for single and multiple ('foo.*') properties,
+        *   joining multiple properties files with join() method,
+        *   storing loaded properties while preserving comments and empty lines,
+        *   parsing loaded properties,
+        *   parsing single lines,
+        *   referencing other properties values with $(foo.bar) syntax, 
+        *   removing and poping single an multiple properties, 
+        *   pyproperites is capable of reading properties splitted into several lines,
+
+CLASSES
+    builtins.object
+        Properties
+    
+    class Properties(builtins.object)
+     |  This class provides methods for working with properties files. 
+     |  You should call it with a path pointing to the file you want to load.
+     |  
+     |  Methods defined here:
+     |  
+     |  __extract__(self)
+     |      Extracts lines containing valid properties strings from loaded source to self.properties 
+     |      It parses self.source line by line. 
+     |      Every line begining with # is considered comment and not parsed. 
+     |      Lines containing only whitespace are also not parsed.
+     |  
+     |  __getkey__(self, line, strip=True)
+     |      Extracts key from given line and returns it. 
+     |      If the line is comment or is an empty string returns empty string.
+     |  
+     |  __getvalue__(self, line)
+     |      Extracts value from given line and returns it. 
+     |      If the line is comment or is an empty string returns empty string.
+     |  
+     |  __init__(self, path)
+     |      First, defines self.path and extracts name of loaded properties file and stores it in self.name.
+     |      Then runs these methods in following order:
+     |          self.__load__( path )
+     |          self.__extract__()
+     |          self.__split__()
+     |  
+     |  __isvalidline__(self, line)
+     |      Checks if the line contains valid property string. 
+     |      It isn't empty string and its first character is not #.
+     |  
+     |  __load__(self, path)
+     |      This method loads properties file from given path to a self.source list. 
+     |      It also strips it of any newline character and whitespace on both sides but leaves it otherwise unprocessed. 
+     |      Path is saved to self.path
+     |  
+     |  __split__(self)
+     |      This methode converts self.properties from list containing extracted lines to a dictionary.
+     |  
+     |  complete(self, properties, prefix='')
+     |      This methode completes base dictionary with properties of the given one. 
+     |      If the base does not have some property it will be added. 
+     |      Values of the existing properties are not overwritten.
+     |  
+     |  get(self, identifier, parsed=False)
+     |      Returns value of identifier. 
+     |      If identifier is not found KeyError is raised.
+     |      If parsed is set to True value will be parsed before returning.
+     |  
+     |  getnames(self)
+     |      Returns list of the property names.
+     |  
+     |  gets(self, identifier, parsed=False)
+     |      Returns dict of properties which names matched pattern given as identifier.
+     |      If parsed is set to True values will be parsed before returning.
+     |  
+     |  join(self, path, mode='c', prefix=' ')
+     |      Loads external properties and completes base. 
+     |      If mode is set to "c": 
+     |          comlete() method is used and properties are added with given prefix,
+     |      if mode is set to "m": 
+     |          merge() method is used (any prefix is discarded and new properties are not added).
+     |      
+     |      You can pass 'prefix' as empty string to add properties without prefix. 
+     |      It defaluts to joined modules name.
+     |  
+     |  merge(self, properties)
+     |      This methode merges given dictionary with the base one.
+     |  
+     |  parse(self)
+     |      This methode parses and returns parsed self.properties
+     |  
+     |  parseline(self, value)
+     |      This method searches for every $(reference) string in given line and 
+     |      replaces it with value of corrsponding property.
+     |  
+     |  pop(self, identifier)
+     |      This methode removes specified property from interal dictionary and returns its value. 
+     |      Removed property will be not saved using store().
+     |  
+     |  pops(self, identifier)
+     |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
+     |      Removed properties will be not saved using store().
+     |  
+     |  refresh(self, overwrite=True)
+     |      Refreshes *.properties file. Missing values are added.
+     |      If 'overwrite' is set to True: existing values are overwritten. (merge() is used)
+     |      Else: existing values are kept unchanged. (complete() is used)
+     |          'overwrite' defaults to True.
+     |      Values which are not found in file are not deleted.
+     |  
+     |  reload(self)
+     |      Reloads *.properties file. Missing values are added. Existing values are overwritten. 
+     |      Values which are not found in file are deleted.
+     |  
+     |  remove(self, identifier)
+     |      This methode removes specified property from interal dictionary. 
+     |      Removed property will be not saved using store().
+     |  
+     |  removes(self, identifier)
+     |      This methode removes properties matching given pattern from interal dictionary. 
+     |      Removed properties will be not saved using store().
+     |  
+     |  set(self, identifier, value)
+     |      Sets key to value.
+     |  
+     |  sets(self, identifier, value, *args, **kwargs)
+     |      Sets every property which name matched pattern given as identifier to value. 
+     |      You can pass more than one value. If more keys are found than values passed 
+     |      last value is passed to every key above number of values. 
+     |      After completing sort() method is used on keys list so the first value goes to first key. 
+     |      If the key is in kwargs its value if taken from the dict and the value counter is not increased. 
+     |      If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
+     |      as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
+     |  
+     |  store(self, path='')
+     |      Writes properties to given 'path'.
+     |      'path' defaults to self.path
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+
+DATA
+    __changes__ = 1
+    __major__ = 0
+    __minor__ = 1
+
+VERSION
+    0.1.1
+
+FILE
+    /home/triviuss/RAWD/Python3/Projects/pyp/modules/pyproperties.py
+
+
