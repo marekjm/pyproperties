@@ -57,8 +57,7 @@ CLASSES
      |  
      |  __load__(self, path)
      |      This method loads properties file from given path to a self.source list. 
-     |      It also strips it of any newline character and whitespace on both sides but leaves it otherwise unprocessed. 
-     |      Path is saved to self.path
+     |      It also strips it of any newline character and whitespace on both sides but leaves it otherwise unprocessed.
      |  
      |  __split__(self)
      |      This methode converts self.properties from list containing extracted lines to a dictionary.
@@ -80,15 +79,16 @@ CLASSES
      |      Returns dict of properties which names matched pattern given as identifier.
      |      If parsed is set to True values will be parsed before returning.
      |  
-     |  join(self, path, mode='c', prefix=' ')
+     |  join(self, path, prefix=' ', merge=False)
      |      Loads external properties and completes base. 
-     |      If mode is set to "c": 
-     |          comlete() method is used and properties are added with given prefix,
-     |      if mode is set to "m": 
-     |          merge() method is used (any prefix is discarded and new properties are not added).
-     |      
      |      You can pass 'prefix' as empty string to add properties without prefix. 
      |      It defaluts to joined modules name.
+     |      
+     |      If merge is set to True values will be overwritten. 
+     |      Merge deafults to False.
+     |  
+     |  melt(self, properties, prefix=' ')
+     |      Completes and merges 'properties' with the base.
      |  
      |  merge(self, properties)
      |      This methode merges given dictionary with the base one.
@@ -109,14 +109,13 @@ CLASSES
      |      Removed properties will be not saved using store().
      |  
      |  refresh(self, overwrite=True)
-     |      Refreshes *.properties file. Missing values are added.
-     |      If 'overwrite' is set to True: existing values are overwritten. (merge() is used)
-     |      Else: existing values are kept unchanged. (complete() is used)
-     |          'overwrite' defaults to True.
+     |      Refreshes from file. Missing values are added.
+     |      If 'overwrite' is set to True existing values are overwritten - merge() is used.
+     |      'overwrite' defaults to True.
      |      Values which are not found in file are not deleted.
      |  
      |  reload(self)
-     |      Reloads *.properties file. Missing values are added. Existing values are overwritten. 
+     |      Reloads from file. Missing values are added. Existing values are overwritten. 
      |      Values which are not found in file are deleted.
      |  
      |  remove(self, identifier)
@@ -161,6 +160,6 @@ VERSION
     0.1.1
 
 FILE
-    /home/triviuss/RAWD/Python3/Projects/pyp/modules/pyproperties.py
+    /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py
 
 

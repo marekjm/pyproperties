@@ -1,7 +1,6 @@
 .*
 !.gitignore
+*.pyc
 modules/__pycache__/
-modules/tests_upcoming.py
 scitesession
 x.properties
-problem.txt

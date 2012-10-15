@@ -44,7 +44,7 @@ class Properties():
         """
         self.path = path.strip()
         self.name = os.path.splitext( os.path.split( self.path )[-1] )[0]
-        self.__load__( path )
+        self.__load__( self.path )
         self.__extract__()
         self.__split__()
 
@@ -53,17 +53,11 @@ class Properties():
         """
         This method loads properties file from given path to a self.source list. 
         It also strips it of any newline character and whitespace on both sides but leaves it otherwise unprocessed. 
-        Path is saved to self.path
         """
-        src = open( self.path, "rt" )
+        src = open( path, "rt" )
         lines = []
-        try :
-            lines = src.readlines()
-        except UnicodeDecodeError as e : 
-            print( "\a\v\tpyproperties: Error was encountered while reading properties from '{0}'".format(path) )
-            raise
-        finally :
-            src.close()
+        lines = src.readlines()
+        src.close()
         for i in range( len( lines ) ) : lines[i] = lines[i].rstrip()
         self.source = lines
 
@@ -106,7 +100,7 @@ class Properties():
         This methode converts self.properties from list containing extracted lines to a dictionary.
         """
         properties = {}
-        for i in range( len( self.properties ) ): properties[ self.__getkey__(self.properties[i]) ] = self.__getvalue__(self.properties[i])
+        for i in range( len( self.properties ) ): properties[ self.__getkey__( self.properties[i] ) ] = self.__getvalue__(self.properties[i])
         self.properties = properties
 
 
@@ -138,24 +132,24 @@ class Properties():
 
     def reload( self ):
         """
-        Reloads *.properties file. Missing values are added. Existing values are overwritten. 
+        Reloads from file. Missing values are added. Existing values are overwritten. 
         Values which are not found in file are deleted.
         """
-        self.__load__( self.path )
-        self.__split__()
+        new = Properties( self.path )
+        self.source = new.source
+        self.properties = new.properties
 
 
     def refresh( self, overwrite = True ):
         """
-        Refreshes *.properties file. Missing values are added.
-        If 'overwrite' is set to True: existing values are overwritten. (merge() is used)
-        Else: existing values are kept unchanged. (complete() is used)
-            'overwrite' defaults to True.
+        Refreshes from file. Missing values are added.
+        If 'overwrite' is set to True existing values are overwritten - merge() is used.
+        'overwrite' defaults to True.
         Values which are not found in file are not deleted.
         """
         new = Properties( self.path )
+        self.complete( new, "" )
         if overwrite : self.merge( new )
-        else : self.complete( new )
 
 
     def parseline( self, value ):
@@ -181,17 +175,14 @@ class Properties():
         return parsed
 
 
-    def join(self, path, mode="c", prefix=" "):
-
+    def join(self, path, prefix=" ", merge = False):
         """
         Loads external properties and completes base. 
-        If mode is set to "c": 
-            comlete() method is used and properties are added with given prefix,
-        if mode is set to "m": 
-            merge() method is used (any prefix is discarded and new properties are not added).
-
         You can pass 'prefix' as empty string to add properties without prefix. 
         It defaluts to joined modules name.
+
+        If merge is set to True values will be overwritten. 
+        Merge deafults to False.
         """
         path = path.strip()
         new = None
@@ -201,11 +192,23 @@ class Properties():
         except IOError : 
             print( "IOError: [Errno 2]: file not found '{0}': properties cannot be joined".format( path ) )
         finally :
-            if new and mode == "c" : 
+            if new and not merge:
                 self.complete( new, prefix )
                 self.source.append( "" )
                 self.source += new.source
-            elif new and mode == "m" : self.merge( new )
+            elif new and merge : self.merge( new )
+            else : pass
+
+
+    def melt(self, properties, prefix=" "):
+        """
+        Completes and merges 'properties' with the base.
+        """
+        if prefix == " " : prefix = properties.name
+        self.complete( properties, prefix )
+        self.merge( properties )
+        self.source.append("")
+        for line in properties.source : self.source.append( line )
 
 
     def complete( self, properties, prefix = "" ):

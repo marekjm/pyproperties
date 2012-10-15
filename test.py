@@ -1,18 +1,12 @@
 #!/usr/bin/python3
 
-from modules import pyproperties
 import unittest
+from modules import pyproperties
+properties = pyproperties.Properties
 
-#
-#   this module is used for testing
-#
 
-print( pyproperties.__version__ )
-
-foo = pyproperties.Properties( "./data/properties/foo.properties" )
-bar = pyproperties.Properties( "./data/properties/bar.properties" )
-
-foo.complete( bar )
+foo = properties( "./data/properties/foo.properties" )
+bar = properties( "./data/properties/bar.properties" )
 
 class GetterTest( unittest.TestCase ):
     def test_get_parsed(self):
@@ -24,11 +18,11 @@ class GetterTest( unittest.TestCase ):
 
 
     def test_gets_parsed(self):
-        self.assertEqual( {"message.0":"Yellow Jack.", "message.1":"Arr... Hello, William!"}, foo.gets( "message.*", True ) )
+        self.assertEqual( {"message.0":"Yellow Jack.", "message.1":"Hello, John the Average!"}, foo.gets( "message.*", True ) )
 
 
     def test_gets_not_parsed(self):
-        self.assertEqual( {"message.0":"Yellow $(name.1).", "message.1":"Arr... Hello, $(name.0)!"}, foo.gets( "message.*" ) )
+        self.assertEqual( {"message.0":"Yellow $(name.1).", "message.1":"Hello, $(name.0)!"}, foo.gets( "message.*" ) )
 
 
 class SetterTest( unittest.TestCase ):
@@ -63,10 +57,19 @@ class PopperTest( unittest.TestCase ):
 
 
     def test_pops(self):
-        self.assertEqual( {"message.0":"Yellow $(name.1).", "message.1":"Arr... Hello, $(name.0)!"}, foo.pops( "message.*" ) )
+        self.assertEqual( {"message.0":"Yellow $(name.1).", "message.1":"Hello, $(name.0)!"}, foo.pops( "message.*" ) )
         foo.set( "message.0", "Yellow $(name.0)." )
-        foo.set( "message.1", "Yellow $(name.0)." )
+        foo.set( "message.1", "Hello, $(name.0)!" )
 
 
-if __name__ == '__main__':
+class ReloadTest( unittest.TestCase ):
+    def test_reload(self):
+        old_src = foo.source
+        n = len( foo.source )
+        foo.melt( bar )
+        foo.reload()
+        self.assertEqual( old_src[:n], foo.source )
+
+
+if __name__ == "__main__" :
     unittest.main()

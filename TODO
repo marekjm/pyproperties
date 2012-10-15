@@ -1,0 +1,6 @@
+List of things to do:
+
+STATUS          DESCRIPTION
+waiting         write new set of tests, not based on unittest,
+                it's hard to write tests fo pyproperties using 
+                unittest although unit tests are GOOD idea;

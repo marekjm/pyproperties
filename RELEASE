@@ -2,3 +2,13 @@ Release 0.1.1
 
     I had some problems with a git repository on SourceForge. 
     So I decided to throw everything away and start once again. 
+
+    ->  pyproperties.py
+        *   fix:    reload() method does not longer crash,
+        *   upd:    join() now takes (path, prefix, merge) as arguments; 
+                    refer to DOC for more information,
+        *   new:    melt() method, as an argument takes another properties object,
+                    it's very similar method to join() but takes works with already loaded 
+                    properties; please refer to DOC for more information
+        *   upd:    reload() works in new way,
+        *   upd:    refresh()
