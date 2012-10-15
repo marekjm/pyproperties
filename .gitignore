@@ -1,6 +1,7 @@
 .*
 !.gitignore
 *.pyc
+*.sh
 modules/__pycache__/
 scitesession
 x.properties
