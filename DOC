@@ -44,7 +44,10 @@ CLASSES
      |      Extracts value from given line and returns it. 
      |      If the line is comment or is an empty string returns empty string.
      |  
-     |  __init__(self, path)
+     |  __init__(self, path='')
+     |      If you give a path as an argument it will be loaded and processed as properties file. 
+     |      If you call Properties() without an argument it will be "blank" - in this case you will have to call 
+     |      foo.read( path ) to load some properties.
      |      First, defines self.path and extracts name of loaded properties file and stores it in self.name.
      |      Then runs these methods in following order:
      |          self.__load__( path )
@@ -62,10 +65,10 @@ CLASSES
      |  __split__(self)
      |      This methode converts self.properties from list containing extracted lines to a dictionary.
      |  
-     |  complete(self, properties, prefix='')
+     |  complete(self, props, prefix='')
      |      This methode completes base dictionary with properties of the given one. 
      |      If the base does not have some property it will be added. 
-     |      Values of the existing properties are not overwritten.
+     |      Values of the existing properties will be not overwritten.
      |  
      |  get(self, identifier, parsed=False)
      |      Returns value of identifier. 
@@ -82,16 +85,19 @@ CLASSES
      |  join(self, path, prefix=' ', merge=False)
      |      Loads external properties and completes base. 
      |      You can pass 'prefix' as empty string to add properties without prefix. 
-     |      It defaluts to joined modules name.
+     |      Prefix defaluts to joined modules name.
      |      
      |      If merge is set to True values will be overwritten. 
-     |      Merge deafults to False.
+     |      Merge defaults to False.
      |  
-     |  melt(self, properties, prefix=' ')
-     |      Completes and merges 'properties' with the base.
+     |  melt(self, properties)
+     |      Completes and merges 'properties' with the base. 
+     |      Completion is done without any prefix.
      |  
      |  merge(self, properties)
-     |      This methode merges given dictionary with the base one.
+     |      This methode base dictionary with the given one. 
+     |      If the base does not have some property it will not be added. 
+     |      Values of the existing properties will be overwritten.
      |  
      |  parse(self)
      |      This methode parses and returns parsed self.properties
@@ -107,6 +113,14 @@ CLASSES
      |  pops(self, identifier)
      |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
      |      Removed properties will be not saved using store().
+     |  
+     |  read(self, path)
+     |      Reads properties file and processes it to be available in Python 3 program.
+     |      This method defines self.path and extracts name of loaded properties file and stores it in self.name.
+     |      Then runs these methods in following order:
+     |          self.__load__( path )
+     |          self.__extract__()
+     |          self.__split__()
      |  
      |  refresh(self, overwrite=True)
      |      Refreshes from file. Missing values are added.
@@ -125,6 +139,9 @@ CLASSES
      |  removes(self, identifier)
      |      This methode removes properties matching given pattern from interal dictionary. 
      |      Removed properties will be not saved using store().
+     |  
+     |  save(self)
+     |      Saves changes made in self.properties by moving self.properties to self.propsorigin
      |  
      |  set(self, identifier, value)
      |      Sets key to value.

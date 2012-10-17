@@ -1,0 +1,15 @@
+SAVING YOUR WORK.
+
+        When you initialize new properites object you get two dictionaries of
+    representing loaded file:
+        *   one, which you are really working ->    self.properties,
+        *   and secure one ->   self.propsorigin,
+
+        Method named save() does very simple thing: it moves self.properties 
+    (on which you are working) to self.propsorigin (which is the secured version).
+    After saving, your changed properties become new origin and you can start 
+    editing them once again. It's useful for saving your progress. 
+
+        It's also important to call save() before storing edited properties 
+    because if you will not call save(), store() method will use umodified 
+    version of your properties.

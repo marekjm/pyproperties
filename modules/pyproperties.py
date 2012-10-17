@@ -34,19 +34,18 @@ class Properties():
     You should call it with a path pointing to the file you want to load. 
     """
 
-    def __init__( self, path ):
+    def __init__( self, path = "" ):
         """
+        If you give a path as an argument it will be loaded and processed as properties file. 
+        If you call Properties() without an argument it will be "blank" - in this case you will have to call 
+        foo.read( path ) to load some properties.
         First, defines self.path and extracts name of loaded properties file and stores it in self.name.
         Then runs these methods in following order:
             self.__load__( path )
             self.__extract__()
             self.__split__()
         """
-        self.path = path.strip()
-        self.name = os.path.splitext( os.path.split( self.path )[-1] )[0]
-        self.__load__( self.path )
-        self.__extract__()
-        self.__split__()
+        if path != "" and not path.isspace() : self.read( path )
 
 
     def __load__( self, path ):
@@ -99,9 +98,14 @@ class Properties():
         """
         This methode converts self.properties from list containing extracted lines to a dictionary.
         """
-        properties = {}
-        for i in range( len( self.properties ) ): properties[ self.__getkey__( self.properties[i] ) ] = self.__getvalue__(self.properties[i])
-        self.properties = properties
+        props = {}
+        origin = {}
+        for i in range( len( self.properties ) ): 
+            key = self.__getkey__( self.properties[i] )
+            value = self.__getvalue__(self.properties[i])
+            origin[ key ] = props[ key ] = value
+        self.propsorigin = origin
+        self.properties = props
 
 
     def __getkey__( self, line, strip=True ):
@@ -128,6 +132,22 @@ class Properties():
         elif line.find("=") == -1 : value = ""
         else : value = line[ line.find("=")+1 : ]
         return value
+
+
+    def read(self, path):
+        """
+        Reads properties file and processes it to be available in Python 3 program.
+        This method defines self.path and extracts name of loaded properties file and stores it in self.name.
+        Then runs these methods in following order:
+            self.__load__( path )
+            self.__extract__()
+            self.__split__()
+        """
+        self.path = path.strip()
+        self.name = os.path.splitext( os.path.split( self.path )[-1] )[0]
+        self.__load__( self.path )
+        self.__extract__()
+        self.__split__()
 
 
     def reload( self ):
@@ -175,14 +195,14 @@ class Properties():
         return parsed
 
 
-    def join(self, path, prefix=" ", merge = False):
+    def join(self, path, prefix=" ", merge=False):
         """
         Loads external properties and completes base. 
         You can pass 'prefix' as empty string to add properties without prefix. 
-        It defaluts to joined modules name.
+        Prefix defaluts to joined modules name.
 
         If merge is set to True values will be overwritten. 
-        Merge deafults to False.
+        Merge defaults to False.
         """
         path = path.strip()
         new = None
@@ -200,31 +220,33 @@ class Properties():
             else : pass
 
 
-    def melt(self, properties, prefix=" "):
+    def melt(self, properties ):
         """
-        Completes and merges 'properties' with the base.
+        Completes and merges 'properties' with the base. 
+        Completion is done without any prefix. 
         """
-        if prefix == " " : prefix = properties.name
-        self.complete( properties, prefix )
+        self.complete( properties, "" )
         self.merge( properties )
         self.source.append("")
-        for line in properties.source : self.source.append( line )
+        self.source += properties.source
 
 
-    def complete( self, properties, prefix = "" ):
+    def complete( self, props, prefix = "" ):
         """
         This methode completes base dictionary with properties of the given one. 
         If the base does not have some property it will be added. 
-        Values of the existing properties are not overwritten. 
+        Values of the existing properties will be not overwritten. 
         """
-        for key, value in properties.properties.items() :
+        for key, value in props.properties.items() :
             if prefix != "" : key = "{0}.{1}".format(prefix, key)
             if key not in self.properties : self.properties[ key ] = value
 
 
     def merge( self, properties ):
         """
-        This methode merges given dictionary with the base one. 
+        This methode base dictionary with the given one. 
+        If the base does not have some property it will not be added. 
+        Values of the existing properties will be overwritten. 
         """
         for key, value in properties.properties.items() : 
             if key in self.properties : self.properties[ key ] = value
@@ -240,19 +262,31 @@ class Properties():
         file = open( path, "w" )
         for i in range( len( self.source ) ) : 
             if self.source[i] == "" : 
+                # saves empty line
                 file.write( "{0}\n".format( self.source[i] ) )
             elif self.source[i][0] == "#" : 
+                # saves commented line
                 file.write( "{0}\n".format( self.source[i] ) )
-            elif self.__getkey__( self.source[i] ) != "" and self.__getkey__( self.source[i] ) in self.properties : 
+            elif self.__getkey__( self.source[i] ) != "" and self.__getkey__( self.source[i] ) in self.propsorigin : 
+                # checks if current line has a key (is a valid property line)
+                # and is in defined in self.propsorigin
                 stored.append( self.__getkey__( self.source[i] ) )
-                file.write( "{0}={1}\n".format(self.__getkey__( self.source[i], False ), self.get( self.__getkey__( self.source[i] ) ) ) )
+                file.write( "{0}={1}\n".format(self.__getkey__( self.source[i], False ), self.propsorigin[ self.__getkey__( self.source[i] ) ] ) )
             else : 
                 pass
-        for key, value in self.properties.items() :
+        for key, value in self.propsorigin.items() :
             if key not in stored : 
                 file.write( "{0}={1}\n".format(key, value) )
                 stored.append( key )
         file.close()
+
+
+    def save(self):
+        """
+        Saves changes made in self.properties by moving self.properties to self.propsorigin
+        """
+        saved = self.properties
+        self.propsorigin = saved
 
 
     def get(self, identifier, parsed = False):

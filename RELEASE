@@ -11,4 +11,21 @@ Release 0.1.1
                     it's very similar method to join() but takes works with already loaded 
                     properties; please refer to DOC for more information
         *   upd:    reload() works in new way,
-        *   upd:    refresh()
+        *   upd:    refresh() works in new way,
+        *   new:    save() - saves changes made to properties dict,
+        *   upd:    store() - uses propsorigin dict when looking for properites to write,
+        *   new:    propsorigin variable of dict() type,
+                    it stores secured version of properties;
+
+
+    As usual, I did not manage to list all of changes and updates here. 
+Some of them are quite drastic (but it's prealpha software after all, so I feel excused) so 
+it would be better for you if you check your software for conflicts with the new version. 
+    Now, when I'm heading for version 0.1.2 it's time to define a stable, final API. 
+This is one of the reasons for such dramiatical changes in some the way some methods work - I 
+just want an API which is (quite) intuitive and easy to learn and remember. 
+    So I wrote several snippets and found that some of my design choices were not so good and 
+changed them - when it is not so painful.
+
+Yours, 
+Marek Marecki.

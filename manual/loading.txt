@@ -1,0 +1,23 @@
+HOW TO LOAD PROPERTIES FILE.
+
+        There are two ways of doing so.
+
+        First - you just call a class with path asa an argument:
+            foo = pyproperties.Properties( path )
+
+        And second - you call a class with no argument an later call read() 
+    method with path as an argument.
+            foo = pyproperties.Properties()
+            foo.read( path )
+
+        The second method can be useful when you know that you will need some 
+    properites object but the path is not yet unknown.
+
+    ####
+
+        Loading properites results in creation of several variables:
+            *   path = path pointing to loaded .properites file,
+            *   name = name of the file,
+            *   source = source of file,
+            *   propsorigin = original dict of properties,
+            *   properties = dict that you are working with,

@@ -2,6 +2,7 @@
 !.gitignore
 *.pyc
 *.sh
+run.py
 modules/__pycache__/
 scitesession
 x.properties

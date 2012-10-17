@@ -1,0 +1,26 @@
+HOW TO STORE PROPERTIES.
+
+        There is a special method for storing loaded properites: store()
+    When you want to write yor properites to a file you should call 
+    store() with path to the file you want your properties to be saved in. 
+
+    WARNING!
+        Storing can be a little tricky at the beginning, because when you are 
+    performing any operation on you object eg. removing some property it 
+    is only removed from self.properties dict, but when you call store() it 
+    takes values from self.propsorigin dict. 
+        This is done to prevent unwanted or accidental damage to your data. 
+    When you are sure that you did everything right and want to store your 
+    new, great properties you should do like this:
+
+        foo.save()
+        foo.store( "./foo.properties" )
+
+        Because if you will do just:
+
+        foo.store( "./foo.properties" )
+
+    it will just write original properties to the file. 
+
+
+    MORE:   manual/saving.txt
