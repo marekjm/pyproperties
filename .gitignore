@@ -4,5 +4,6 @@
 *.sh
 run.py
 modules/__pycache__/
+archives/
 scitesession
 x.properties
