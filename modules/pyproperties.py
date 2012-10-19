@@ -53,12 +53,16 @@ class Properties():
         This method loads properties file from given path to a self.source list. 
         It also strips it of any newline character and whitespace on both sides but leaves it otherwise unprocessed. 
         """
+        srcorigin = []
+        source = []
         src = open( path, "rt" )
-        lines = []
-        lines = src.readlines()
+        source = src.readlines()
         src.close()
-        for i in range( len( lines ) ) : lines[i] = lines[i].rstrip()
-        self.source = lines
+        for i in range( len( source ) ) : 
+            source[i] = source[i].rstrip()
+            srcorigin.append( source[i] )
+        self.source = source
+        self.srcorigin = srcorigin
 
 
     def __isvalidline__( self, line ):
@@ -199,10 +203,13 @@ class Properties():
         """
         Loads external properties and completes base. 
         You can pass 'prefix' as empty string to add properties without prefix. 
-        Prefix defaluts to joined modules name.
+        Prefix defaluts to joined modules name. 
 
-        If merge is set to True values will be overwritten. 
-        Merge defaults to False.
+        If merge is set to True values will be overwritten. Setting merge to 
+        True will only merge properties and not complete them. 
+        It's done this way because if you complete with prefix and than merge 
+        You will have two exactly same sets of values. But one will be prefixed. 
+        Merge defaults to False. 
         """
         path = path.strip()
         new = None
@@ -212,7 +219,7 @@ class Properties():
         except IOError : 
             print( "IOError: [Errno 2]: file not found '{0}': properties cannot be joined".format( path ) )
         finally :
-            if new and not merge:
+            if new and not merge :
                 self.complete( new, prefix )
                 self.source.append( "" )
                 self.source += new.source
@@ -220,15 +227,25 @@ class Properties():
             else : pass
 
 
-    def melt(self, properties ):
+    def melt(self, properties, prefix="" ):
         """
         Completes and merges 'properties' with the base. 
-        Completion is done without any prefix. 
         """
-        self.complete( properties, "" )
-        self.merge( properties )
+        self.complete( properties, prefix )
+        self.merge( properties, prefix )
         self.source.append("")
-        self.source += properties.source
+
+        propkeys = properties.getnames()
+        keys = dict()
+        src = []
+        if prefix :
+            for i in range( len( propkeys ) ) :
+                keys[ propkeys[i] ] = "{0}.{1}".format(prefix, propkeys[i])
+        for line in properties.source :
+            for oldkey, newkey in keys.items() :
+                line = line.replace( oldkey, newkey )
+            src.append( line )
+        self.source += src
 
 
     def complete( self, props, prefix = "" ):
@@ -242,13 +259,17 @@ class Properties():
             if key not in self.properties : self.properties[ key ] = value
 
 
-    def merge( self, properties ):
+    def merge( self, properties, with_prefix="" ):
         """
         This methode base dictionary with the given one. 
         If the base does not have some property it will not be added. 
         Values of the existing properties will be overwritten. 
+
+        If prefix is specified only properties which are preceded with 
+        this key will have their value changed.
         """
         for key, value in properties.properties.items() : 
+            if with_prefix : key = "{0}.{1}".format( with_prefix, key )
             if key in self.properties : self.properties[ key ] = value
 
 
@@ -284,9 +305,12 @@ class Properties():
     def save(self):
         """
         Saves changes made in self.properties by moving self.properties to self.propsorigin
+        and self.source to self.srcorigin
         """
         saved = self.properties
         self.propsorigin = saved
+        saved = self.source
+        self.srcorigin = saved
 
 
     def get(self, identifier, parsed = False):
