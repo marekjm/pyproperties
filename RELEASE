@@ -1,8 +1,28 @@
 Release 0.1.2
 
-        This release brings you:
-    *   4 update(s),
-    *   2 fix(es),
+        The greatest thing in this release is typecasting. 
+    Many methods now accpet new argument. It is called 'cast'.
+    If it's name is not self-descroptive enough I'm explianing: 
+            if you call get, gets, pop or pops with 'cast' arg 
+            set to True they will try to guess the property type 
+            and cast it for you.
+        Nice, isn't it? 
+        There are two types to which your property can be casted: 
+    int and float.
+        Guessing is done with regular expressions.
+
+        Apart from that shiny new feature (which is not really a 
+    'killer') there are few fixes and updates.
+
+        Enjoy.
+
+
+---------------------------------------------------------------------------------------------
+
+
+    This release brings you:
+    *   8 update(s),
+    *   3 fix(es),
     *   3 new feature(s).
 
     ->  pyproperties.py
@@ -11,17 +31,27 @@ Release 0.1.2
                     non empty string merge will be discarded (even if set to True)
         *   upd:    merge() - added 'with_prefix' argumet, read DOC for more information,
         *   upd:    save() saves both source and properties,
-        *   fix:    save() does not cause 'origins' link to 'working copies',
-        *   new:    srcorigin variable for securing source (in 0.1.1 only properties were secure)
+        *   upd:    get() and gets() methods now accept new argument - cast, which indicates
+                    if the method should guess property type and cast type of this property, 
+                    read DOC for more
+        *   upd:    pop() and pops() methods now accept new argument - cast, which indicates
+                    if the method should guess property type and cast type of this property, 
+                    read DOC for more
+        *   upd:    parse() method now accept new argument - cast, which indicates if 
+                    the method should guess property type and cast type of this property, 
+                    read DOC for more
+        *   upd:    you can now pass path in "~/path/to/my/great.properties" format,
         *   upd/
             fix:    store() does not save the same property multiple times after adding new source
                     eg. with melt() or join().
                     (this filtering functionality should be placed in melt() and join() methods to 
                     avoid bloating self.source and self.srcorigin; 
                     eventually filtering can be implemented in save() method)
+        *   fix:    save() does not cause 'origins' link to 'working copies',
+        *   fix:    pops() is now removing properties from dictionary (it did not),
+        *   new:    srcorigin variable for securing source (in 0.1.1 only properties were secure)
         *   new:    rsave() "reverse save" - moves origins to working copies,
-        *   new:    added functionality to guess property types (str, int, float) and convert them,
-                    (typecast() and typecasts() methods), read DOC for more,
+        *   new:    new method: getkeyof() tries to find and return key of given value, read DOC for more
 
     Yours,
     Marek Marecki.

@@ -16,15 +16,18 @@ It features:
     *   parsing single lines,
     *   referencing other properties values with $(foo.bar) syntax, 
     *   removing and poping single an multiple properties, 
+    *   guessing types of properties (str, int, float)  and casting them during load and post-load,
+    *   securing your work by providing you two dictionaries - one for saved work and one as a 'working copy',
     *   pyproperites is capable of reading properties splitted into several lines, 
 """
 
-import os, re
+import os
+import re
 
 
 __major__ = 0
 __minor__ = 1
-__changes__ = 1
+__changes__ = 2
 __version__ = "{}.{}.{}".format(__major__, __minor__, __changes__)
 
 
@@ -127,7 +130,6 @@ class Properties():
         identifier = re.compile( identifier.replace("*", "[a-z0-9\.\*]*") )
         for key in self.properties.keys() :
             if re.match(identifier, key) : keys.append( key )
-
         for key in keys : self.__tcast__( key )
 
 
@@ -175,7 +177,7 @@ class Properties():
         return value
 
 
-    def read(self, path, type_convert=False):
+    def read(self, path, cast=False):
         """
         Reads properties file and processes it to be available in Python 3 program.
         This method defines self.path and extracts name of loaded properties file and stores it in self.name.
@@ -183,15 +185,15 @@ class Properties():
             self.__load__( path )
             self.__extract__()
             self.__split__()
-        You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
+        You can pass cast as True to tell pyproperites that it should guess the type of the property 
         and convert it accordingly (the __tcasts__ method will be called).
         """
-        self.path = path.strip()
+        self.path = os.path.expanduser( path ).strip()
         self.name = os.path.splitext( os.path.split( self.path )[-1] )[0]
         self.__load__( self.path )
         self.__extract__()
         self.__split__()
-        if type_convert : self.__tcasts__( "*" )
+        if cast : self.__tcasts__( "*" )
 
 
     def reload( self ):
@@ -219,23 +221,24 @@ class Properties():
     def parseline( self, value ):
         """
         This method searches for every $(reference) string in given line and 
-        replaces it with value of corrsponding property. 
+        replaces it with value of corresponding property. 
         """
+        init_value = value
         while "$(" in value and ")" in value :
             a = value.find("$(")
             b = value[a:].find(")")
             name = value[ a+2 : a+b ]
             if a == -1 or b == -1 : break
-            value = value.replace("$({0})".format(name), self.properties[ name ])
+            value = value.replace("$({0})".format(name), str( self.properties[ name ] ) )
         return value
 
 
-    def parse( self ):
+    def parse( self, cast = False ):
         """
         This methode parses and returns parsed self.properties
         """
         parsed = {}
-        for key, value in self.properties.items(): parsed[ key ] = self.get( key, True )
+        for key, value in self.properties.items(): parsed[ key ] = self.get( key, True, cast )
         return parsed
 
 
@@ -243,8 +246,8 @@ class Properties():
         """
         Loads external properties and completes base. 
         You can pass 'prefix' as empty string to add properties without prefix. 
-        Prefix (if set) will be passed to both complete() and merge().
         Prefix defaluts to joined modules name. 
+        Source of joined properties is appended to base source.
         """
         path = path.strip()
         new = None
@@ -252,20 +255,20 @@ class Properties():
             new = Properties( path )
             if prefix == " " : prefix = new.name
         except IOError : 
-            print( "IOError: [Errno 2]: file not found '{0}': properties cannot be joined".format( path ) )
+            print( "\v\tIOError: [Errno 2]: file not found '{0}': properties cannot be joined\v".format( path ) )
+            raise
         finally :
             if new :
                 self.complete( new, prefix )
                 self.source.append( "" )
                 self.source += new.source
-            #  if new and not merge : pass
-            #  elif new and merge : self.merge( new, prefix )
             else : pass
 
 
     def melt(self, properties ):
         """
         Completes and merges 'properties' with the base. 
+        Source of melted properties is appended to base source.
         """
         self.complete( properties )
         self.merge( properties )
@@ -356,7 +359,7 @@ class Properties():
         file.close()
 
 
-    def get(self, identifier, parsed = False):
+    def get(self, identifier, parsed = False, cast = False):
         """
         Returns value of identifier. 
         If identifier is not found KeyError is raised.
@@ -364,10 +367,11 @@ class Properties():
         """
         if parsed : value = self.parseline( self.properties[ identifier ] )
         else : value = self.properties[ identifier ]
+        if cast : value = self.__typeguess__( value )(value)
         return value
 
 
-    def gets(self, identifier, parsed = False):
+    def gets(self, identifier, parsed = False, cast = False):
         """
         Returns dict of properties which names matched pattern given as identifier.
         If parsed is set to True values will be parsed before returning.
@@ -378,6 +382,8 @@ class Properties():
         for key, value in self.properties.items():
             if re.match(identifier, key) and parsed : matched[ key ] = self.parseline( value )
             elif re.match(identifier, key) and not parsed : matched[ key ] = value
+        if cast : 
+            for key, value in matched.items(): matched[ key ] = self.__typeguess__( value )( value )
         return matched
 
 
@@ -440,15 +446,17 @@ class Properties():
         for key in to_remove : self.properties.pop( key )
 
 
-    def pop(self, identifier):
+    def pop(self, identifier, cast = False):
         """
         This methode removes specified property from interal dictionary and returns its value. 
         Removed property will be not saved using store().
         """
-        return self.properties.pop( identifier )
+        prop = self.properties.pop( identifier )
+        if cast : prop = self.__typeguess__( prop )( prop )
+        return prop
 
 
-    def pops(self, identifier):
+    def pops(self, identifier, cast = False):
         """
         This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
         Removed properties will be not saved using store().
@@ -456,28 +464,32 @@ class Properties():
         popped = {}
         identifier = re.compile( identifier.replace("*", "[a-z0-9\.\*]*") )
         for key, value in self.properties.items() :
-            if re.match( identifier, key ) : popped[ key ] = value
+            if re.match( identifier, key ) : 
+                popped[ key ] = value
+        for key in popped.keys(): self.properties.pop( key )
+        if cast : 
+            for key, value in popped.items():
+                popped[ key ] = self.__typeguess__( value )( value )
         return popped
 
-
-    def typecast(self, key):
-        """
-        Converts property of the given key from str (default) to int or float if needed.
-        It is a 'font-end' for the __tcast__( key ) method.
-        """
-        self.__tcast__( key )
-        
-
-    def typecasts(self, identifier):
-        """
-        Converts properties which key match given identifier from str (default) to int or float if needed.
-        It is a 'font-end' for the __tcasts__( key ) method.
-        """
-        self.__tcasts__( identifier )
-        
 
     def getnames(self):
         """
         Returns list of the property names. 
         """
         return sorted( list( self.properties.keys() ) )
+
+
+    def getkeyof( self, value ):
+        """
+        Returns key of given value. 
+        Raises KeyError if value will not match any key.
+        """
+        key = None
+        for propkey, propvalue in self.properties.items():
+            if value == propvalue : 
+                key = propkey
+                break
+
+        if key : return key
+        else : raise KeyError("there is no key holding value of '{0}'".format( value ) )
