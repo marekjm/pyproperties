@@ -34,18 +34,17 @@ class Properties():
     You should call it with a path pointing to the file you want to load. 
     """
 
-    def __init__( self, path = "" ):
+    def __init__( self, path = "", type_convert=False ):
         """
         If you give a path as an argument it will be loaded and processed as properties file. 
-        If you call Properties() without an argument it will be "blank" - in this case you will have to call 
-        foo.read( path ) to load some properties.
-        First, defines self.path and extracts name of loaded properties file and stores it in self.name.
-        Then runs these methods in following order:
-            self.__load__( path )
-            self.__extract__()
-            self.__split__()
+        If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
+        foo.read( path, type_convert ) to load some properties.
+        You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
+        and convert it accordingly.
+
+        This method (__init__) just calls read() with arguments passed to itself.
         """
-        if path != "" and not path.isspace() : self.read( path )
+        if path != "" and not path.isspace() : self.read( path, type_convert )
 
 
     def __load__( self, path ):
@@ -112,6 +111,44 @@ class Properties():
         self.properties = props
 
 
+    def __tcast__( self, identifier ):
+        """
+        Converts property of the given key from str (default) to int or float if needed.
+        """
+        ptype = self.__typeguess__( self.get( identifier ) )
+        self.set( identifier, ptype( self.get( identifier ) ) )
+
+
+    def __tcasts__( self, identifier ):
+        """
+        Converts properties from str (default) to int or float (if needed). 
+        """
+        keys = []
+        identifier = re.compile( identifier.replace("*", "[a-z0-9\.\*]*") )
+        for key in self.properties.keys() :
+            if re.match(identifier, key) : keys.append( key )
+
+        for key in keys : self.__tcast__( key )
+
+
+    def __typeguess__(self, prop):
+        """
+        Tries to guess the type of property (initially all properties are stored as strings) and 
+        convert it accordingly.
+        It can guess three types: int, float and string.
+        If property contains only digits and a dot inside - it's considered float (re: "^[0-9]*\.[0-9]+$").
+        If property contains only digits and not a dot inside - it's considered int (re: "^[0-9]+$").
+        Otherwise: property is considered str.
+        """
+        re_int = re.compile("^[0-9]+$")
+        re_float = re.compile("^[0-9]*\.[0-9]+$")
+
+        if re.match(re_int, prop) : ptype = int
+        elif re.match(re_float, prop) : ptype = float
+        else : ptype = str
+        return ptype
+
+
     def __getkey__( self, line, strip=True ):
         """
         Extracts key from given line and returns it. 
@@ -138,7 +175,7 @@ class Properties():
         return value
 
 
-    def read(self, path):
+    def read(self, path, type_convert=False):
         """
         Reads properties file and processes it to be available in Python 3 program.
         This method defines self.path and extracts name of loaded properties file and stores it in self.name.
@@ -146,12 +183,15 @@ class Properties():
             self.__load__( path )
             self.__extract__()
             self.__split__()
+        You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
+        and convert it accordingly (the __tcasts__ method will be called).
         """
         self.path = path.strip()
         self.name = os.path.splitext( os.path.split( self.path )[-1] )[0]
         self.__load__( self.path )
         self.__extract__()
         self.__split__()
+        if type_convert : self.__tcasts__( "*" )
 
 
     def reload( self ):
@@ -199,17 +239,12 @@ class Properties():
         return parsed
 
 
-    def join(self, path, prefix=" ", merge=False):
+    def join(self, path, prefix=" "):
         """
         Loads external properties and completes base. 
         You can pass 'prefix' as empty string to add properties without prefix. 
+        Prefix (if set) will be passed to both complete() and merge().
         Prefix defaluts to joined modules name. 
-
-        If merge is set to True values will be overwritten. Setting merge to 
-        True will only merge properties and not complete them. 
-        It's done this way because if you complete with prefix and than merge 
-        You will have two exactly same sets of values. But one will be prefixed. 
-        Merge defaults to False. 
         """
         path = path.strip()
         new = None
@@ -219,33 +254,23 @@ class Properties():
         except IOError : 
             print( "IOError: [Errno 2]: file not found '{0}': properties cannot be joined".format( path ) )
         finally :
-            if new and not merge :
+            if new :
                 self.complete( new, prefix )
                 self.source.append( "" )
                 self.source += new.source
-            elif new and merge : self.merge( new )
+            #  if new and not merge : pass
+            #  elif new and merge : self.merge( new, prefix )
             else : pass
 
 
-    def melt(self, properties, prefix="" ):
+    def melt(self, properties ):
         """
         Completes and merges 'properties' with the base. 
         """
-        self.complete( properties, prefix )
-        self.merge( properties, prefix )
+        self.complete( properties )
+        self.merge( properties )
         self.source.append("")
-
-        propkeys = properties.getnames()
-        keys = dict()
-        src = []
-        if prefix :
-            for i in range( len( propkeys ) ) :
-                keys[ propkeys[i] ] = "{0}.{1}".format(prefix, propkeys[i])
-        for line in properties.source :
-            for oldkey, newkey in keys.items() :
-                line = line.replace( oldkey, newkey )
-            src.append( line )
-        self.source += src
+        self.source += properties.source
 
 
     def complete( self, props, prefix = "" ):
@@ -273,6 +298,32 @@ class Properties():
             if key in self.properties : self.properties[ key ] = value
 
 
+    def save(self):
+        """
+        Saves changes made in self.properties by moving self.properties to self.propsorigin
+        and self.source to self.srcorigin
+        """
+        saved = {}
+        for key, value in self.properties.items() : saved[ key ] = value
+        self.propsorigin = saved
+        saved = []
+        for line in self.source: saved.append( line )
+        self.srcorigin = saved
+
+
+    def rsave(self):
+        """
+        Undoes changes made in self.properties by moving self.propsorigin to self.properties
+        and self.srcorigin to self.source
+        """
+        rsaved = {}
+        for key, value in self.propsorigin.items() : rsaved[ key ] = value
+        self.properties = rsaved
+        rsaved = []
+        for line in self.srcorigin: rsaved.append( line )
+        self.source = rsaved
+
+
     def store(self, path = ""):
         """
         Writes properties to given 'path'.
@@ -280,6 +331,7 @@ class Properties():
         """
         stored = []
         if path == "" : path = self.path
+
         file = open( path, "w" )
         for i in range( len( self.source ) ) : 
             if self.source[i] == "" : 
@@ -288,29 +340,20 @@ class Properties():
             elif self.source[i][0] == "#" : 
                 # saves commented line
                 file.write( "{0}\n".format( self.source[i] ) )
-            elif self.__getkey__( self.source[i] ) != "" and self.__getkey__( self.source[i] ) in self.propsorigin : 
+            elif self.__getkey__( self.source[i] ) != "" and self.__getkey__( self.source[i] ) in self.propsorigin and self.__getkey__( self.source[i] ) not in stored : 
                 # checks if current line has a key (is a valid property line)
                 # and is in defined in self.propsorigin
                 stored.append( self.__getkey__( self.source[i] ) )
                 file.write( "{0}={1}\n".format(self.__getkey__( self.source[i], False ), self.propsorigin[ self.__getkey__( self.source[i] ) ] ) )
             else : 
                 pass
+
         for key, value in self.propsorigin.items() :
             if key not in stored : 
                 file.write( "{0}={1}\n".format(key, value) )
                 stored.append( key )
+
         file.close()
-
-
-    def save(self):
-        """
-        Saves changes made in self.properties by moving self.properties to self.propsorigin
-        and self.source to self.srcorigin
-        """
-        saved = self.properties
-        self.propsorigin = saved
-        saved = self.source
-        self.srcorigin = saved
 
 
     def get(self, identifier, parsed = False):
@@ -416,6 +459,22 @@ class Properties():
             if re.match( identifier, key ) : popped[ key ] = value
         return popped
 
+
+    def typecast(self, key):
+        """
+        Converts property of the given key from str (default) to int or float if needed.
+        It is a 'font-end' for the __tcast__( key ) method.
+        """
+        self.__tcast__( key )
+        
+
+    def typecasts(self, identifier):
+        """
+        Converts properties which key match given identifier from str (default) to int or float if needed.
+        It is a 'font-end' for the __tcasts__( key ) method.
+        """
+        self.__tcasts__( identifier )
+        
 
     def getnames(self):
         """

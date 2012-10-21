@@ -44,15 +44,14 @@ CLASSES
      |      Extracts value from given line and returns it. 
      |      If the line is comment or is an empty string returns empty string.
      |  
-     |  __init__(self, path='')
+     |  __init__(self, path='', type_convert=False)
      |      If you give a path as an argument it will be loaded and processed as properties file. 
-     |      If you call Properties() without an argument it will be "blank" - in this case you will have to call 
-     |      foo.read( path ) to load some properties.
-     |      First, defines self.path and extracts name of loaded properties file and stores it in self.name.
-     |      Then runs these methods in following order:
-     |          self.__load__( path )
-     |          self.__extract__()
-     |          self.__split__()
+     |      If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
+     |      foo.read( path, type_convert ) to load some properties.
+     |      You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
+     |      and convert it accordingly.
+     |      
+     |      This method (__init__) just calls read() with arguments passed to itself.
      |  
      |  __isvalidline__(self, line)
      |      Checks if the line contains valid property string. 
@@ -64,6 +63,20 @@ CLASSES
      |  
      |  __split__(self)
      |      This methode converts self.properties from list containing extracted lines to a dictionary.
+     |  
+     |  __tcast__(self, identifier)
+     |      Converts property of the given key from str (default) to int or float if needed.
+     |  
+     |  __tcasts__(self, identifier)
+     |      Converts properties from str (default) to int or float (if needed).
+     |  
+     |  __typeguess__(self, prop)
+     |      Tries to guess the type of property (initially all properties are stored as strings) and 
+     |      convert it accordingly.
+     |      It can guess three types: int, float and string.
+     |      If property contains only digits and a dot inside - it's considered float (re: "^[0-9]*\.[0-9]+$").
+     |      If property contains only digits and not a dot inside - it's considered int (re: "^[0-9]+$").
+     |      Otherwise: property is considered str.
      |  
      |  complete(self, props, prefix='')
      |      This methode completes base dictionary with properties of the given one. 
@@ -82,22 +95,22 @@ CLASSES
      |      Returns dict of properties which names matched pattern given as identifier.
      |      If parsed is set to True values will be parsed before returning.
      |  
-     |  join(self, path, prefix=' ', merge=False)
+     |  join(self, path, prefix=' ')
      |      Loads external properties and completes base. 
      |      You can pass 'prefix' as empty string to add properties without prefix. 
+     |      Prefix (if set) will be passed to both complete() and merge().
      |      Prefix defaluts to joined modules name.
-     |      
-     |      If merge is set to True values will be overwritten. 
-     |      Merge defaults to False.
      |  
      |  melt(self, properties)
-     |      Completes and merges 'properties' with the base. 
-     |      Completion is done without any prefix.
+     |      Completes and merges 'properties' with the base.
      |  
-     |  merge(self, properties)
+     |  merge(self, properties, with_prefix='')
      |      This methode base dictionary with the given one. 
      |      If the base does not have some property it will not be added. 
-     |      Values of the existing properties will be overwritten.
+     |      Values of the existing properties will be overwritten. 
+     |      
+     |      If prefix is specified only properties which are preceded with 
+     |      this key will have their value changed.
      |  
      |  parse(self)
      |      This methode parses and returns parsed self.properties
@@ -114,13 +127,15 @@ CLASSES
      |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
      |      Removed properties will be not saved using store().
      |  
-     |  read(self, path)
+     |  read(self, path, type_convert=False)
      |      Reads properties file and processes it to be available in Python 3 program.
      |      This method defines self.path and extracts name of loaded properties file and stores it in self.name.
      |      Then runs these methods in following order:
      |          self.__load__( path )
      |          self.__extract__()
      |          self.__split__()
+     |      You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
+     |      and convert it accordingly (the __tcasts__ method will be called).
      |  
      |  refresh(self, overwrite=True)
      |      Refreshes from file. Missing values are added.
@@ -140,8 +155,13 @@ CLASSES
      |      This methode removes properties matching given pattern from interal dictionary. 
      |      Removed properties will be not saved using store().
      |  
+     |  rsave(self)
+     |      Undoes changes made in self.properties by moving self.propsorigin to self.properties
+     |      and self.srcorigin to self.source
+     |  
      |  save(self)
      |      Saves changes made in self.properties by moving self.properties to self.propsorigin
+     |      and self.source to self.srcorigin
      |  
      |  set(self, identifier, value)
      |      Sets key to value.
@@ -158,6 +178,14 @@ CLASSES
      |  store(self, path='')
      |      Writes properties to given 'path'.
      |      'path' defaults to self.path
+     |  
+     |  typecast(self, key)
+     |      Converts property of the given key from str (default) to int or float if needed.
+     |      It is a 'font-end' for the __tcast__( key ) method.
+     |  
+     |  typecasts(self, identifier)
+     |      Converts properties which key match given identifier from str (default) to int or float if needed.
+     |      It is a 'font-end' for the __tcasts__( key ) method.
      |  
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:

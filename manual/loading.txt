@@ -21,3 +21,8 @@ HOW TO LOAD PROPERTIES FILE.
             *   source = source of file,
             *   propsorigin = original dict of properties,
             *   properties = dict that you are working with,
+
+
+    SEE ALSO:
+        manual/storing.txt
+        manual/saving.txt

@@ -1,13 +1,27 @@
 Release 0.1.2
 
+        This release brings you:
+    *   4 update(s),
+    *   2 fix(es),
+    *   3 new feature(s).
+
     ->  pyproperties.py
-        *   upd:    join() - changed order of argumets,
-        *   upd:    merge() - added 'with_prefix' argumet,
-                    read DOC for more information,
-        *   upd:    melt() can now accept 'prefix' argument,
+        *   upd:    join() behaves diffrently, read DOC for more information,
+                    it accepts (path, prefix, merge) as args - if prefix is passed as 
+                    non empty string merge will be discarded (even if set to True)
+        *   upd:    merge() - added 'with_prefix' argumet, read DOC for more information,
         *   upd:    save() saves both source and properties,
-        *   new:    srcorigin variable for securing source,
-                    (in 0.1.1 only properties were secure)
+        *   fix:    save() does not cause 'origins' link to 'working copies',
+        *   new:    srcorigin variable for securing source (in 0.1.1 only properties were secure)
+        *   upd/
+            fix:    store() does not save the same property multiple times after adding new source
+                    eg. with melt() or join().
+                    (this filtering functionality should be placed in melt() and join() methods to 
+                    avoid bloating self.source and self.srcorigin; 
+                    eventually filtering can be implemented in save() method)
+        *   new:    rsave() "reverse save" - moves origins to working copies,
+        *   new:    added functionality to guess property types (str, int, float) and convert them,
+                    (typecast() and typecasts() methods), read DOC for more,
 
     Yours,
     Marek Marecki.

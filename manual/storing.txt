@@ -23,4 +23,5 @@ HOW TO STORE PROPERTIES.
     it will just write original properties to the file. 
 
 
-    MORE:   manual/saving.txt
+    SEE ALSO:
+        manual/saving.txt
