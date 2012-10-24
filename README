@@ -14,22 +14,7 @@ Projects website:       https://sourceforge.net/projects/pyproperties/
                         https://github.com/marekjm/pyproperties
 
 
-****    How to
 
-To use pyproperties library you only need file named 'pyproperties.py'. 
-Place it in whatever directory you need.
-Then you will have to 'import' it. I suggest using this line:
+    HOW TO
 
-    >>> from pyproperties import Properties as properties
-
-After that you can read properties with following method:
-
-    >>> foo = properties( "/home/user/my/diretory/foo.properties" )
-
-To get single property:
-
-    >>> foo.get( "foo.bar" )
-    
-Or multiple properties:
-
-    >>> foo.gets( "foo.*" )
+        Manuals are placed in manual/ directory.

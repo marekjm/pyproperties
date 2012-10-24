@@ -18,6 +18,8 @@ DESCRIPTION
         *   parsing single lines,
         *   referencing other properties values with $(foo.bar) syntax, 
         *   removing and poping single an multiple properties, 
+        *   guessing types of properties (str, int, float) and casting them during load and post-load,
+        *   securing your work by providing you two dictionaries - one for saved work and one as a 'working copy',
         *   pyproperites is capable of reading properties splitted into several lines,
 
 CLASSES
@@ -83,26 +85,31 @@ CLASSES
      |      If the base does not have some property it will be added. 
      |      Values of the existing properties will be not overwritten.
      |  
-     |  get(self, identifier, parsed=False)
+     |  get(self, identifier, parsed=False, cast=False)
      |      Returns value of identifier. 
      |      If identifier is not found KeyError is raised.
      |      If parsed is set to True value will be parsed before returning.
      |  
+     |  getkeyof(self, value)
+     |      Returns key of given value. 
+     |      Raises KeyError if value will not match any key.
+     |  
      |  getnames(self)
      |      Returns list of the property names.
      |  
-     |  gets(self, identifier, parsed=False)
+     |  gets(self, identifier, parsed=False, cast=False)
      |      Returns dict of properties which names matched pattern given as identifier.
      |      If parsed is set to True values will be parsed before returning.
      |  
      |  join(self, path, prefix=' ')
      |      Loads external properties and completes base. 
      |      You can pass 'prefix' as empty string to add properties without prefix. 
-     |      Prefix (if set) will be passed to both complete() and merge().
-     |      Prefix defaluts to joined modules name.
+     |      Prefix defaluts to joined modules name. 
+     |      Source of joined properties is appended to base source.
      |  
      |  melt(self, properties)
-     |      Completes and merges 'properties' with the base.
+     |      Completes and merges 'properties' with the base. 
+     |      Source of melted properties is appended to base source.
      |  
      |  merge(self, properties, with_prefix='')
      |      This methode base dictionary with the given one. 
@@ -112,29 +119,29 @@ CLASSES
      |      If prefix is specified only properties which are preceded with 
      |      this key will have their value changed.
      |  
-     |  parse(self)
+     |  parse(self, cast=False)
      |      This methode parses and returns parsed self.properties
      |  
      |  parseline(self, value)
      |      This method searches for every $(reference) string in given line and 
-     |      replaces it with value of corrsponding property.
+     |      replaces it with value of corresponding property.
      |  
-     |  pop(self, identifier)
+     |  pop(self, identifier, cast=False)
      |      This methode removes specified property from interal dictionary and returns its value. 
      |      Removed property will be not saved using store().
      |  
-     |  pops(self, identifier)
+     |  pops(self, identifier, cast=False)
      |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
      |      Removed properties will be not saved using store().
      |  
-     |  read(self, path, type_convert=False)
+     |  read(self, path, cast=False)
      |      Reads properties file and processes it to be available in Python 3 program.
      |      This method defines self.path and extracts name of loaded properties file and stores it in self.name.
      |      Then runs these methods in following order:
      |          self.__load__( path )
      |          self.__extract__()
      |          self.__split__()
-     |      You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
+     |      You can pass cast as True to tell pyproperites that it should guess the type of the property 
      |      and convert it accordingly (the __tcasts__ method will be called).
      |  
      |  refresh(self, overwrite=True)
@@ -179,14 +186,6 @@ CLASSES
      |      Writes properties to given 'path'.
      |      'path' defaults to self.path
      |  
-     |  typecast(self, key)
-     |      Converts property of the given key from str (default) to int or float if needed.
-     |      It is a 'font-end' for the __tcast__( key ) method.
-     |  
-     |  typecasts(self, identifier)
-     |      Converts properties which key match given identifier from str (default) to int or float if needed.
-     |      It is a 'font-end' for the __tcasts__( key ) method.
-     |  
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |  
@@ -197,12 +196,12 @@ CLASSES
      |      list of weak references to the object (if defined)
 
 DATA
-    __changes__ = 1
+    __changes__ = 2
     __major__ = 0
     __minor__ = 1
 
 VERSION
-    0.1.1
+    0.1.2
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py
