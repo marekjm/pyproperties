@@ -505,21 +505,68 @@ class Properties():
 
     def getnames(self):
         """
-        Returns list of the property names. 
+        Returns sorted list of the property names. 
         """
         return sorted( list( self.properties.keys() ) )
 
 
-    def getkeyof( self, value ):
+    def getkeysof( self, value ):
         """
-        Returns key of given value. 
-        Raises KeyError if value will not match any key.
+        Returns list of keys containing given value. 
+        Returns empty list if no key was matched.
         """
-        key = None
+        keys = []
         for propkey, propvalue in self.properties.items():
-            if value == propvalue : 
-                key = propkey
-                break
+            if value == propvalue : keys.append( propkey )
+        return keys
 
-        if key : return key
-        else : raise KeyError("there is no key holding value of '{0}'".format( value ) )
+
+    def getgroups(self):
+        """
+        Returns list of properties-groups in the internal dictionary. 
+        Group is understood by two or more properties which can 
+        be obtained with the same gets() identifier.
+
+        For example:
+            language.0=Python 2.x
+            language.1=Python 3.x
+        will form group with identifer 'language.*'. 
+
+        And:
+            customer.0.address=Some Street 16.
+            customer.1.address=Other Street 17.
+        will form group with identifer 'customer.*.address'. 
+
+        But:
+            person.name=John
+            person.surname=Average
+        will not form a group even if gets('person.*') will return 
+        list of length greater than two.
+
+        This is because only digits are considered as 'groupers'.
+        """
+        skeys = []
+        [ skeys.append( key.split(".") ) for key in self.getnames() ]
+        groups = []
+        for skey in skeys :
+            identifier = ""
+            for key in skey :
+                if key.isdigit() : key = "*"
+                identifier = "{}.{}".format(identifier, key)
+            identifier = identifier[1:]
+            if identifier not in groups and len( self.gets( identifier ) ) > 1 : groups.append( identifier )
+        return groups
+
+
+    def getsingles(self):
+        """
+        Returns list of properties which do not 
+        belong to any group.
+        """
+        groups = self.getgroups()
+        singles = []
+        for key in self.getnames() :
+            key = re.sub( re.compile("\.[0-9]+\."), ".*.", key )
+            key = re.sub( re.compile("\.[0-9]+$"), ".*", key )
+            if key not in groups : singles.append( key )
+        return singles

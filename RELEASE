@@ -1,9 +1,17 @@
 Release 0.1.3
 
-        Some text.
-    Some more text.
+        This release brings two new methods. Both are connected with working with 
+    properties grouped in 'sections'.
+        What's more - update in store() method which will cause your properties to 
+    be saved in more human-readable form if the source is empty. For example when 
+    properties are created from the inside of a program and not loaded to it.
+        And last but not least - loading directories as properties. 
+        In this case I suggest reading manual for more information about how 
+    directories are treated. 
+        Also, manual contains new files: 'groups.txt' and 'singles.txt' which are 
+    describing how grouping is implemented.
 
-        Enjoy.
+        I hope you will enjoy this release as much as I do.
 
 ---------------------------------------------------------------------------------------------
 
@@ -14,9 +22,15 @@ Release 0.1.3
     *   z new feature(s).
 
     ->  pyproperties.py
-        *   upd:    x
+        !   upd:    getkeyof() method was renamed to getkeysof() - simply because several 
+                    keys can have the same value,
         *   fix:    y
-        *   new:    z
+        *   new:    getgroups() method which returns list of properties groups found 
+                    in internal dictionary, read DOC for more
+        *   new:    getsingles() method which returns list of properties which do not 
+                    belong to any group, read DOC for more
+
+        *   new:    loading directories as properties, read manual for more
 
     Yours,
     Marek Marecki.

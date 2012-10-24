@@ -59,7 +59,10 @@ CLASSES
      |      Checks if the line contains valid property string. 
      |      It isn't empty string and its first character is not #.
      |  
-     |  __load__(self, path)
+     |  __loadd__(self, path)
+     |      This method reads directory tree as if it was properties file.
+     |  
+     |  __loadf__(self, path)
      |      This method loads properties file from given path to a self.source list. 
      |      It also strips it of any newline character and whitespace on both sides but leaves it otherwise unprocessed.
      |  
@@ -90,16 +93,43 @@ CLASSES
      |      If identifier is not found KeyError is raised.
      |      If parsed is set to True value will be parsed before returning.
      |  
-     |  getkeyof(self, value)
-     |      Returns key of given value. 
-     |      Raises KeyError if value will not match any key.
+     |  getgroups(self)
+     |      Returns list of properties-groups in the internal dictionary. 
+     |      Group is understood by two or more properties which can 
+     |      be obtained with the same gets() identifier.
+     |      
+     |      For example:
+     |          language.0=Python 2.x
+     |          language.1=Python 3.x
+     |      will form group with identifer 'language.*'. 
+     |      
+     |      And:
+     |          customer.0.address=Some Street 16.
+     |          customer.1.address=Other Street 17.
+     |      will form group with identifer 'customer.*.address'. 
+     |      
+     |      But:
+     |          person.name=John
+     |          person.surname=Average
+     |      will not form a group even if gets('person.*') will return 
+     |      list of length greater than two.
+     |      
+     |      This is because only digits are considered as 'groupers'.
+     |  
+     |  getkeysof(self, value)
+     |      Returns list of keys containing given value. 
+     |      Returns empty list if no key was matched.
      |  
      |  getnames(self)
-     |      Returns list of the property names.
+     |      Returns sorted list of the property names.
      |  
      |  gets(self, identifier, parsed=False, cast=False)
      |      Returns dict of properties which names matched pattern given as identifier.
      |      If parsed is set to True values will be parsed before returning.
+     |  
+     |  getsingles(self)
+     |      Returns list of properties which do not 
+     |      belong to any group.
      |  
      |  join(self, path, prefix=' ')
      |      Loads external properties and completes base. 
@@ -196,12 +226,12 @@ CLASSES
      |      list of weak references to the object (if defined)
 
 DATA
-    __changes__ = 2
+    __changes__ = 3
     __major__ = 0
     __minor__ = 1
 
 VERSION
-    0.1.2
+    0.1.3
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py
