@@ -24,13 +24,18 @@ Release 0.1.3
     ->  pyproperties.py
         !   upd:    getkeyof() method was renamed to getkeysof() - simply because several 
                     keys can have the same value,
-        *   fix:    y
+        *   upd:    store() uses grouping for storing properties created from blank,
+        *   fix:    creating blank Properties object will be able to work with,
+                    thanks to the new blank() method,
+        *   fix:    in gets() method,
+        *   new:    blank() methode creating blank properties,
+                    can be used to erase all properties and source of loaded properties,
         *   new:    getgroups() method which returns list of properties groups found 
                     in internal dictionary, read DOC for more
         *   new:    getsingles() method which returns list of properties which do not 
                     belong to any group, read DOC for more
-
         *   new:    loading directories as properties, read manual for more
+        *   new:    StoreError and LoadError added, read DOC for more
 
     Yours,
     Marek Marecki.

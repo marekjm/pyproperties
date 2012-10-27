@@ -31,23 +31,41 @@ __changes__ = 3
 __version__ = "{}.{}.{}".format(__major__, __minor__, __changes__)
 
 
+class LoadError(IOError):
+    pass
+
+
+class StoreError(IOError):
+    pass
+
+
 class Properties():
     """
     This class provides methods for working with properties files. 
     You should call it with a path pointing to the file you want to load. 
+
+    It contains five variables used for working with properties files:
+
+        self.path           -   path used for reading and storing properties,
+        self.source         -   working copy of source file
+        self.srcorigin      -   original lines of source file
+        self.properties     -   working copy of properties dictionary
+        self.propsorigin    -   original dictionary of properties
     """
 
     def __init__( self, path = "", type_convert=False ):
         """
         If you give a path as an argument it will be loaded and processed as properties file. 
         If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
-        foo.read( path, type_convert ) to load some properties.
+        foo.read( path, type_convert ) to load some properties or 
+        you can use the blank properties to create completly new set of properties.
         You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
         and convert it accordingly.
 
         This method (__init__) just calls read() with arguments passed to itself.
         """
         if path != "" and not path.isspace(): self.read( path, type_convert )
+        elif path == "" : self.blank()
 
 
     def __loadf__( self, path ):
@@ -79,7 +97,7 @@ class Properties():
 
         for root, dirs, files in os.walk( self.path ):
             for file in files :
-                proppaths.append( os.path.abspath( "{0}{1}{2}".format( root, os.path.sep, file ) ) )
+                proppaths.append( os.path.normpath( os.path.abspath( "{0}{1}{2}".format( root, os.path.sep, file ) ) ) )
 
         for i in range( len( proppaths ) ):
             propnames.append( proppaths[i].replace("{0}{1}".format(self.path, os.path.sep), "").replace( os.path.sep, "." ) )
@@ -90,7 +108,7 @@ class Properties():
             propvalues[ propnames[i] ] = value
 
         for key, value in propvalues.items():
-            source.append()
+            source.append( "{0}={1}".format(key, value) )
 
         self.source = source
         self.srcorigin = srcorigin
@@ -206,6 +224,17 @@ class Properties():
         return value
 
 
+    def blank(self):
+        """
+        Creates blank properties object.
+        """
+        self.path = ""
+        self.srcorigin = []
+        self.source = []
+        self.properties = {}
+        self.propsorigin = {}
+
+
     def read(self, path, cast=False):
         """
         Reads properties file and processes it to be available in Python 3 program.
@@ -220,7 +249,8 @@ class Properties():
         self.path = os.path.expanduser( path ).strip()
         self.name = os.path.splitext( os.path.split( self.path )[-1] )[0]
         if os.path.isfile( self.path ): self.__loadf__( self.path )
-        else : self.__loadd__( self.path )
+        elif os.path.isdir( self.path ): self.__loadd__( self.path )
+        else : raise LoadError("'{0}' is not a path".format( path ) )
         self.__extract__()
         self.__split__()
         if cast : self.__tcasts__( "*" )
@@ -363,23 +393,39 @@ class Properties():
         'path' defaults to self.path
         """
         stored = []
-        if path == "" : path = self.path
+        if path == "" and not path.isspace(): path = self.path
+        if path == "" : raise StoreError("no path specified")
 
         file = open( path, "w" )
-        for i in range( len( self.source ) ): 
-            if self.source[i] == "" : 
-                # saves empty line
-                file.write( "{0}\n".format( self.source[i] ) )
-            elif self.source[i][0] == "#" : 
-                # saves commented line
-                file.write( "{0}\n".format( self.source[i] ) )
-            elif self.__getkey__( self.source[i] ) != "" and self.__getkey__( self.source[i] ) in self.propsorigin and self.__getkey__( self.source[i] ) not in stored : 
-                # checks if current line has a key (is a valid property line)
-                # and is in defined in self.propsorigin
-                stored.append( self.__getkey__( self.source[i] ) )
-                file.write( "{0}={1}\n".format(self.__getkey__( self.source[i], False ), self.propsorigin[self.__getkey__( self.source[i] )] ) )
-            else : 
-                pass
+        if self.srcorigin :
+            for i in range( len( self.source ) ): 
+                if self.source[i] == "" : 
+                    # saves empty line
+                    file.write( "{0}\n".format( self.source[i] ) )
+                elif self.source[i][0] == "#" : 
+                    # saves commented line
+                    file.write( "{0}\n".format( self.source[i] ) )
+                elif self.__getkey__( self.source[i] ) != "" and self.__getkey__( self.source[i] ) in self.propsorigin and self.__getkey__( self.source[i] ) not in stored : 
+                    # checks if current line has a key (is a valid property line)
+                    # and is in defined in self.propsorigin
+                    stored.append( self.__getkey__( self.source[i] ) )
+                    file.write( "{0}={1}\n".format(self.__getkey__( self.source[i], False ), self.propsorigin[self.__getkey__( self.source[i] )] ) )
+                else : 
+                    pass
+        else :
+            groups = self.getgroups()
+            print( groups )
+            for identifier in groups:
+                print( identifier )
+                props = self.gets( identifier )
+                print( props )
+                keys = []
+                [ keys.append(key) for key in props.keys() ]
+                for key in sorted(keys):
+                    file.write( "{0}={1}\n".format(key, props[key]) )
+                    stored.append( key )
+                    print( key )
+                
 
         for key, value in self.propsorigin.items():
             if key not in stored : 
@@ -407,8 +453,7 @@ class Properties():
         If parsed is set to True values will be parsed before returning.
         """
         matched = {}
-        identifier = identifier.replace("*", "[a-z0-9\.\*]*")
-        identifier = re.compile(identifier)
+        identifier = identifier.replace("*", "[a-z0-9\*]*")
         for key, value in self.properties.items():
             if re.match(identifier, key) and parsed : matched[key] = self.parseline( value )
             elif re.match(identifier, key) and not parsed : matched[key] = value
@@ -429,7 +474,8 @@ class Properties():
         Sets every property which name matched pattern given as identifier to value. 
         You can pass more than one value. If more keys are found than values passed 
         last value is passed to every key above number of values. 
-        After completing sort() method is used on keys list so the first value goes to first key. 
+
+        After completing, sort() method is used on keys list so the first value goes to first key. 
         If the key is in kwargs its value if taken from the dict and the value counter is not increased. 
         If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
         as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
@@ -540,7 +586,7 @@ class Properties():
         But:
             person.name=John
             person.surname=Average
-        will not form a group even if gets('person.*') will return 
+        will not form a group although gets('person.*') will return 
         list of length greater than two.
 
         This is because only digits are considered as 'groupers'.

@@ -5,17 +5,12 @@ from modules import pyproperties
 properties = pyproperties.Properties
 
 
-class Test_getkeysof( unittest.TestCase ):
-    def test_getkeysof_0(self):
+class TestKeyGetter( unittest.TestCase ):
+    def test_getkeysof(self):
         foo = properties( "./data/properties/foo.properties" )
         self.assertEqual( ["literal.string.0", "literal.string.1"], sorted( foo.getkeysof( "Hello World!" ) ) )
 
-    def test_getkeysof_1(self):
-        foo = properties( "./data/properties/foo.properties" )
-        self.assertEqual( ["numeral.float.1"], sorted( foo.getkeysof( ".14" ) ) )
-
-
-class Test_getnames( unittest.TestCase ):
+class TestNameGetter( unittest.TestCase ):
     def test_getnames(self):
         foo = properties( "./data/properties/foo.properties" )
         names = ["numeral.float.0",
@@ -38,7 +33,7 @@ class Test_getnames( unittest.TestCase ):
                 ]
         self.assertEqual( sorted(names), foo.getnames() )
 
-class Test_getgroups( unittest.TestCase ):
+class TestGrouping( unittest.TestCase ):
     def test_getgroups(self):
         foo = properties( "./data/properties/foo.properties" )
         groups = [  "customer.*.name",
@@ -50,8 +45,6 @@ class Test_getgroups( unittest.TestCase ):
                     ]
         self.assertEqual( sorted(groups), foo.getgroups() )
 
-
-class Test_getsingles( unittest.TestCase ):
     def test_getsingles(self):
         foo = properties( "./data/properties/foo.properties" )
         singles = [ "numeral.pi",
@@ -60,6 +53,12 @@ class Test_getsingles( unittest.TestCase ):
                     "person.surname",
                     ]
         self.assertEqual( sorted(singles), sorted(foo.getsingles()) )
+
+
+class TestStore(unittest.TestCase):
+    def test_store(self):
+        foo = properties( "./data/properties/foo.properties" )
+        self.assertEqual( 1, 0 )
 
 
 if __name__ == "__main__" :
