@@ -22,7 +22,7 @@ Release 0.1.3
 
 
     This release brings you:
-    *   3 update(s),
+    *   4 update(s),
     *   2 fix(es),
     *   7 new feature(s).
 
@@ -30,6 +30,8 @@ Release 0.1.3
         !   upd:    getkeyof() method was renamed to getkeysof() - simply because several 
                     keys can have the same value;
         *   upd:    store() uses grouping for storing properties created from blank;
+        *   upd:    store() was partially rewritten to be more readable,
+                    also it is now generating more readable files;
         *   upd/
             fix:    gets(), sets(), removes() and pops() are now basing on different regular 
                     expression; 

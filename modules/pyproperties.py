@@ -117,7 +117,7 @@ class Properties():
     def __isvalidline__( self, line ):
         """
         Checks if the line contains valid property string. 
-        It isn't empty string and its first character is not #.
+        valid string is not an empty string and its first character is not '#'.
         """
         result = line != "" and line[0] != "#"
         return result
@@ -390,35 +390,45 @@ class Properties():
         self.source = rsaved
 
 
-    def __srcstore__(self):
+    def _srcstore(self):
         """
         This method stores that come with the source file. 
         """
         stored = []
         lines = []
         for i in range( len( self.srcorigin ) ): 
-            # saves empty line
-            if self.source[i] == "" : 
-                lines.append( "{0}".format( self.srcorigin[i] ) )
-            # saves commented line
-            elif self.source[i][0] == "#" : 
-                lines.append( "{0}".format( self.srcorigin[i] ) )
-            # checks if current line has a key (is a valid property line)
-            # is in defined in self.propsorigin
-            # and has not been stored yet
+            if self.source[i] == "" : lines.append( "{0}".format( self.srcorigin[i] ) )
+            elif self.source[i][0] == "#" : lines.append( "{0}".format( self.srcorigin[i] ) )
+            # checks if current line has a key is in defined in self.propsorigin and has not been stored yet
             elif (
                     self.__getkey__( self.srcorigin[i] ) != "" and 
-                    self.__getkey__( self.srcorigin[i] ) in self.propsorigin and 
-                    self.__getkey__( self.srcorigin[i] ) not in stored 
+                    self.__getkey__( self.srcorigin[i] ) in self.propsorigin and self.__getkey__( self.srcorigin[i] ) not in stored 
                  ): 
                 # appends comments attached by the program
-                if self.__getkey__(self.srcorigin[i]) in self.propcomments:
-                    for line in self.propcomments[ self.__getkey__(self.srcorigin[i]) ]: 
-                        lines.append( "{0}".format(line) )
+                if self.__getkey__(self.srcorigin[i]) in self.propcomments: [ lines.append("{0}".format(line)) for line in self.propcomments[self.__getkey__(self.srcorigin[i])] ]
                 stored.append( self.__getkey__( self.source[i] ) )
-                lines.append( "{0}={1}".format(self.__getkey__( self.source[i], False ), self.propsorigin[self.__getkey__( self.source[i] )] ) )
-            else : 
-                pass
+                lines.append( "{0}={1}".format(self.__getkey__(self.source[i], False), self.propsorigin[self.__getkey__(self.source[i])] ) )
+            else : pass
+        return (lines, stored)
+
+
+    def _groupstore(self, stored):
+        """
+        Stores groups wich were not included in original source.
+        """
+        lines = [""]
+        groups = self.getgroups()
+        for identifier in groups:
+            previous_len = len(lines)
+            props = self.gets( identifier )
+            keys = []
+            [ keys.append(key) for key in props.keys() ]
+            for key in sorted(keys):
+                if key not in stored and key in self.propsorigin: # key in self.propsorigin -> check needed to prevent storing unsaved changes
+                    if key in self.propcomments: [ lines.append( "{0}".format(line) ) for line in self.propcomments[ key ] ]                        
+                    lines.append( "{0}={1}".format(key, props[key]) )
+                    stored.append( key )
+            if len(lines) > previous_len: lines.append("")
         return (lines, stored)
 
 
@@ -432,29 +442,18 @@ class Properties():
         if path == "" and not path.isspace(): path = self.path
         if path == "" : raise StoreError("no path specified")
 
-        if self.srcorigin :
-            srcstore = self.__srcstore__()
-            stored.extend( srcstore[1] )
-            lines.extend( srcstore[0] )
-        else :
-            groups = self.getgroups()
-            for identifier in groups:
-                props = self.gets( identifier )
-                keys = []
-                [ keys.append(key) for key in props.keys() ]
-                for key in sorted(keys):
-                    if key in self.propcomments:
-                        for line in self.propcomments[ key ]: lines.append( "{0}".format(line) )
-                    lines.append( "{0}={1}".format(key, props[key]) )
-                    stored.append( key )
-                #   blank line between groups
-                lines.append("")
-                
+        srcstore = self._srcstore()
+        lines.extend( srcstore[0] )
+        stored.extend( srcstore[1] )
+
+        groupstore = self._groupstore(stored)
+        lines.extend( groupstore[0] )
+        stored.extend( groupstore[1] )
+        while lines[-1] == "" and lines[-2] == "" : lines = lines[:-1]
 
         for key, value in self.propsorigin.items():
             if key not in stored : 
-                if key in self.propcomments:
-                    for line in self.propcomments[ key ]: lines.append( "{0}".format(line) )
+                if key in self.propcomments: [ lines.append( "{0}".format(line) ) for line in self.propcomments[ key ] ]
                 lines.append( "{0}={1}".format(key, value) )
                 stored.append( key )
 
@@ -484,7 +483,7 @@ class Properties():
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format( str(type(identifier))[8:-2] ) )
 
         matched = {}
-        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9_\.]*").replace(".", "\.")))
         for key, value in self.properties.items():
             if re.match(identifier, key) and parsed : matched[key] = self.parseline( value )
             elif re.match(identifier, key) and not parsed : matched[key] = value
@@ -537,7 +536,7 @@ class Properties():
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
 
-        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9_\.]*").replace(".", "\.")))
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append( key )
 
@@ -566,7 +565,7 @@ class Properties():
         Removed properties will be not saved using store().
         """
         to_remove = []
-        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9_\.]*").replace(".", "\.")))
         for key in self.properties.keys():
             if re.match( identifier, key ): to_remove.append( key )
         for key in to_remove : self.properties.pop( key )
@@ -588,7 +587,7 @@ class Properties():
         Removed properties will be not saved using store().
         """
         popped = {}
-        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9_\.]*").replace(".", "\.")))
         for key, value in self.properties.items():
             if re.match( identifier, key ): 
                 popped[key] = value
@@ -671,7 +670,7 @@ class Properties():
         Attaches comment to property. 
         Comment can be passed as a string or a list. 
         Multiline comments are supported - either by passing a list of lines or
-        by passing a string containing newline characters '\n'.
+        by passing a string containing newline characters '\\n'.
         """
         if type(comment) == str and "\n" in comment: comment = comment.split("\n")
         elif type(comment) == list: pass
@@ -685,7 +684,7 @@ class Properties():
         Attaches comment to properties which will match the identifier. 
         Comment can be passed as a string or a list. 
         Multiline comments are supported - either by passing a list of lines or
-        by passing a string containing newline characters '\n'.
+        by passing a string containing newline characters '\\n'.
         """
         _args = []
         for i in range(len(args)):

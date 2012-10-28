@@ -151,7 +151,7 @@ CLASSES
      |  
      |  __isvalidline__(self, line)
      |      Checks if the line contains valid property string. 
-     |      It isn't empty string and its first character is not #.
+     |      valid string is not an empty string and its first character is not '#'.
      |  
      |  __loadd__(self, path)
      |      This method reads directory tree as if it was properties file.
@@ -176,6 +176,18 @@ CLASSES
      |      If property contains only digits and a dot inside - it's considered float (re: "^[0-9]*\.[0-9]+$").
      |      If property contains only digits and not a dot inside - it's considered int (re: "^[0-9]+$").
      |      Otherwise: property is considered str.
+     |  
+     |  addcomment(self, identifier, comment)
+     |      Attaches comment to property. 
+     |      Comment can be passed as a string or a list. 
+     |      Multiline comments are supported - either by passing a list of lines or
+     |      by passing a string containing newline characters '\n'.
+     |  
+     |  addcomments(self, identifier, comment, *args)
+     |      Attaches comment to properties which will match the identifier. 
+     |      Comment can be passed as a string or a list. 
+     |      Multiline comments are supported - either by passing a list of lines or
+     |      by passing a string containing newline characters '\n'.
      |  
      |  blank(self)
      |      Creates blank properties object.
