@@ -1,0 +1,34 @@
+SETTERS or HOW TO SET A PROPERTY.
+
+        pyproperties has two setter methods.
+
+
+    1.  set()
+
+            Is used to set single properties eg. ('customer.0.name', 'Agent Smith').
+
+
+    2.  sets()
+
+            Is desinged to be used when you need to set values for group of 
+        properties eg. 'customer.*.name'.
+
+            Before compiling regular exression pattern every '*' is replaced 
+        by '[a-zA-Z0-9_.]*' string; every '.' (which has a 
+        special meaning in regular expressions) is escaped and '^' is insrted 
+        on the begining and '$' at the end of the pattern. Then, pattern is 
+        compiled.
+
+            sets() creates a sorted list of all keys matching given pattern. 
+        Then, it assigns first given value to first key on a list. 
+            If there are more keys then values last value is added to any key 
+        above the number of values given.
+            In case keyworded values were passed sets() will check for key in 
+        kwargs before taking value from args list. If the key is in kwargs 
+        value counter is not increased.
+            This loop is continued for all keys that matched given pattern.
+
+
+    SEE ALSO:
+        manual/removers.txt
+        manual/getters.txt

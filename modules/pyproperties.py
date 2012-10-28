@@ -414,17 +414,15 @@ class Properties():
                     pass
         else :
             groups = self.getgroups()
-            print( groups )
             for identifier in groups:
-                print( identifier )
                 props = self.gets( identifier )
-                print( props )
                 keys = []
                 [ keys.append(key) for key in props.keys() ]
                 for key in sorted(keys):
                     file.write( "{0}={1}\n".format(key, props[key]) )
                     stored.append( key )
-                    print( key )
+                #   blank line between groups
+                file.write("\n")
                 
 
         for key, value in self.propsorigin.items():
@@ -452,12 +450,6 @@ class Properties():
         """
         Returns dict of properties which names matched pattern given as identifier.
         If parsed is set to True values will be parsed before returning.
-
-        For 'person.*' it will get 'person.0' and 'person.name' but not 'person.0.name' or 'person.foo.bar'.
-        For 'person.*.*' it will get 'person.0.name' and 'person.foo.bar' but not 'person.0' or 'person.name'.
-
-        Before compiling regular expression pattern every '*' character is replaced with '[a-z0-9\_]*' 
-        string and every dot '.' is escaped - '\.'.
         """
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format( str(type(identifier))[8:-2] ) )
 
@@ -507,9 +499,6 @@ class Properties():
         If the key is in kwargs its value if taken from the dict and the value counter is not increased. 
         If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
         as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
-
-        Before compiling regular expression pattern every '*' character is replaced with '[a-z0-9\_]*' 
-        string and every dot '.' is escaped - '\.'.
         """
         keys = []
         values = [value]
@@ -518,7 +507,7 @@ class Properties():
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
 
-        identifier = re.compile( identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.") )
+        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.")))
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append( key )
 
@@ -547,7 +536,7 @@ class Properties():
         Removed properties will be not saved using store().
         """
         to_remove = []
-        identifier = re.compile( identifier.replace("*", "[a-z0-9\.\*]*") )
+        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.")))
         for key in self.properties.keys():
             if re.match( identifier, key ): to_remove.append( key )
         for key in to_remove : self.properties.pop( key )
@@ -569,7 +558,7 @@ class Properties():
         Removed properties will be not saved using store().
         """
         popped = {}
-        identifier = re.compile( identifier.replace("*", "[a-z0-9\.\*]*") )
+        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.")))
         for key, value in self.properties.items():
             if re.match( identifier, key ): 
                 popped[key] = value

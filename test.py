@@ -51,11 +51,6 @@ class TestGet(unittest.TestCase):
 
 
 class TestGets(unittest.TestCase):
-    def test_gets_empty(self):
-        foo = pyproperties.Properties( foo_path )
-        self.assertEqual( {}, foo.gets( "customer.*" ) )
-
-
     def test_gets_customerNames(self):
         foo = pyproperties.Properties( foo_path )
         self.assertEqual( {"customer.0.name":"John the Average.", "customer.1.name":"Agent Smith"}, foo.gets( "customer.*.name" ) )

@@ -23,5 +23,11 @@ HOW TO STORE PROPERTIES.
     it will just write original properties to the file. 
 
 
+        Prior to version 0.1.2 if store() was used on properties with no source 
+    they were stored as an ugly mess. From 0.1.2 and above properties created 
+    from blank are stored in groups (thanks to the capability of grouping properties)
+    and properties which do not belong to any group are appended at the end. 
+        A blank line is inserted between each group.
+
     SEE ALSO:
         manual/saving.txt

@@ -228,12 +228,6 @@ CLASSES
      |  gets(self, identifier, parsed=False, cast=False)
      |      Returns dict of properties which names matched pattern given as identifier.
      |      If parsed is set to True values will be parsed before returning.
-     |      
-     |      For 'person.*' it will get 'person.0' and 'person.name' but not 'person.0.name' or 'person.foo.bar'.
-     |      For 'person.*.*' it will get 'person.0.name' and 'person.foo.bar' but not 'person.0' or 'person.name'.
-     |      
-     |      Before compiling regular expression pattern every '*' character is replaced with '[a-z0-9\_]*' 
-     |      string and every dot '.' is escaped - '\.'.
      |  
      |  getsingles(self)
      |      Returns list of properties which do not 
@@ -320,9 +314,6 @@ CLASSES
      |      If the key is in kwargs its value if taken from the dict and the value counter is not increased. 
      |      If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
      |      as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
-     |      
-     |      Before compiling regular expression pattern every '*' character is replaced with '[a-z0-9\_]*' 
-     |      string and every dot '.' is escaped - '\.'.
      |  
      |  store(self, path='')
      |      Writes properties to given 'path'.

@@ -1,0 +1,37 @@
+REGULAR EXPRESSIONS USED IN PYPROPERTIES.
+
+        Regular expressions are used in pyproperties in 
+    methods working with groups of properties; that means:
+        *   gets()
+        *   sets()
+        *   removes()
+        *   pops()
+        ~   getgroups()
+        ~   getsingles()
+
+
+        The first four (gets, sets, removes and pops) are based on teh same 
+    pattern:
+        You pass identifier of the property as a string:
+
+            'customer.*.name'
+
+    and its being transformed to such a form:
+
+            '^cusomer\.[a-zA-Z0-9_\.]\.name$'
+
+
+----------------------------------------------------------------------------------------
+
+
+        Simplifying, every '*' character in identifier is replaced and every '.' 
+    in identifier is escaped.
+
+        '*'     ->  '[a-zA-Z0-9_\.]'
+        '.'     ->  '\.'
+
+
+    SEE ALSO:
+        manual/setters.txt
+        manual/getters.txt
+        manual/removers.txt
