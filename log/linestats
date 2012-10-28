@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cloc --by-file-by-lang ./test.py ./modules/pyproperties.py > ./log/linestats.log
+less ./log/linestats.log

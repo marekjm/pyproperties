@@ -229,10 +229,12 @@ class Properties():
         Creates blank properties object.
         """
         self.path = ""
+        self.name = ""
         self.srcorigin = []
         self.source = []
         self.properties = {}
         self.propsorigin = {}
+        self.propcomments = {}
 
 
     def read(self, path, cast=False):
@@ -254,6 +256,7 @@ class Properties():
         self.__extract__()
         self.__split__()
         if cast : self.__tcasts__( "*" )
+        self.propcomments = {}
 
 
     def reload( self ):
@@ -387,31 +390,52 @@ class Properties():
         self.source = rsaved
 
 
+    def __srcstore__(self):
+        """
+        This method stores that come with the source file. 
+        """
+        stored = []
+        lines = []
+        for i in range( len( self.srcorigin ) ): 
+            # saves empty line
+            if self.source[i] == "" : 
+                lines.append( "{0}".format( self.srcorigin[i] ) )
+            # saves commented line
+            elif self.source[i][0] == "#" : 
+                lines.append( "{0}".format( self.srcorigin[i] ) )
+            # checks if current line has a key (is a valid property line)
+            # is in defined in self.propsorigin
+            # and has not been stored yet
+            elif (
+                    self.__getkey__( self.srcorigin[i] ) != "" and 
+                    self.__getkey__( self.srcorigin[i] ) in self.propsorigin and 
+                    self.__getkey__( self.srcorigin[i] ) not in stored 
+                 ): 
+                # appends comments attached by the program
+                if self.__getkey__(self.srcorigin[i]) in self.propcomments:
+                    for line in self.propcomments[ self.__getkey__(self.srcorigin[i]) ]: 
+                        lines.append( "{0}".format(line) )
+                stored.append( self.__getkey__( self.source[i] ) )
+                lines.append( "{0}={1}".format(self.__getkey__( self.source[i], False ), self.propsorigin[self.__getkey__( self.source[i] )] ) )
+            else : 
+                pass
+        return (lines, stored)
+
+
     def store(self, path = ""):
         """
         Writes properties to given 'path'.
         'path' defaults to self.path
         """
         stored = []
+        lines = []
         if path == "" and not path.isspace(): path = self.path
         if path == "" : raise StoreError("no path specified")
 
-        file = open( path, "w" )
         if self.srcorigin :
-            for i in range( len( self.source ) ): 
-                if self.source[i] == "" : 
-                    # saves empty line
-                    file.write( "{0}\n".format( self.source[i] ) )
-                elif self.source[i][0] == "#" : 
-                    # saves commented line
-                    file.write( "{0}\n".format( self.source[i] ) )
-                elif self.__getkey__( self.source[i] ) != "" and self.__getkey__( self.source[i] ) in self.propsorigin and self.__getkey__( self.source[i] ) not in stored : 
-                    # checks if current line has a key (is a valid property line)
-                    # and is in defined in self.propsorigin
-                    stored.append( self.__getkey__( self.source[i] ) )
-                    file.write( "{0}={1}\n".format(self.__getkey__( self.source[i], False ), self.propsorigin[self.__getkey__( self.source[i] )] ) )
-                else : 
-                    pass
+            srcstore = self.__srcstore__()
+            stored.extend( srcstore[1] )
+            lines.extend( srcstore[0] )
         else :
             groups = self.getgroups()
             for identifier in groups:
@@ -419,17 +443,23 @@ class Properties():
                 keys = []
                 [ keys.append(key) for key in props.keys() ]
                 for key in sorted(keys):
-                    file.write( "{0}={1}\n".format(key, props[key]) )
+                    if key in self.propcomments:
+                        for line in self.propcomments[ key ]: lines.append( "{0}".format(line) )
+                    lines.append( "{0}={1}".format(key, props[key]) )
                     stored.append( key )
                 #   blank line between groups
-                file.write("\n")
+                lines.append("")
                 
 
         for key, value in self.propsorigin.items():
             if key not in stored : 
-                file.write( "{0}={1}\n".format(key, value) )
+                if key in self.propcomments:
+                    for line in self.propcomments[ key ]: lines.append( "{0}".format(line) )
+                lines.append( "{0}={1}".format(key, value) )
                 stored.append( key )
 
+        file = open( path, "w" )
+        for line in lines: file.write( "{0}\n".format(line) )
         file.close()
 
 
@@ -636,3 +666,41 @@ class Properties():
             key = re.sub( re.compile("\.[0-9]+$"), ".*", key )
             if key not in groups : singles.append( key )
         return singles
+    def addcomment(self, identifier, comment):
+        """
+        Attaches comment to property. 
+        Comment can be passed as a string or a list. 
+        Multiline comments are supported - either by passing a list of lines or
+        by passing a string containing newline characters '\n'.
+        """
+        if type(comment) == str and "\n" in comment: comment = comment.split("\n")
+        elif type(comment) == list: pass
+        else: comment = [comment]
+        for i in range(len(comment)): comment[i] = "#\t{0}".format(comment[i])
+        self.propcomments[ identifier ] = comment
+
+
+    def addcomments(self, identifier, comment, *args):
+        """
+        Attaches comment to properties which will match the identifier. 
+        Comment can be passed as a string or a list. 
+        Multiline comments are supported - either by passing a list of lines or
+        by passing a string containing newline characters '\n'.
+        """
+        _args = []
+        for i in range(len(args)):
+            if type(args[i]) == str and "\n" in comment: _args.append( args[i].split("\n") )
+            elif type(args[i]) == list: _args.append( args[i] )
+            else: _args.append( [args[i]] )
+
+        if type(comment) == str and "\n" in comment: comments = comment.split("\n")
+        elif type(comment) == list: comments = comment
+        else: comments = [comment]
+        comments.extend(_args)
+        keys = self.gets(identifier)
+
+        i = 0
+        for key in keys:
+            try : self.addcomment(key, comments[i])
+            except IndexError: self.addcomment(key, comments[-1])
+            finally: i += 1
