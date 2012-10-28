@@ -24,22 +24,20 @@ DESCRIPTION
 
 CLASSES
     builtins.OSError(builtins.Exception)
-        PropertiesError
-            LoadError
-            StoreError
+        LoadError
+        StoreError
     builtins.object
         Properties
     
-    class LoadError(PropertiesError)
+    class LoadError(builtins.OSError)
      |  Method resolution order:
      |      LoadError
-     |      PropertiesError
      |      builtins.OSError
      |      builtins.Exception
      |      builtins.BaseException
      |      builtins.object
      |  
-     |  Data descriptors inherited from PropertiesError:
+     |  Data descriptors defined here:
      |  
      |  __weakref__
      |      list of weak references to the object (if defined)
@@ -222,9 +220,20 @@ CLASSES
      |  getnames(self)
      |      Returns sorted list of the property names.
      |  
+     |  getre(self, identifier, parsed=False, cast=False)
+     |      Returns dict of properties which names matched given pattern.
+     |      If parsed is set to True values will be parsed before returning. 
+     |      If cast is passed as True pyproperites will try to cast types of properties.
+     |  
      |  gets(self, identifier, parsed=False, cast=False)
      |      Returns dict of properties which names matched pattern given as identifier.
      |      If parsed is set to True values will be parsed before returning.
+     |      
+     |      For 'person.*' it will get 'person.0' and 'person.name' but not 'person.0.name' or 'person.foo.bar'.
+     |      For 'person.*.*' it will get 'person.0.name' and 'person.foo.bar' but not 'person.0' or 'person.name'.
+     |      
+     |      Before compiling regular expression pattern every '*' character is replaced with '[a-z0-9\_]*' 
+     |      string and every dot '.' is escaped - '\.'.
      |  
      |  getsingles(self)
      |      Returns list of properties which do not 
@@ -311,6 +320,9 @@ CLASSES
      |      If the key is in kwargs its value if taken from the dict and the value counter is not increased. 
      |      If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
      |      as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
+     |      
+     |      Before compiling regular expression pattern every '*' character is replaced with '[a-z0-9\_]*' 
+     |      string and every dot '.' is escaped - '\.'.
      |  
      |  store(self, path='')
      |      Writes properties to given 'path'.
@@ -325,98 +337,15 @@ CLASSES
      |  __weakref__
      |      list of weak references to the object (if defined)
     
-    class PropertiesError(builtins.OSError)
+    class StoreError(builtins.OSError)
      |  Method resolution order:
-     |      PropertiesError
+     |      StoreError
      |      builtins.OSError
      |      builtins.Exception
      |      builtins.BaseException
      |      builtins.object
      |  
      |  Data descriptors defined here:
-     |  
-     |  __weakref__
-     |      list of weak references to the object (if defined)
-     |  
-     |  ----------------------------------------------------------------------
-     |  Methods inherited from builtins.OSError:
-     |  
-     |  __init__(...)
-     |      x.__init__(...) initializes x; see help(type(x)) for signature
-     |  
-     |  __reduce__(...)
-     |  
-     |  __str__(...)
-     |      x.__str__() <==> str(x)
-     |  
-     |  ----------------------------------------------------------------------
-     |  Data descriptors inherited from builtins.OSError:
-     |  
-     |  characters_written
-     |  
-     |  errno
-     |      POSIX exception code
-     |  
-     |  filename
-     |      exception filename
-     |  
-     |  strerror
-     |      exception strerror
-     |  
-     |  ----------------------------------------------------------------------
-     |  Data and other attributes inherited from builtins.OSError:
-     |  
-     |  __new__ = <built-in method __new__ of type object>
-     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
-     |  
-     |  ----------------------------------------------------------------------
-     |  Methods inherited from builtins.BaseException:
-     |  
-     |  __delattr__(...)
-     |      x.__delattr__('name') <==> del x.name
-     |  
-     |  __getattribute__(...)
-     |      x.__getattribute__('name') <==> x.name
-     |  
-     |  __repr__(...)
-     |      x.__repr__() <==> repr(x)
-     |  
-     |  __setattr__(...)
-     |      x.__setattr__('name', value) <==> x.name = value
-     |  
-     |  __setstate__(...)
-     |  
-     |  with_traceback(...)
-     |      Exception.with_traceback(tb) --
-     |      set self.__traceback__ to tb and return self.
-     |  
-     |  ----------------------------------------------------------------------
-     |  Data descriptors inherited from builtins.BaseException:
-     |  
-     |  __cause__
-     |      exception cause
-     |  
-     |  __context__
-     |      exception context
-     |  
-     |  __dict__
-     |  
-     |  __suppress_context__
-     |  
-     |  __traceback__
-     |  
-     |  args
-    
-    class StoreError(PropertiesError)
-     |  Method resolution order:
-     |      StoreError
-     |      PropertiesError
-     |      builtins.OSError
-     |      builtins.Exception
-     |      builtins.BaseException
-     |      builtins.object
-     |  
-     |  Data descriptors inherited from PropertiesError:
      |  
      |  __weakref__
      |      list of weak references to the object (if defined)

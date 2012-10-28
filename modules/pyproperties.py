@@ -250,7 +250,7 @@ class Properties():
         self.name = os.path.splitext( os.path.split( self.path )[-1] )[0]
         if os.path.isfile( self.path ): self.__loadf__( self.path )
         elif os.path.isdir( self.path ): self.__loadd__( self.path )
-        else : raise LoadError("'{0}' is not a path".format( path ) )
+        else : raise LoadError("'{0}' no such file or directory".format( path ) )
         self.__extract__()
         self.__split__()
         if cast : self.__tcasts__( "*" )
@@ -441,6 +441,7 @@ class Properties():
         If identifier is not found KeyError is raised.
         If parsed is set to True value will be parsed before returning.
         """
+        if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format( str(type(identifier))[8:-2] ) )
         if parsed : value = self.parseline( self.properties[identifier] )
         else : value = self.properties[identifier]
         if cast : value = self.__typeguess__( value )(value)
@@ -451,9 +452,36 @@ class Properties():
         """
         Returns dict of properties which names matched pattern given as identifier.
         If parsed is set to True values will be parsed before returning.
+
+        For 'person.*' it will get 'person.0' and 'person.name' but not 'person.0.name' or 'person.foo.bar'.
+        For 'person.*.*' it will get 'person.0.name' and 'person.foo.bar' but not 'person.0' or 'person.name'.
+
+        Before compiling regular expression pattern every '*' character is replaced with '[a-z0-9\_]*' 
+        string and every dot '.' is escaped - '\.'.
+        """
+        if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format( str(type(identifier))[8:-2] ) )
+
+        matched = {}
+        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.")))
+        for key, value in self.properties.items():
+            if re.match(identifier, key) and parsed : matched[key] = self.parseline( value )
+            elif re.match(identifier, key) and not parsed : matched[key] = value
+        if cast : 
+            for key, value in matched.items(): matched[key] = self.__typeguess__( value )( value )
+        return matched
+
+
+    def getre(self, identifier, parsed=False, cast=False):
+        """
+        Returns dict of properties which names matched given pattern.
+        If parsed is set to True values will be parsed before returning. 
+        If cast is passed as True pyproperites will try to cast types of properties.
         """
         matched = {}
-        identifier = identifier.replace("*", "[a-z0-9\*]*")
+        if type(identifier) == str: identifier= re.compile( identifier )
+        elif str(type(identifier)) == "<class '_sre.SRE_Pattern'>": pass
+        else : raise TypeError("identifer must be either compiled or string regular expression pattern, but '{0}' type was given".format( str(type(identifier))[8:-2] ) )
+
         for key, value in self.properties.items():
             if re.match(identifier, key) and parsed : matched[key] = self.parseline( value )
             elif re.match(identifier, key) and not parsed : matched[key] = value
@@ -479,6 +507,9 @@ class Properties():
         If the key is in kwargs its value if taken from the dict and the value counter is not increased. 
         If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
         as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
+
+        Before compiling regular expression pattern every '*' character is replaced with '[a-z0-9\_]*' 
+        string and every dot '.' is escaped - '\.'.
         """
         keys = []
         values = [value]
@@ -487,7 +518,7 @@ class Properties():
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
 
-        identifier = re.compile( identifier.replace("*", "[a-z0-9\.\*]*") )
+        identifier = re.compile( identifier.replace("*", "[a-z0-9\_]*").replace(".", "\.") )
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append( key )
 

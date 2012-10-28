@@ -25,6 +25,10 @@ Release 0.1.3
         !   upd:    getkeyof() method was renamed to getkeysof() - simply because several 
                     keys can have the same value,
         *   upd:    store() uses grouping for storing properties created from blank,
+        *   upd/
+            fix:    gets() and sets() are now basing on different regular expression, 
+                    it doesn't include '.' and '*' characters,
+                    also, before compiling to pattern, every dot '.' is escaped to '\.',
         *   fix:    creating blank Properties object will be able to work with,
                     thanks to the new blank() method,
         *   fix:    in gets() method,
@@ -36,6 +40,9 @@ Release 0.1.3
                     belong to any group, read DOC for more
         *   new:    loading directories as properties, read manual for more
         *   new:    StoreError and LoadError added, read DOC for more
+        *   new:    getre() which is another getter - this one allows you to get properties 
+                    by passing a pattern (compiled or as a string)
+
 
     Yours,
     Marek Marecki.
