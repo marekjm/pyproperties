@@ -16,18 +16,31 @@ HOW TO STORE PROPERTIES.
         foo.save()
         foo.store( "./foo.properties" )
 
-        Because if you will do just:
+    Because if you will do just:
 
         foo.store( "./foo.properties" )
 
-    it will just write original properties to the file. 
+    with any unsaved changes pyproperties will raise UnsavedChangesError.
+
+        You can store properties with unsaved changes by passing optional 
+    'force' argument as True. This will prevent UnsavedChangesError from 
+    being raised and store properties as of the state of last saving.
+
+        foo.addcomment("some.property", "some comment\ndivided into\nseveral lines")
+        foo.store()
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "./modules/pyproperties.py", line 480, in store
+            if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
+        pyproperties.UnsavedChangesError: trying to store with unsaved changes
 
 
         Prior to version 0.1.2 if store() was used on properties with no source 
     they were stored as an ugly mess. From 0.1.2 and above properties created 
-    from blank are stored in groups (thanks to the capability of grouping properties)
-    and properties which do not belong to any group are appended at the end. 
+    from blank are stored in groups (thanks to the capability of grouping) and 
+    properties which do not belong to any group are appended at the end. 
         A blank line is inserted between each group.
+
 
     SEE ALSO:
         manual/saving.txt

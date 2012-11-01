@@ -2,8 +2,7 @@
 
 """Working with *.properties files.
 
-pyproperites aims to ease manipulation, interaction and use of *.properties files in Python 3.x programs
-by providing methods like merge(), complete(), join(), parse() and store(). 
+pyproperites aims to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
 
 It features:
     *   merging different properties with merge() method,
@@ -19,24 +18,24 @@ It features:
     *   guessing types of properties (str, int, float) and casting them during load and post-load,
     *   securing your work by providing you two dictionaries - one for saved work and one as a 'working copy',
     *   pyproperites is capable of reading properties splitted into several lines, 
+    *   commenting loaded properties,
 """
 
 import os
 import re
 
 
-__major__ = 0
-__minor__ = 1
-__changes__ = 3
-__version__ = "{}.{}.{}".format(__major__, __minor__, __changes__)
+__version__ = "0.1.4"
 
 
-class LoadError(IOError):
-    pass
+wildcart_re = "[a-z0-9_.]*"
+guess_int_re = "^[0-9]+$"
+guess_float_re = "^[0-9]*\.[0-9]+$"
 
 
-class StoreError(IOError):
-    pass
+class LoadError(IOError): pass
+class StoreError(IOError): pass
+class UnsavedChangesError(BaseException): pass
 
 
 class Properties():
@@ -44,13 +43,14 @@ class Properties():
     This class provides methods for working with properties files. 
     You should call it with a path pointing to the file you want to load. 
 
-    It contains five variables used for working with properties files:
+    It contains variables used for working with properties files:
 
         self.path           -   path used for reading and storing properties,
         self.source         -   working copy of source file
         self.srcorigin      -   original lines of source file
         self.properties     -   working copy of properties dictionary
         self.propsorigin    -   original dictionary of properties
+        self.propcomments   -   dictionary storing comments of properties (only added by pyproperites interface)
     """
 
     def __init__( self, path = "", type_convert=False ):
@@ -79,7 +79,7 @@ class Properties():
         source = src.readlines()
         src.close()
         for i in range( len( source ) ): 
-            source[i] = source[i].rstrip()
+            source[i] = source[i].lstrip()
             srcorigin.append( source[i] )
         self.source = source
         self.srcorigin = srcorigin
@@ -119,7 +119,7 @@ class Properties():
         Checks if the line contains valid property string. 
         valid string is not an empty string and its first character is not '#'.
         """
-        result = line != "" and line[0] != "#"
+        result = line != "" and line[0] not in ["#", "!"]
         return result
 
 
@@ -138,11 +138,10 @@ class Properties():
         i = 0
         while i < len( extracted ):
             line = extracted[i]
-            while line[-1] == "\\" :
-                #  if line ends with backslash read next line and append it to
+            while line[-1] == "\\" :    #  if line ends with backslash read next line and append it to
                 i += 1
-                line = line[:-1] + extracted[i]
-            properties.append( line )
+                line = line[:-1] + extracted[i].lstrip()
+            properties.append( line.lstrip() )
             i += 1
         self.properties = properties
 
@@ -174,7 +173,7 @@ class Properties():
         Converts properties from str (default) to int or float (if needed). 
         """
         keys = []
-        identifier = re.compile( identifier.replace("*", "[a-z0-9\.\*]*") )
+        identifier = re.compile( identifier.replace("*", wildcart_re) )
         for key in self.properties.keys():
             if re.match(identifier, key): keys.append( key )
         for key in keys : self.__tcast__( key )
@@ -189,8 +188,8 @@ class Properties():
         If property contains only digits and not a dot inside - it's considered int (re: "^[0-9]+$").
         Otherwise: property is considered str.
         """
-        re_int = re.compile("^[0-9]+$")
-        re_float = re.compile("^[0-9]*\.[0-9]+$")
+        re_int = re.compile(guess_int_re)
+        re_float = re.compile(guess_float_re)
 
         if re.match(re_int, prop): ptype = int
         elif re.match(re_float, prop): ptype = float
@@ -198,30 +197,49 @@ class Properties():
         return ptype
 
 
-    def __getkey__( self, line, strip=True ):
+    def __getkey__( self, line):
         """
         Extracts key from given line and returns it. 
-        If the line is comment or is an empty string returns empty string.
+        If the line is comment or is blank returns None.
         """
-        if strip : line = line.strip()
-        if line == "" : key = ""
-        elif line[0] == "#" or line.isspace(): key = ""
-        elif line.find("=") == -1 : key = ""
-        else : key = line[: line.find("=")]
-        return key
+        if line == "" : key = None
+        elif line[0] in ["#", "!"] or line.isspace(): key = None
+        elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0]
+        else : key = line.split("=", 1)[0]
+        return key.strip()
 
 
     def __getvalue__( self, line ):
         """
         Extracts value from given line and returns it. 
-        If the line is comment or is an empty string returns empty string.
+        If the line is comment or is blank returns None. 
+        It is done this way to distinguish properties with empty value 
+        from lines which do not carry a property.
         """
-        line = line.strip()
-        if line == "" : value = ""
-        elif line[0] == "#" or line.isspace(): value = ""
-        elif line.find("=") == -1 : value = ""
-        else : value = line[line.find("=")+1 :]
+        if line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
+        if line == "" : value = None
+        elif line[0] in ["#", "!"] or line.isspace(): value = None
+        elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
+        else: value = line.split("=", 1)[1].lstrip()
+        if value:
+            if value[0] == "\\": value = value[1:]
         return value
+
+
+    def _appendsrc(self, props, prefix=""):
+        """
+        This methods appends source of given properties 
+        to the base.
+        """
+        lines = []
+        for line in props.srcorigin:
+            if line == "": lines.append(line)
+            elif line[0] in ["#", "!"] or line.isspace(): lines.append(line)
+            elif self.__isvalidline__(line) and not prefix: lines.append(line)
+            elif self.__isvalidline__(line) and prefix: lines.append("{0}.{1}".format(prefix, line))
+            else: pass
+        if self.source: self.source.append("")
+        self.source.extend(lines)
 
 
     def blank(self):
@@ -235,6 +253,7 @@ class Properties():
         self.properties = {}
         self.propsorigin = {}
         self.propcomments = {}
+        self.unsaved = False
 
 
     def read(self, path, cast=False):
@@ -257,6 +276,7 @@ class Properties():
         self.__split__()
         if cast : self.__tcasts__( "*" )
         self.propcomments = {}
+        self.unsaved = False
 
 
     def reload( self ):
@@ -323,20 +343,22 @@ class Properties():
         finally :
             if new :
                 self.complete( new, prefix )
-                self.source.append( "" )
-                self.source += new.source
+                self._appendsrc(new, prefix)
             else : pass
+        self.unsaved = True
 
 
     def melt(self, properties ):
         """
         Completes and merges 'properties' with the base. 
-        Source of melted properties is appended to base source.
+
+        Source of melted properties is appended to base.
         """
         self.complete( properties )
         self.merge( properties )
         self.source.append("")
         self.source += properties.source
+        self.unsaved = True
 
 
     def complete( self, props, prefix="" ):
@@ -344,13 +366,16 @@ class Properties():
         This methode completes base dictionary with properties of the given one. 
         If the base does not have some property it will be added. 
         Values of the existing properties will be not overwritten. 
+
+        Source of merged properties are not appended to the base.
         """
         for key, value in props.properties.items():
-            if prefix != "" : key = "{0}.{1}".format(prefix, key)
+            if prefix: key = "{0}.{1}".format(prefix, key)
             if key not in self.properties : self.properties[key] = value
+        self.unsaved = True
 
 
-    def merge( self, properties, with_prefix="" ):
+    def merge( self, props, with_prefix="" ):
         """
         This methode base dictionary with the given one. 
         If the base does not have some property it will not be added. 
@@ -358,10 +383,13 @@ class Properties():
 
         If prefix is specified only properties which are preceded with 
         this key will have their value changed.
+
+        Source of merged properties are not appended to the base.
         """
-        for key, value in properties.properties.items(): 
-            if with_prefix : key = "{0}.{1}".format( with_prefix, key )
-            if key in self.properties : self.properties[key] = value
+        for key, value in props.properties.items(): 
+            if with_prefix: key = "{0}.{1}".format( with_prefix, key )
+            if key in self.properties: self.properties[key] = value
+        self.unsaved = True
 
 
     def save(self):
@@ -375,6 +403,7 @@ class Properties():
         saved = []
         for line in self.source: saved.append( line )
         self.srcorigin = saved
+        self.unsaved = False
 
 
     def rsave(self):
@@ -388,78 +417,80 @@ class Properties():
         rsaved = []
         for line in self.srcorigin: rsaved.append( line )
         self.source = rsaved
+        self.unsaved = False
 
 
-    def _srcstore(self):
+    def _storesrc(self):
         """
-        This method stores that come with the source file. 
+        Prepares data which came with source for storing.
         """
-        stored = []
-        lines = []
         for i in range( len( self.srcorigin ) ): 
-            if self.source[i] == "" : lines.append( "{0}".format( self.srcorigin[i] ) )
-            elif self.source[i][0] == "#" : lines.append( "{0}".format( self.srcorigin[i] ) )
-            # checks if current line has a key is in defined in self.propsorigin and has not been stored yet
-            elif (
-                    self.__getkey__( self.srcorigin[i] ) != "" and 
-                    self.__getkey__( self.srcorigin[i] ) in self.propsorigin and self.__getkey__( self.srcorigin[i] ) not in stored 
-                 ): 
+            if self.source[i] == "" : self.lines.append( "{0}".format( self.srcorigin[i] ) )
+            elif self.source[i][0] == "#" : self.lines.append( "{0}".format( self.srcorigin[i] ) )
+            # checks if current line has a key which is in defined in self.propsorigin and has not been stored yet
+            elif self.__getkey__( self.srcorigin[i] ) != "" and self.__getkey__( self.srcorigin[i] ) not in self.stored: 
                 # appends comments attached by the program
-                if self.__getkey__(self.srcorigin[i]) in self.propcomments: [ lines.append("{0}".format(line)) for line in self.propcomments[self.__getkey__(self.srcorigin[i])] ]
-                stored.append( self.__getkey__( self.source[i] ) )
-                lines.append( "{0}={1}".format(self.__getkey__(self.source[i], False), self.propsorigin[self.__getkey__(self.source[i])] ) )
+                if self.__getkey__(self.srcorigin[i]) in self.propcomments: [ self.lines.append("{0}".format(line)) for line in self.propcomments[self.__getkey__(self.srcorigin[i])] ]
+                self.lines.append( "{0}={1}".format(self.__getkey__(self.source[i]), self.propsorigin[self.__getkey__(self.source[i])] ) )
+                self.stored.append( self.__getkey__( self.source[i] ) )
             else : pass
-        return (lines, stored)
 
 
-    def _groupstore(self, stored):
+    def _storegroups(self):
         """
-        Stores groups wich were not included in original source.
+        Prepares groups not found in source file.
         """
-        lines = [""]
+        if self.lines != [] : self.lines.append("")
         groups = self.getgroups()
         for identifier in groups:
-            previous_len = len(lines)
+            previous_len = len(self.lines)
             props = self.gets( identifier )
             keys = []
-            [ keys.append(key) for key in props.keys() ]
+            [ keys.append(key) for key in props ]
             for key in sorted(keys):
-                if key not in stored and key in self.propsorigin: # key in self.propsorigin -> check needed to prevent storing unsaved changes
-                    if key in self.propcomments: [ lines.append( "{0}".format(line) ) for line in self.propcomments[ key ] ]                        
-                    lines.append( "{0}={1}".format(key, props[key]) )
-                    stored.append( key )
-            if len(lines) > previous_len: lines.append("")
-        return (lines, stored)
+                if key not in self.stored and key in self.propsorigin:
+                    if key in self.propcomments: [ self.lines.append( "{0}".format(line) ) for line in self.propcomments[ key ] ]
+                    self.lines.append( "{0}={1}".format(key, props[key]) )
+                    self.stored.append( key )
+            if len(self.lines) > previous_len: self.lines.append("")
 
 
-    def store(self, path = ""):
+    def _storesingles(self):
+        """
+        Preprares single values not found in source.
+        """
+        for key, value in self.propsorigin.items():
+            if key not in self.stored : 
+                if key in self.propcomments: [ self.lines.append( "{0}".format(line) ) for line in self.propcomments[ key ] ]
+                self.lines.append( "{0}={1}".format(key, value) )
+                self.stored.append( key )
+
+
+    def store(self, path = "", force=False):
         """
         Writes properties to given 'path'.
         'path' defaults to self.path
+
+        If store will encounter some unsaved changes it will
+        raise UnsavedChangesError.
+        You can explicitly silence it by passing force as True.
+
+        If self.path is empty it will be set to given path.
         """
-        stored = []
-        lines = []
-        if path == "" and not path.isspace(): path = self.path
-        if path == "" : raise StoreError("no path specified")
-
-        srcstore = self._srcstore()
-        lines.extend( srcstore[0] )
-        stored.extend( srcstore[1] )
-
-        groupstore = self._groupstore(stored)
-        lines.extend( groupstore[0] )
-        stored.extend( groupstore[1] )
-        while lines[-1] == "" and lines[-2] == "" : lines = lines[:-1]
-
-        for key, value in self.propsorigin.items():
-            if key not in stored : 
-                if key in self.propcomments: [ lines.append( "{0}".format(line) ) for line in self.propcomments[ key ] ]
-                lines.append( "{0}={1}".format(key, value) )
-                stored.append( key )
-
+        if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
+        self.stored = []
+        self.lines = []
+        if path == "" : path = self.path    # this line defaults the value
+        if path == "" or path.isspace(): raise StoreError("no path specified")
+        if path and not self.path: self.path = path
+        self._storesrc()
+        self._storegroups()
+        self._storesingles()
         file = open( path, "w" )
-        for line in lines: file.write( "{0}\n".format(line) )
+        for line in self.lines: file.write( "{0}\n".format(line) )
         file.close()
+        self.stored = []
+        self.lines = []
 
 
     def get(self, identifier, parsed=False, cast=False):
@@ -483,7 +514,7 @@ class Properties():
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format( str(type(identifier))[8:-2] ) )
 
         matched = {}
-        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9_\.]*").replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace("*", wildcart_re).replace(".", "\.")))
         for key, value in self.properties.items():
             if re.match(identifier, key) and parsed : matched[key] = self.parseline( value )
             elif re.match(identifier, key) and not parsed : matched[key] = value
@@ -516,9 +547,10 @@ class Properties():
         Sets key to value. 
         """
         self.properties[identifier] = value
+        self.unsaved = True
 
 
-    def sets(self, identifier, value, *args, **kwargs):
+    def sets(self, identifier, *values, **kwargs):
         """
         Sets every property which name matched pattern given as identifier to value. 
         You can pass more than one value. If more keys are found than values passed 
@@ -530,13 +562,11 @@ class Properties():
         as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
         """
         keys = []
-        values = [value]
-        values.extend(args)
         _kwargs = {}
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
 
-        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9_\.]*").replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace("*", wildcart_re).replace(".", "\.")))
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append( key )
 
@@ -549,6 +579,7 @@ class Properties():
                 if key in kwargs : value = kwargs[key]
                 else : i += 1   # increasing the counter if value wasn't taken from the kwargs
                 self.set( key, value )
+        self.unsaved = True
 
 
     def remove(self, identifier):
@@ -557,6 +588,7 @@ class Properties():
         Removed property will be not saved using store().
         """
         self.properties.pop( identifier )
+        self.unsaved = True
 
 
     def removes(self, identifier):
@@ -565,10 +597,11 @@ class Properties():
         Removed properties will be not saved using store().
         """
         to_remove = []
-        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9_\.]*").replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace("*", wildcart_re).replace(".", "\.")))
         for key in self.properties.keys():
             if re.match( identifier, key ): to_remove.append( key )
         for key in to_remove : self.properties.pop( key )
+        self.unsaved = True
 
 
     def pop(self, identifier, cast=False):
@@ -578,6 +611,7 @@ class Properties():
         """
         prop = self.properties.pop( identifier )
         if cast : prop = self.__typeguess__( prop )( prop )
+        self.unsaved = True
         return prop
 
 
@@ -587,7 +621,7 @@ class Properties():
         Removed properties will be not saved using store().
         """
         popped = {}
-        identifier = re.compile("^{0}$".format(identifier.replace("*", "[a-z0-9_\.]*").replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace("*", wildcart_re).replace(".", "\.")))
         for key, value in self.properties.items():
             if re.match( identifier, key ): 
                 popped[key] = value
@@ -595,6 +629,7 @@ class Properties():
         if cast : 
             for key, value in popped.items():
                 popped[key] = self.__typeguess__( value )( value )
+        self.unsaved = True
         return popped
 
 
@@ -665,6 +700,8 @@ class Properties():
             key = re.sub( re.compile("\.[0-9]+$"), ".*", key )
             if key not in groups : singles.append( key )
         return singles
+
+
     def addcomment(self, identifier, comment):
         """
         Attaches comment to property. 
@@ -677,27 +714,19 @@ class Properties():
         else: comment = [comment]
         for i in range(len(comment)): comment[i] = "#\t{0}".format(comment[i])
         self.propcomments[ identifier ] = comment
+        self.unsaved = True
 
 
-    def addcomments(self, identifier, comment, *args):
+    def addcomments(self, identifier, *comments):
         """
         Attaches comment to properties which will match the identifier. 
         Comment can be passed as a string or a list. 
         Multiline comments are supported - either by passing a list of lines or
         by passing a string containing newline characters '\\n'.
+
+        addcomments('foo.*.bar', 'first comment', 'second\ncomment', ['third', 'comment'])
         """
-        _args = []
-        for i in range(len(args)):
-            if type(args[i]) == str and "\n" in comment: _args.append( args[i].split("\n") )
-            elif type(args[i]) == list: _args.append( args[i] )
-            else: _args.append( [args[i]] )
-
-        if type(comment) == str and "\n" in comment: comments = comment.split("\n")
-        elif type(comment) == list: comments = comment
-        else: comments = [comment]
-        comments.extend(_args)
         keys = self.gets(identifier)
-
         i = 0
         for key in keys:
             try : self.addcomment(key, comments[i])

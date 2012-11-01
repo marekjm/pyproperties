@@ -1,0 +1,15 @@
+Fetaures:
+
+1.  add support for 'include' property as described on http://commons.apache.org/configuration/howto_properties.html
+
+        'include=foo.properties' will be included as:
+            foo.property.0=0
+            foo.property.1=1
+
+        to include without a prefix you should write it this way:
+            include=(foo.properties)
+            OR
+            include=foo.properties --no-prefix
+
+        to include with a specified prefix you should write it this way:
+            include=foo.properties as bar

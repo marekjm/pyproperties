@@ -1,0 +1,13 @@
+COMMENTING PROPERTIES.
+
+
+        When reading from file both ! and # characters are considered "comments", but 
+    when using store() method all !-comments will be converted to #-comments.
+
+        This is done so because of the thirteenth line of The Zen of Python:
+    "There should be one-- and preferably only one --obvious way to do it."
+
+
+    SEE ALSO:
+        manual/saving.txt
+        manual/storing.txt

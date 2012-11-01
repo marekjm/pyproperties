@@ -11,16 +11,31 @@ HOW TO LOAD PROPERTIES FILE.
             foo.read( path )
 
         The second method can be useful when you know that you will need some 
-    properites object but the path is not yet unknown.
+    properites object but the path is unknown at the moment.
 
-    ####
 
-        Loading properites results in creation of several variables:
-            *   path = path pointing to loaded .properites file,
-            *   name = name of the file,
-            *   source = source of file,
-            *   propsorigin = original dict of properties,
-            *   properties = dict that you are working with,
+----------------
+
+        Loading style:
+
+        [LINE]              [LOADED KEY/VALUE]
+
+        'key = value'       'key' / 'value'
+        'key= value '       'key' / 'value '
+        'key = value '      'key' / 'value '
+        'key : value '      'key' / 'value'
+
+        White space preceding and trailing the key are both stripped. 
+    White space preceding value are stripped but the trailing are preserved.
+    You can preserve preceding whitespace of the value by escaping first 
+    whitescape of it's value.
+
+        [LINE]              [LOADED KEY/VALUE]
+
+        'key =\  value '       'key' / '  value '
+
+
+----------------
 
 
     SEE ALSO:

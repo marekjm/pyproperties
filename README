@@ -5,7 +5,15 @@ THIS IN NOT a java.util.Properties replacement for Python.
 If you look for this kind of library go to: https://bitbucket.org/jnoller/pyjavaproperties/src/6dc1f59f6793/pyjavaproperties.py
 
 pyproperites aims to ease manipulation, interaction and use of *.properties files in Python 3.x programs
-by providing getters, setters and methods like merge(), complete(), join() and store(). 
+by providing getters, setters and methods like merge(), complete(), join() and store().
+
+
+----------------
+
+    Since version 0.1.4 is trying to stick closely to the specification at: 
+        http://docs.oracle.com/cd/E23095_01/Platform.93/ATGProgGuide/html/s0204propertiesfileformat01.html
+
+----------------
 
 
 Original creation date: 2012.10.06
