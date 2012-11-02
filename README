@@ -10,7 +10,7 @@ by providing getters, setters and methods like merge(), complete(), join() and s
 
 ----------------
 
-    Since version 0.1.4 is trying to stick closely to the specification at: 
+    Since version 0.1.4 is trying to stick to the specification at: 
         http://docs.oracle.com/cd/E23095_01/Platform.93/ATGProgGuide/html/s0204propertiesfileformat01.html
 
 ----------------

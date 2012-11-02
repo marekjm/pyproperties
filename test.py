@@ -125,7 +125,7 @@ class GetreTest(unittest.TestCase):
         self.assertRaises( TypeError, foo.getre, 0 )
 
 
-class GroupingTest( unittest.TestCase ):
+class GroupingTest(unittest.TestCase):
     def test_getgroups(self):
         foo = properties( "./data/properties/foo.properties" )
         groups = [  "customer.*.name",
@@ -149,6 +149,46 @@ class GroupingTest( unittest.TestCase ):
                     "person.surname",
                     ]
         self.assertListEqual( sorted(singles), sorted(foo.getsingles()) )
+
+
+class ParseTest(unittest.TestCase):
+    def test_parseDict(self):
+        bar = pyproperties.Properties( foo_path.replace("foo", "bar") )
+        parsed =    {
+                    "message.0":"Apple Jack  .",
+                    "message.1":"Arr... Welcome, John the Average!",
+                    "name.0":"John the Average",
+                    "name.1":"Jack  ",
+                    "name.2":"  William  ",
+                    "alert":"Fire!",
+                    }
+        self.assertEqual( parsed, bar.parse() )
+
+
+    def test_parseProps(self):
+        bar = pyproperties.Properties( foo_path.replace("foo", "bar") )
+        parsed =    {
+                    "message.0":"Apple Jack  .",
+                    "message.1":"Arr... Welcome, John the Average!",
+                    "name.0":"John the Average",
+                    "name.1":"Jack  ",
+                    "name.2":"  William  ",
+                    "alert":"Fire!",
+                    }
+        pbar = bar.parse(props=True)
+        self.assertEqual( parsed, pbar.gets("*") )
+        self.assertEqual( pyproperties.Properties, type(pbar) )
+
+
+class CopyTest(unittest.TestCase):
+    def test_copy(self):
+        foo = pyproperties.Properties(foo_path)
+        foo2 = foo.copy()
+        self.assertEqual(foo.srcorigin, foo2.srcorigin)
+        self.assertEqual(foo.source, foo2.source)
+        self.assertEqual(foo.propsorigin, foo2.propsorigin)
+        self.assertEqual(foo.properties, foo2.properties)
+        self.assertEqual(foo.propcomments, foo2.propcomments)
 
 
 if __name__ == "__main__" : unittest.main()

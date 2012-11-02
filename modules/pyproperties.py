@@ -29,8 +29,8 @@ __version__ = "0.1.4"
 
 
 wildcart_re = "[a-z0-9_.]*"
-guess_int_re = "^[0-9]+$"
-guess_float_re = "^[0-9]*\.[0-9]+$"
+guess_int_re = "^[+-]{0,1}[0-9]+$"
+guess_float_re = "^[+-]{0,1}[0-9]*\.[0-9]+$"
 
 
 class LoadError(IOError): pass
@@ -316,13 +316,29 @@ class Properties():
         return value
 
 
-    def parse( self, cast=False ):
+    def parse( self, cast=False, props=False ):
         """
         This methode parses and returns parsed self.properties
+
+        If props argument is passed as True parse() will return
+        an Properties() object with all values parsed.
         """
-        parsed = {}
-        for key, value in self.properties.items(): parsed[key] = self.get( key, True, cast )
+        if props:
+            parsed = Properties()
+            parsed.melt(self)
+            parsed.properties = parsed.parse()
+            parsed.save()
+        else :
+            parsed = {}
+            for key in self.properties: parsed[key] = self.get( key, True, cast )
         return parsed
+
+
+    def copy(self):
+        """
+        Returns exact copy of a Properties() object.
+        """
+        return self
 
 
     def join(self, path, prefix=" "):

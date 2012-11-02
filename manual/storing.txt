@@ -33,6 +33,8 @@ HOW TO STORE PROPERTIES.
           File "./modules/pyproperties.py", line 480, in store
             if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
         pyproperties.UnsavedChangesError: trying to store with unsaved changes
+        foo.store(force=True)
+        # and pyproperties would happily store your props
 
 
         Prior to version 0.1.2 if store() was used on properties with no source 
