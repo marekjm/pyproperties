@@ -9,6 +9,35 @@ properties = pyproperties.Properties
 
 foo_path = "./data/properties/foo.properties"
 
+class ParselineTest(unittest.TestCase):
+    def test_parselineInteger(self):
+        foo = pyproperties.Properties()
+        foo.set("two.0", 2)
+        foo.set("two.1", "2")
+        self.assertEqual(2, foo.get("two.0", parsed=True, cast=True))
+        self.assertEqual(2, foo.get("two.0", parsed=True, cast=False))
+        self.assertEqual(2, foo.get("two.1", parsed=True, cast=True))
+        self.assertEqual("2", foo.get("two.1", parsed=True, cast=False))
+
+
+    def test_parselineFloat(self):
+        foo = pyproperties.Properties()
+        foo.set("pi.0", 3.14)
+        foo.set("pi.1", "3.14")
+        self.assertEqual(3.14, foo.get("pi.0", parsed=True, cast=True))
+        self.assertEqual(3.14, foo.get("pi.0", parsed=True, cast=False))
+        self.assertEqual(3.14, foo.get("pi.1", parsed=True, cast=True))
+        self.assertEqual("3.14", foo.get("pi.1", parsed=True, cast=False))
+
+
+    def test_parselineString(self):
+        foo = pyproperties.Properties()
+        foo.set("greeting", "Hello $(name)!")
+        foo.set("name", "World")
+        self.assertEqual("Hello World!", foo.get("greeting", parsed=True, cast=True))
+        self.assertEqual("Hello World!", foo.get("greeting", parsed=True, cast=False))
+
+
 class LoadTest(unittest.TestCase):
     def test_spaces(self):
         props = {
@@ -80,6 +109,30 @@ class GetTest(unittest.TestCase):
     def test_get_exception(self):
         foo = pyproperties.Properties( foo_path )
         self.assertRaises( TypeError, foo.get, 0 )
+
+
+    def test_getCastedInteger(self):
+        foo = pyproperties.Properties()
+        foo.set("two", "2")
+        self.assertEqual(2, foo.get("two", cast=True))
+
+
+    def test_getCastedFloat(self):
+        foo = pyproperties.Properties()
+        foo.set("pi", "3.14")
+        self.assertEqual(3.14, foo.get("pi", cast=True))
+
+
+    def test_getCastedNegativeInteger(self):
+        foo = pyproperties.Properties()
+        foo.set("two", "-2")
+        self.assertEqual(-2, foo.get("two", cast=True))
+
+
+    def test_getCastedNegativeFloat(self):
+        foo = pyproperties.Properties()
+        foo.set("neg_pi", "-3.14")
+        self.assertEqual(-3.14, foo.get("neg_pi", cast=True))
 
 
 class GetsTest(unittest.TestCase):
@@ -181,7 +234,7 @@ class ParseTest(unittest.TestCase):
 
 
 class CopyTest(unittest.TestCase):
-    def test_copy(self):
+    def test_equality(self):
         foo = pyproperties.Properties(foo_path)
         foo2 = foo.copy()
         self.assertEqual(foo.srcorigin, foo2.srcorigin)
@@ -189,6 +242,13 @@ class CopyTest(unittest.TestCase):
         self.assertEqual(foo.propsorigin, foo2.propsorigin)
         self.assertEqual(foo.properties, foo2.properties)
         self.assertEqual(foo.propcomments, foo2.propcomments)
+
+
+    def test_diversity(self):
+        foo = pyproperties.Properties(foo_path)
+        foo2 = foo.copy()
+        foo.set("test", True)
+        self.assertNotEqual(foo.properties, foo2.properties)
 
 
 if __name__ == "__main__" : unittest.main()

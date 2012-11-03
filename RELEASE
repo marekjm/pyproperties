@@ -37,7 +37,8 @@ Release 0.1.4
                     variables instead.
         *   upd:    _groupstore renamed to _storegroups and _srcstore renamed to _storesrc,
                     this will not affect your usage because these are mothods used internaly,
-        *   fix:    preventing unsing store when unsaved changes are present.
+        *   fix:    preventing unsing store when unsaved changes are present,
+        *   fix:    fixed casting negative integers and floats (minor fix in regular expression),
         *   new:    UnsavedChangesError exception,
         *   new:    _appendsrc() method for effective joining two sources,
                     it prevents errors when join() was used with prefix and gives more control 

@@ -29,8 +29,8 @@ __version__ = "0.1.4"
 
 
 wildcart_re = "[a-z0-9_.]*"
-guess_int_re = "^[+-]{0,1}[0-9]+$"
-guess_float_re = "^[+-]{0,1}[0-9]*\.[0-9]+$"
+guess_int_re = "^[-]{0,1}[0-9]+$"
+guess_float_re = "^[-]{0,1}[0-9]*\.[0-9]+$"
 
 
 class LoadError(IOError): pass
@@ -41,10 +41,8 @@ class UnsavedChangesError(BaseException): pass
 class Properties():
     """
     This class provides methods for working with properties files. 
-    You should call it with a path pointing to the file you want to load. 
 
-    It contains variables used for working with properties files:
-
+    Variables describing properties:
         self.path           -   path used for reading and storing properties,
         self.source         -   working copy of source file
         self.srcorigin      -   original lines of source file
@@ -182,11 +180,7 @@ class Properties():
     def __typeguess__(self, prop):
         """
         Tries to guess the type of property (initially all properties are stored as strings) and 
-        convert it accordingly.
-        It can guess three types: int, float and string.
-        If property contains only digits and a dot inside - it's considered float (re: "^[0-9]*\.[0-9]+$").
-        If property contains only digits and not a dot inside - it's considered int (re: "^[0-9]+$").
-        Otherwise: property is considered str.
+        convert it accordingly. It can guess three types: int, float and string.
         """
         re_int = re.compile(guess_int_re)
         re_float = re.compile(guess_float_re)
@@ -306,13 +300,13 @@ class Properties():
         This method searches for every $(reference) string in given line and 
         replaces it with value of corresponding property. 
         """
-        init_value = value
-        while "$(" in value and ")" in value :
-            a = value.find("$(")
-            b = value[a:].find(")")
-            name = value[a+2 : a+b]
-            if a == -1 or b == -1 : break
-            value = value.replace("$({0})".format(name), str( self.properties[name] ) )
+        if type(value) == str: 
+            while "$(" in value and ")" in value:
+                a = value.find("$(")
+                b = value[a:].find(")")
+                name = value[a+2 : a+b]
+                if a == -1 or b == -1 : break
+                value = value.replace("$({0})".format(name), str(self.properties[name]))
         return value
 
 
@@ -338,7 +332,12 @@ class Properties():
         """
         Returns exact copy of a Properties() object.
         """
-        return self
+        copy = Properties()
+        copy._appendsrc(self)
+        for key in self.properties: copy.set(key, self.get(key))
+        for key in self.propcomments: copy.addcomment(key, self.propcomments[key])
+        copy.save()
+        return copy
 
 
     def join(self, path, prefix=" "):
@@ -518,7 +517,7 @@ class Properties():
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format( str(type(identifier))[8:-2] ) )
         if parsed : value = self.parseline( self.properties[identifier] )
         else : value = self.properties[identifier]
-        if cast : value = self.__typeguess__( value )(value)
+        if cast and type(value) == str: value = self.__typeguess__( value )(value)
         return value
 
 
@@ -534,8 +533,9 @@ class Properties():
         for key, value in self.properties.items():
             if re.match(identifier, key) and parsed : matched[key] = self.parseline( value )
             elif re.match(identifier, key) and not parsed : matched[key] = value
-        if cast : 
-            for key, value in matched.items(): matched[key] = self.__typeguess__( value )( value )
+        if cast: 
+            for key, value in matched.items(): 
+                if type(value) == str: matched[key] = self.__typeguess__( value )( value )
         return matched
 
 
