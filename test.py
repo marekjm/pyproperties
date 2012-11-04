@@ -4,8 +4,6 @@ import unittest
 import re
 
 from modules import pyproperties
-properties = pyproperties.Properties
-
 
 foo_path = "./data/properties/foo.properties"
 
@@ -49,7 +47,7 @@ class LoadTest(unittest.TestCase):
                     "alert":"Fire!",
                 }
         loaded = pyproperties.Properties("./data/properties/bar.properties")
-        self.assertEqual( props, loaded.gets("*") )
+        self.assertEqual(props, loaded.gets("*"))
 
     def test_colonSeparated(self):
         props = {
@@ -61,18 +59,18 @@ class LoadTest(unittest.TestCase):
                     "alert":"Fire!",
                 }
         loaded = pyproperties.Properties("./data/properties/bar.properties")
-        self.assertEqual( props, loaded.gets("*") )
+        self.assertEqual(props, loaded.gets("*"))
 
 
 class KeyGetterTest(unittest.TestCase):
     def test_getkeysof(self):
-        foo = properties( "./data/properties/foo.properties" )
-        self.assertEqual( ["literal.string.0", "literal.string.1"], sorted( foo.getkeysof( "Hello World!" ) ) )
+        foo = pyproperties.Properties("./data/properties/foo.properties")
+        self.assertEqual(["literal.string.0", "literal.string.1"], sorted(foo.getkeysof("Hello World!")))
 
 
 class NameGetterTest(unittest.TestCase):
     def test_getnames(self):
-        foo = properties( "./data/properties/foo.properties" )
+        foo = pyproperties.Properties("./data/properties/foo.properties")
         names = ["numeral.float.0",
                 "numeral.float.1",
                 "numeral.pi",
@@ -97,18 +95,18 @@ class NameGetterTest(unittest.TestCase):
                 "foo.1.money",
                 "foo.1.power",
                 ]
-        self.assertEqual( sorted(names), foo.getnames() )
+        self.assertEqual(sorted(names), foo.getnames())
 
 
 class GetTest(unittest.TestCase):
     def test_get(self):
-        foo = pyproperties.Properties( foo_path )
-        self.assertEqual( "Agent Smith", foo.get( "customer.1.name" ) )
+        foo = pyproperties.Properties(foo_path)
+        self.assertEqual("Agent Smith", foo.get("customer.1.name"))
 
 
     def test_get_exception(self):
-        foo = pyproperties.Properties( foo_path )
-        self.assertRaises( TypeError, foo.get, 0 )
+        foo = pyproperties.Properties(foo_path)
+        self.assertRaises(TypeError, foo.get, 0)
 
 
     def test_getCastedInteger(self):
@@ -137,50 +135,50 @@ class GetTest(unittest.TestCase):
 
 class GetsTest(unittest.TestCase):
     def test_gets_customerNames(self):
-        foo = pyproperties.Properties( foo_path )
-        self.assertEqual( {"customer.0.name":"John the Average.", "customer.1.name":"Agent Smith"}, foo.gets( "customer.*.name" ) )
+        foo = pyproperties.Properties(foo_path)
+        self.assertEqual({"customer.0.name":"John the Average.", "customer.1.name":"Agent Smith"}, foo.gets("customer.*.name"))
 
 
     def test_gets_customerPhoneNumbers(self):
-        foo = pyproperties.Properties( foo_path )
-        self.assertEqual( { "customer.0.phone_number.0":"+48 500666101", 
+        foo = pyproperties.Properties(foo_path)
+        self.assertEqual({ "customer.0.phone_number.0":"+48 500666101", 
                             "customer.0.phone_number.1":"+48 678992005", 
                             "customer.1.phone_number.0":"-1 000-000-000"}, 
-                            foo.gets( "customer.*.phone_number.*" ) )
+                            foo.gets("customer.*.phone_number.*"))
 
 
     def test_gets_exception(self):
-        foo = pyproperties.Properties( foo_path )
-        self.assertRaises( TypeError, foo.gets, 0 )
+        foo = pyproperties.Properties(foo_path)
+        self.assertRaises(TypeError, foo.gets, 0)
 
 
 class GetreTest(unittest.TestCase):
     def test_getre_string(self):
-        foo = pyproperties.Properties( foo_path )
+        foo = pyproperties.Properties(foo_path)
         props = {   "customer.0.phone_number.0": "+48 500666101",
                     "customer.0.phone_number.1": "+48 678992005",
                     "customer.1.phone_number.0": "-1 000-000-000",
                 }
-        self.assertEqual( props, foo.getre( "^customer\.[0-9]+\.phone_number\.[0-9]+$" ) )
+        self.assertEqual(props, foo.getre("^customer\.[0-9]+\.phone_number\.[0-9]+$"))
 
 
     def test_getre_pattern(self):
-        foo = pyproperties.Properties( foo_path )
+        foo = pyproperties.Properties(foo_path)
         props = {   "customer.0.phone_number.0": "+48 500666101",
                     "customer.0.phone_number.1": "+48 678992005",
                     "customer.1.phone_number.0": "-1 000-000-000",
                 }
-        self.assertEqual( props, foo.getre( re.compile("^customer\.[0-9]+\.phone_number\.[0-9]+$") ) )
+        self.assertEqual(props, foo.getre(re.compile("^customer\.[0-9]+\.phone_number\.[0-9]+$")))
 
 
     def test_getre_exception(self):
-        foo = pyproperties.Properties( foo_path )
-        self.assertRaises( TypeError, foo.getre, 0 )
+        foo = pyproperties.Properties(foo_path)
+        self.assertRaises(TypeError, foo.getre, 0)
 
 
 class GroupingTest(unittest.TestCase):
     def test_getgroups(self):
-        foo = properties( "./data/properties/foo.properties" )
+        foo = pyproperties.Properties("./data/properties/foo.properties")
         groups = [  "customer.*.name",
                     "customer.*.phone_number.*",
                     "customer.*.address",
@@ -191,22 +189,22 @@ class GroupingTest(unittest.TestCase):
                     "foo.*.money",
                     "foo.*.power",
                     ]
-        self.assertListEqual( sorted(groups), sorted(foo.getgroups()) )
+        self.assertListEqual(sorted(groups), sorted(foo.getgroups()))
 
 
     def test_getsingles(self):
-        foo = properties( "./data/properties/foo.properties" )
+        foo = pyproperties.Properties("./data/properties/foo.properties")
         singles = [ "numeral.pi",
                     "numeral.int",
                     "person.name",
                     "person.surname",
                     ]
-        self.assertListEqual( sorted(singles), sorted(foo.getsingles()) )
+        self.assertListEqual(sorted(singles), sorted(foo.getsingles()))
 
 
 class ParseTest(unittest.TestCase):
     def test_parseDict(self):
-        bar = pyproperties.Properties( foo_path.replace("foo", "bar") )
+        bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
         parsed =    {
                     "message.0":"Apple Jack  .",
                     "message.1":"Arr... Welcome, John the Average!",
@@ -215,11 +213,11 @@ class ParseTest(unittest.TestCase):
                     "name.2":"  William  ",
                     "alert":"Fire!",
                     }
-        self.assertEqual( parsed, bar.parse() )
+        self.assertEqual(parsed, bar.parse())
 
 
     def test_parseProps(self):
-        bar = pyproperties.Properties( foo_path.replace("foo", "bar") )
+        bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
         parsed =    {
                     "message.0":"Apple Jack  .",
                     "message.1":"Arr... Welcome, John the Average!",
@@ -229,8 +227,8 @@ class ParseTest(unittest.TestCase):
                     "alert":"Fire!",
                     }
         pbar = bar.parse(props=True)
-        self.assertEqual( parsed, pbar.gets("*") )
-        self.assertEqual( pyproperties.Properties, type(pbar) )
+        self.assertEqual(parsed, pbar.gets("*"))
+        self.assertEqual(pyproperties.Properties, type(pbar))
 
 
 class CopyTest(unittest.TestCase):
