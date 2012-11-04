@@ -3,11 +3,16 @@ Release 0.1.4
         Hi. In this release I bring new exception to you. Yeah, we all like exceptions... 
     This one prevents saving unsaved changes and is named: UnsavedChangesError. 
     I know you will like it.
-        Also, improvements in store method and it's submethods. As a bonus I saved a few 
+        Also, improvements in store() method and it's submethods. As a bonus I saved a few 
     lines with it.
         This is mainly an updating release. As of new features it brings a copy() method 
-    and new argument in parse().
+    and new argument in parse() which tells the method to return a Properties() instance 
+    with (values parsed) and not a simple dict.
+        For a dessert - bunch of new unit tests.
 
+        Enjoy.
+
+    ----
     Post scriptum.
 
         Could you do one thing for me? It will not take you more than a cpule of minutes. 
@@ -19,13 +24,14 @@ Release 0.1.4
 
         Thanks.
 
+
 ---------------------------------------------------------------------------------------------
 
 
     This release brings you:
-    *   a update(s),
-    *   b fix(es),
-    *   c new feature(s).
+    *   5 update(s),
+    *   2 fix(es),
+    *   5 new feature(s).
 
     ->  pyproperties.py
         *   upd:    white space preceding property value is ignored,
@@ -46,7 +52,7 @@ Release 0.1.4
         *   new:    store() accepts new arg: 'force' which can force storing a properties even if 
                     there are some unsaved changes to them,
         *   new:    parse() can now return Properties() object,
-        *   new:    copy method,
+        *   new:    copy() method,
 
 
     Yours,
