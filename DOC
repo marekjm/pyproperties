@@ -4,8 +4,7 @@ NAME
     pyproperties - Working with *.properties files.
 
 DESCRIPTION
-    pyproperites aims to ease manipulation, interaction and use of *.properties files in Python 3.x programs
-    by providing methods like merge(), complete(), join(), parse() and store(). 
+    pyproperites aims to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
     
     It features:
         *   merging different properties with merge() method,
@@ -20,9 +19,12 @@ DESCRIPTION
         *   removing and poping single an multiple properties, 
         *   guessing types of properties (str, int, float) and casting them during load and post-load,
         *   securing your work by providing you two dictionaries - one for saved work and one as a 'working copy',
-        *   pyproperites is capable of reading properties splitted into several lines,
+        *   pyproperites is capable of reading properties splitted into several lines, 
+        *   commenting loaded properties,
 
 CLASSES
+    builtins.BaseException(builtins.object)
+        UnsavedChangesError
     builtins.OSError(builtins.Exception)
         LoadError
         StoreError
@@ -113,15 +115,14 @@ CLASSES
     
     class Properties(builtins.object)
      |  This class provides methods for working with properties files. 
-     |  You should call it with a path pointing to the file you want to load. 
      |  
-     |  It contains five variables used for working with properties files:
-     |  
+     |  Variables describing properties:
      |      self.path           -   path used for reading and storing properties,
      |      self.source         -   working copy of source file
      |      self.srcorigin      -   original lines of source file
      |      self.properties     -   working copy of properties dictionary
      |      self.propsorigin    -   original dictionary of properties
+     |      self.propcomments   -   dictionary storing comments of properties (only added by pyproperites interface)
      |  
      |  Methods defined here:
      |  
@@ -131,18 +132,20 @@ CLASSES
      |      Every line begining with # is considered comment and not parsed. 
      |      Lines containing only whitespace are also not parsed.
      |  
-     |  __getkey__(self, line, strip=True)
+     |  __getkey__(self, line)
      |      Extracts key from given line and returns it. 
-     |      If the line is comment or is an empty string returns empty string.
+     |      If the line is comment or is blank returns None.
      |  
      |  __getvalue__(self, line)
      |      Extracts value from given line and returns it. 
-     |      If the line is comment or is an empty string returns empty string.
+     |      If the line is comment or is blank returns None. 
+     |      It is done this way to distinguish properties with empty value 
+     |      from lines which do not carry a property.
      |  
      |  __init__(self, path='', type_convert=False)
      |      If you give a path as an argument it will be loaded and processed as properties file. 
      |      If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
-     |      foo.read( path, type_convert ) to load some properties or 
+     |      foo.read(path, type_convert) to load some properties or 
      |      you can use the blank properties to create completly new set of properties.
      |      You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
      |      and convert it accordingly.
@@ -171,11 +174,7 @@ CLASSES
      |  
      |  __typeguess__(self, prop)
      |      Tries to guess the type of property (initially all properties are stored as strings) and 
-     |      convert it accordingly.
-     |      It can guess three types: int, float and string.
-     |      If property contains only digits and a dot inside - it's considered float (re: "^[0-9]*\.[0-9]+$").
-     |      If property contains only digits and not a dot inside - it's considered int (re: "^[0-9]+$").
-     |      Otherwise: property is considered str.
+     |      convert it accordingly. It can guess three types: int, float and string.
      |  
      |  addcomment(self, identifier, comment)
      |      Attaches comment to property. 
@@ -183,11 +182,14 @@ CLASSES
      |      Multiline comments are supported - either by passing a list of lines or
      |      by passing a string containing newline characters '\n'.
      |  
-     |  addcomments(self, identifier, comment, *args)
-     |      Attaches comment to properties which will match the identifier. 
-     |      Comment can be passed as a string or a list. 
-     |      Multiline comments are supported - either by passing a list of lines or
-     |      by passing a string containing newline characters '\n'.
+     |  addcomments(self, identifier, *comments)
+     |              Attaches comment to properties which will match the identifier. 
+     |              Comment can be passed as a string or a list. 
+     |              Multiline comments are supported - either by passing a list of lines or
+     |              by passing a string containing newline characters '\n'.
+     |      
+     |              addcomments('foo.*.bar', 'first comment', 'second
+     |      comment', ['third', 'comment'])
      |  
      |  blank(self)
      |      Creates blank properties object.
@@ -195,7 +197,12 @@ CLASSES
      |  complete(self, props, prefix='')
      |      This methode completes base dictionary with properties of the given one. 
      |      If the base does not have some property it will be added. 
-     |      Values of the existing properties will be not overwritten.
+     |      Values of the existing properties will be not overwritten. 
+     |      
+     |      Source of merged properties are not appended to the base.
+     |  
+     |  copy(self)
+     |      Returns exact copy of a Properties() object.
      |  
      |  get(self, identifier, parsed=False, cast=False)
      |      Returns value of identifier. 
@@ -253,18 +260,24 @@ CLASSES
      |  
      |  melt(self, properties)
      |      Completes and merges 'properties' with the base. 
-     |      Source of melted properties is appended to base source.
+     |      
+     |      Source of melted properties is appended to base.
      |  
-     |  merge(self, properties, with_prefix='')
+     |  merge(self, props, with_prefix='')
      |      This methode base dictionary with the given one. 
      |      If the base does not have some property it will not be added. 
      |      Values of the existing properties will be overwritten. 
      |      
      |      If prefix is specified only properties which are preceded with 
      |      this key will have their value changed.
+     |      
+     |      Source of merged properties are not appended to the base.
      |  
-     |  parse(self, cast=False)
+     |  parse(self, cast=False, props=False)
      |      This methode parses and returns parsed self.properties
+     |      
+     |      If props argument is passed as True parse() will return
+     |      an Properties() object with all values parsed.
      |  
      |  parseline(self, value)
      |      This method searches for every $(reference) string in given line and 
@@ -282,7 +295,7 @@ CLASSES
      |      Reads properties file and processes it to be available in Python 3 program.
      |      This method defines self.path and extracts name of loaded properties file and stores it in self.name.
      |      Then runs these methods in following order:
-     |          self.__load__( path )
+     |          self.__load__(path)
      |          self.__extract__()
      |          self.__split__()
      |      You can pass cast as True to tell pyproperites that it should guess the type of the property 
@@ -317,7 +330,7 @@ CLASSES
      |  set(self, identifier, value)
      |      Sets key to value.
      |  
-     |  sets(self, identifier, value, *args, **kwargs)
+     |  sets(self, identifier, *values, **kwargs)
      |      Sets every property which name matched pattern given as identifier to value. 
      |      You can pass more than one value. If more keys are found than values passed 
      |      last value is passed to every key above number of values. 
@@ -327,9 +340,15 @@ CLASSES
      |      If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
      |      as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
      |  
-     |  store(self, path='')
+     |  store(self, path='', force=False)
      |      Writes properties to given 'path'.
      |      'path' defaults to self.path
+     |      
+     |      If store will encounter some unsaved changes it will
+     |      raise UnsavedChangesError.
+     |      You can explicitly silence it by passing force as True.
+     |      
+     |      If self.path is empty it will be set to given path.
      |  
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -421,14 +440,77 @@ CLASSES
      |  __traceback__
      |  
      |  args
+    
+    class UnsavedChangesError(builtins.BaseException)
+     |  Method resolution order:
+     |      UnsavedChangesError
+     |      builtins.BaseException
+     |      builtins.object
+     |  
+     |  Data descriptors defined here:
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from builtins.BaseException:
+     |  
+     |  __delattr__(...)
+     |      x.__delattr__('name') <==> del x.name
+     |  
+     |  __getattribute__(...)
+     |      x.__getattribute__('name') <==> x.name
+     |  
+     |  __init__(...)
+     |      x.__init__(...) initializes x; see help(type(x)) for signature
+     |  
+     |  __reduce__(...)
+     |  
+     |  __repr__(...)
+     |      x.__repr__() <==> repr(x)
+     |  
+     |  __setattr__(...)
+     |      x.__setattr__('name', value) <==> x.name = value
+     |  
+     |  __setstate__(...)
+     |  
+     |  __str__(...)
+     |      x.__str__() <==> str(x)
+     |  
+     |  with_traceback(...)
+     |      Exception.with_traceback(tb) --
+     |      set self.__traceback__ to tb and return self.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from builtins.BaseException:
+     |  
+     |  __cause__
+     |      exception cause
+     |  
+     |  __context__
+     |      exception context
+     |  
+     |  __dict__
+     |  
+     |  __suppress_context__
+     |  
+     |  __traceback__
+     |  
+     |  args
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from builtins.BaseException:
+     |  
+     |  __new__ = <built-in method __new__ of type object>
+     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
 
 DATA
-    __changes__ = 3
-    __major__ = 0
-    __minor__ = 1
+    guess_float_re = r'^[-]{0,1}[0-9]*\.[0-9]+$'
+    guess_int_re = '^[-]{0,1}[0-9]+$'
+    wildcart_re = '[a-z0-9_.]*'
 
 VERSION
-    0.1.3
+    0.1.4
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py
