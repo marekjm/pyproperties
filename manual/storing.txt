@@ -22,20 +22,38 @@ HOW TO STORE PROPERTIES.
 
     with any unsaved changes pyproperties will raise UnsavedChangesError.
 
+    ----------------
+
         You can store properties with unsaved changes by passing optional 
     'force' argument as True. This will prevent UnsavedChangesError from 
     being raised and store properties as of the state of last saving.
 
-        foo.addcomment("some.property", "some comment\ndivided into\nseveral lines")
-        foo.store()
+        >>> foo = pyproperties.Properties("./foo.properties")
+        >>> foo.set("some.property", "some value")
+        >>> foo.addcomment("some.property", "some comment\ndivided into\nseveral lines")
+        >>> foo.store()
         Traceback (most recent call last):
           File "<stdin>", line 1, in <module>
           File "./modules/pyproperties.py", line 480, in store
             if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
         pyproperties.UnsavedChangesError: trying to store with unsaved changes
-        foo.store(force=True)
-        # and pyproperties would happily store your props
+        >>>
+        >>> foo.store(force=True)
+        
+    and pyproperties would happily store your props.
 
+    ----------------
+
+        From version 0.1.4 and above store() is divided into four submethods:
+        *   _storesrc()
+        *   _storegroups()
+        *   _storesingles()
+        *   _dump()
+        By passing 'no_dump' argument as True to
+    store() method you can tell it to only generate lines and use your custom function to write 
+    them to file.
+
+    ----------------
 
         Prior to version 0.1.2 if store() was used on properties with no source 
     they were stored as an ugly mess. From 0.1.2 and above properties created 

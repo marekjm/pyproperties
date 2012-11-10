@@ -25,10 +25,10 @@ import os
 import re
 
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 
-wildcart_re = "[a-z0-9_.]*"
+wildcart_re = "[a-z0-9_.-]*"
 guess_int_re = "^[-]{0,1}[0-9]+$"
 guess_float_re = "^[-]{0,1}[0-9]*\.[0-9]+$"
 
@@ -51,19 +51,25 @@ class Properties():
         self.propcomments   -   dictionary storing comments of properties (only added by pyproperites interface)
     """
 
-    def __init__(self, path="", type_convert=False):
+    def __init__(self, path="", cast=False, no_read=False):
         """
         If you give a path as an argument it will be loaded and processed as properties file. 
         If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
-        foo.read(path, type_convert) to load some properties or 
+        foo.read(path, cast) to load some properties or 
         you can use the blank properties to create completly new set of properties.
-        You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
+        You can pass cast as True to tell pyproperites that it should guess the type of the property 
         and convert it accordingly.
 
-        This method (__init__) just calls read() with arguments passed to itself.
+        This method just calls read() with arguments passed to itself or blank() when no arguments are passed.
+        
+        To create a blank instance with path specified you can run: 
+            pyproperites.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
-        if path != "" and not path.isspace(): self.read(path, type_convert)
+        if path != "" and not path.isspace() and not no_read: self.read(path, cast)
         elif path == "" : self.blank()
+        elif path != "" and not path.isspace() and no_read: 
+            self.blank()
+            self.path = path
 
 
     def __loadf__(self, path):
@@ -78,6 +84,7 @@ class Properties():
         src.close()
         for i in range(len(source)): 
             source[i] = source[i].lstrip()
+            if source[i][-1:] == "\n": source[i] = source[i][:-1]
             srcorigin.append(source[i])
         self.source = source
         self.srcorigin = srcorigin
@@ -144,6 +151,43 @@ class Properties():
         self.properties = properties
 
 
+    def __extractcomments__(self):
+        """
+        Extracts comments loaded source to self.propcomments
+        It parses self.source line by line. 
+        
+        When it finds valid line it goes up the file and appends 
+        every line which begins with '#' or '!' and stops on 
+        line which is only whitespace or a valid line.
+        """
+        propcomments = {}
+        i = 0
+        while True:
+            if i >= len(self.source): break
+            if self.__isvalidline__(self.source[i]):
+                try:
+                    if self.source[i-1][0] in ["#", "!"]:
+                        n = i-1
+                        comment = []
+                        while True:
+                            try:
+                                if self.source[n][0] in ["#", "!"]: 
+                                    comment.append(self.source[n].rstrip())
+                                    n -= 1
+                                else: break
+                            except IndexError: break
+                            finally: pass
+                        comment.reverse()
+                        if comment: propcomments[self.__getkey__(self.source[i])] = comment
+                        self.source = self.source[:n+1] + self.source[i:]
+                    else: pass
+                except IndexError: pass
+                finally: pass
+            i += 1
+        self.propcomments.update(propcomments)
+        self.save()
+
+
     def __split__(self):
         """
         This methode converts self.properties from list containing extracted lines to a dictionary.
@@ -187,7 +231,7 @@ class Properties():
 
         if re.match(re_int, prop): ptype = int
         elif re.match(re_float, prop): ptype = float
-        else : ptype = str
+        else: ptype = str
         return ptype
 
 
@@ -198,9 +242,9 @@ class Properties():
         """
         if line == "" : key = None
         elif line[0] in ["#", "!"] or line.isspace(): key = None
-        elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0]
-        else : key = line.split("=", 1)[0]
-        return key.strip()
+        elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
+        else: key = line.split("=", 1)[0].strip()
+        return key
 
 
     def __getvalue__(self, line):
@@ -215,8 +259,7 @@ class Properties():
         elif line[0] in ["#", "!"] or line.isspace(): value = None
         elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
         else: value = line.split("=", 1)[1].lstrip()
-        if value:
-            if value[0] == "\\": value = value[1:]
+        if value[0] == "\\": value = value[1:]
         return value
 
 
@@ -250,7 +293,7 @@ class Properties():
         self.unsaved = False
 
 
-    def read(self, path, cast=False):
+    def read(self, path="", cast=False):
         """
         Reads properties file and processes it to be available in Python 3 program.
         This method defines self.path and extracts name of loaded properties file and stores it in self.name.
@@ -261,15 +304,17 @@ class Properties():
         You can pass cast as True to tell pyproperites that it should guess the type of the property 
         and convert it accordingly (the __tcasts__ method will be called).
         """
-        self.path = os.path.expanduser(path).strip()
+        if path == "": path = self.path
+        else: self.path = os.path.expanduser(path).strip()
         self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
         if os.path.isfile(self.path): self.__loadf__(self.path)
         elif os.path.isdir(self.path): self.__loadd__(self.path)
-        else : raise LoadError("'{0}' no such file or directory".format(path))
+        else: raise LoadError("'{0}' no such file or directory".format(path))
         self.__extract__()
         self.__split__()
         if cast : self.__tcasts__("*")
         self.propcomments = {}
+        self.__extractcomments__()
         self.unsaved = False
 
 
@@ -322,7 +367,7 @@ class Properties():
             parsed.melt(self)
             parsed.properties = parsed.parse()
             parsed.save()
-        else :
+        else:
             parsed = {}
             for key in self.properties: parsed[key] = self.get(key, True, cast)
         return parsed
@@ -359,7 +404,7 @@ class Properties():
             if new :
                 self.complete(new, prefix)
                 self._appendsrc(new, prefix)
-            else : pass
+            else: pass
         self.unsaved = True
 
 
@@ -440,15 +485,15 @@ class Properties():
         Prepares data which came with source for storing.
         """
         for i in range(len(self.srcorigin)): 
-            if self.source[i] == "" : self.lines.append("{0}".format(self.srcorigin[i]))
-            elif self.source[i][0] == "#" : self.lines.append("{0}".format(self.srcorigin[i]))
+            if self.srcorigin[i] == "" or self.srcorigin[i].isspace() : self.lines.append("{0}".format(self.srcorigin[i]))
+            elif self.srcorigin[i][0] == "#" : self.lines.append("{0}".format(self.srcorigin[i]))
             # checks if current line has a key which is in defined in self.propsorigin and has not been stored yet
             elif self.__getkey__(self.srcorigin[i]) != "" and self.__getkey__(self.srcorigin[i]) not in self.stored: 
                 # appends comments attached by the program
                 if self.__getkey__(self.srcorigin[i]) in self.propcomments: [ self.lines.append("{0}".format(line)) for line in self.propcomments[self.__getkey__(self.srcorigin[i])] ]
-                self.lines.append("{0}={1}".format(self.__getkey__(self.source[i]), self.propsorigin[self.__getkey__(self.source[i])]))
-                self.stored.append(self.__getkey__(self.source[i]))
-            else : pass
+                self.lines.append("{0}={1}".format(self.__getkey__(self.srcorigin[i]), self.get(self.__getkey__(self.srcorigin[i]))))
+                self.stored.append(self.__getkey__(self.srcorigin[i]))
+            else: pass
 
 
     def _storegroups(self):
@@ -461,10 +506,10 @@ class Properties():
             previous_len = len(self.lines)
             props = self.gets(identifier)
             keys = []
-            [ keys.append(key) for key in props ]
+            [keys.append(key) for key in props]
             for key in sorted(keys):
                 if key not in self.stored and key in self.propsorigin:
-                    if key in self.propcomments: [ self.lines.append("{0}".format(line)) for line in self.propcomments[ key ] ]
+                    if key in self.propcomments: [self.lines.append("{0}".format(line)) for line in self.propcomments[ key ]]
                     self.lines.append("{0}={1}".format(key, props[key]))
                     self.stored.append(key)
             if len(self.lines) > previous_len: self.lines.append("")
@@ -475,13 +520,25 @@ class Properties():
         Preprares single values not found in source.
         """
         for key, value in self.propsorigin.items():
-            if key not in self.stored : 
-                if key in self.propcomments: [ self.lines.append("{0}".format(line)) for line in self.propcomments[ key ] ]
+            if key not in self.stored:
+                if key in self.propcomments: [self.lines.append("{0}".format(line)) for line in self.propcomments[ key ]]
                 self.lines.append("{0}={1}".format(key, value))
                 self.stored.append(key)
 
 
-    def store(self, path = "", force=False):
+    def _dump(self, path):
+        """
+        Dumps generated lines to file given in path and clears 
+        variables defined by store() and its subemthods.
+        """
+        file = open(path, "w")
+        for line in self.lines: file.write("{0}\n".format(line))
+        file.close()
+        self.stored = []
+        self.lines = []
+
+
+    def store(self, path="", force=False, no_dump=False):
         """
         Writes properties to given 'path'.
         'path' defaults to self.path
@@ -491,21 +548,21 @@ class Properties():
         You can explicitly silence it by passing force as True.
 
         If self.path is empty it will be set to given path.
+
+        If 'no_dump' is passed as True lines will be generated 
+        but not written to file.
         """
         if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
-        self.stored = []
-        self.lines = []
         if path == "" : path = self.path    # this line defaults the value
         if path == "" or path.isspace(): raise StoreError("no path specified")
         if path and not self.path: self.path = path
+        self.lines = []
+        self.stored = []
         self._storesrc()
         self._storegroups()
         self._storesingles()
-        file = open(path, "w")
-        for line in self.lines: file.write("{0}\n".format(line))
-        file.close()
-        self.stored = []
-        self.lines = []
+        while self.lines[-1] == "": self.lines = self.lines[:-1]
+        if not no_dump: self._dump(path)
 
 
     def get(self, identifier, parsed=False, cast=False):
@@ -516,7 +573,7 @@ class Properties():
         """
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
         if parsed : value = self.parseline(self.properties[identifier])
-        else : value = self.properties[identifier]
+        else: value = self.properties[identifier]
         if cast and type(value) == str: value = self.__typeguess__(value)(value)
         return value
 
@@ -548,7 +605,7 @@ class Properties():
         matched = {}
         if type(identifier) == str: identifier= re.compile(identifier)
         elif str(type(identifier)) == "<class '_sre.SRE_Pattern'>": pass
-        else : raise TypeError("identifer must be either compiled or string regular expression pattern, but '{0}' type was given".format(str(type(identifier))[8:-2]))
+        else: raise TypeError("identifer must be either compiled or string regular expression pattern, but '{0}' type was given".format(str(type(identifier))[8:-2]))
 
         for key, value in self.properties.items():
             if re.match(identifier, key) and parsed : matched[key] = self.parseline(value)
@@ -593,7 +650,7 @@ class Properties():
             except IndexError : value = values[-1]
             finally : 
                 if key in kwargs : value = kwargs[key]
-                else : i += 1   # increasing the counter if value wasn't taken from the kwargs
+                else: i += 1   # increasing the counter if value wasn't taken from the kwargs
                 self.set(key, value)
         self.unsaved = True
 
@@ -721,14 +778,44 @@ class Properties():
     def addcomment(self, identifier, comment):
         """
         Attaches comment to property. 
-        Comment can be passed as a string or a list. 
+        Comment can be passed as a string, list or list of strings.
+
+            foo.addcomment("foo", "first", "part")
+            foo.addcomment("foo", ["first", "part"])
+            foo.addcomment("foo", "first\npart")
+
         Multiline comments are supported - either by passing a list of lines or
         by passing a string containing newline characters '\\n'.
         """
         if type(comment) == str and "\n" in comment: comment = comment.split("\n")
         elif type(comment) == list: pass
         else: comment = [comment]
-        for i in range(len(comment)): comment[i] = "#\t{0}".format(comment[i])
+        for i in range(len(comment)): comment[i] = "#   {0}".format(comment[i])
+        self.propcomments[ identifier ] = comment
+        self.unsaved = True
+
+
+    def addcomment2(self, identifier, *comment):
+        """
+        Attaches comment to property. 
+        Comment can be passed as a string or list of strings.
+
+            foo.addcomment("foo", "first", "part")
+            foo.addcomment("foo", ["first", "part"])
+            foo.addcomment("foo", "first\npart")
+
+        FOR IMPLEMENTATION:
+            Multiline comments are supported - either by passing a list of lines or
+            by passing a string containing newline characters '\\n'.
+        """
+        _comment = []
+        for s in comment: print(s)
+        for s in comment:
+            s = s.split("\n")
+            for i in s:
+                line = "#   {0}".format(i)
+                print(line)
+                _comment.append(line)
         self.propcomments[ identifier ] = comment
         self.unsaved = True
 

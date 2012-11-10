@@ -37,7 +37,7 @@ class ParselineTest(unittest.TestCase):
 
 
 class LoadTest(unittest.TestCase):
-    def test_spaces(self):
+    def testSpaces(self):
         props = {
                     "message.0":"Apple $(name.1).",
                     "message.1":"Arr... Welcome, $(name.0)!",
@@ -49,7 +49,8 @@ class LoadTest(unittest.TestCase):
         loaded = pyproperties.Properties("./data/properties/bar.properties")
         self.assertEqual(props, loaded.gets("*"))
 
-    def test_colonSeparated(self):
+
+    def testColonSeparated(self):
         props = {
                     "message.0":"Apple $(name.1).",
                     "message.1":"Arr... Welcome, $(name.0)!",
@@ -60,16 +61,57 @@ class LoadTest(unittest.TestCase):
                 }
         loaded = pyproperties.Properties("./data/properties/bar.properties")
         self.assertEqual(props, loaded.gets("*"))
+
+
+    def testComments(self):
+        comments = {"message.0":["#   This is a comment for massage.0"], 
+                    "name.0":["#   This is a comment for name.0 which", "#   value is \"John the Average\""],
+                    }
+        src = [ "#   second simple properties file",
+                "#   used for testing properties.py module",
+                "",
+                "message.0=Apple $(name.1).",
+                "message.1=  Arr... Welcome, $(name.0)!",
+                "name.0 :John the Average",
+                "name.1 : Jack  ",
+                "name.2 :\  William  ",
+                "alert=Fire!"
+                ]
+        loaded = pyproperties.Properties("./data/properties/bar.properties")
+        self.assertEqual(comments, loaded.propcomments)
+        self.assertEqual(src, loaded.source)
+
+
+    def testNoRead(self):
+        loaded = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
+        self.assertEqual("./data/properties/bar.properties", loaded.path)
+        self.assertEqual([], loaded.srcorigin)
+        self.assertEqual([], loaded.source)
+        self.assertEqual({}, loaded.propsorigin)
+        self.assertEqual({}, loaded.properties)
+        self.assertEqual({}, loaded.propcomments)
+
+
+    def testDifferentReadCustoms(self):
+        bara = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
+        barb = pyproperties.Properties()
+        bara.read()
+        barb.read("./data/properties/bar.properties")
+        self.assertEqual(bara.srcorigin, barb.srcorigin)
+        self.assertEqual(bara.source, barb.source)
+        self.assertEqual(bara.propsorigin, barb.propsorigin)
+        self.assertEqual(bara.properties, barb.properties)
+        self.assertEqual(bara.propcomments, barb.propcomments)
 
 
 class KeyGetterTest(unittest.TestCase):
-    def test_getkeysof(self):
+    def testGetKeysOf(self):
         foo = pyproperties.Properties("./data/properties/foo.properties")
         self.assertEqual(["literal.string.0", "literal.string.1"], sorted(foo.getkeysof("Hello World!")))
 
 
 class NameGetterTest(unittest.TestCase):
-    def test_getnames(self):
+    def testGetNames(self):
         foo = pyproperties.Properties("./data/properties/foo.properties")
         names = ["numeral.float.0",
                 "numeral.float.1",
@@ -99,47 +141,47 @@ class NameGetterTest(unittest.TestCase):
 
 
 class GetTest(unittest.TestCase):
-    def test_get(self):
+    def testGet(self):
         foo = pyproperties.Properties(foo_path)
         self.assertEqual("Agent Smith", foo.get("customer.1.name"))
 
 
-    def test_get_exception(self):
+    def testGet_exception(self):
         foo = pyproperties.Properties(foo_path)
         self.assertRaises(TypeError, foo.get, 0)
 
 
-    def test_getCastedInteger(self):
+    def testGetCastedInteger(self):
         foo = pyproperties.Properties()
         foo.set("two", "2")
         self.assertEqual(2, foo.get("two", cast=True))
 
 
-    def test_getCastedFloat(self):
+    def testGetCastedFloat(self):
         foo = pyproperties.Properties()
         foo.set("pi", "3.14")
         self.assertEqual(3.14, foo.get("pi", cast=True))
 
 
-    def test_getCastedNegativeInteger(self):
+    def testGetCastedNegativeInteger(self):
         foo = pyproperties.Properties()
         foo.set("two", "-2")
         self.assertEqual(-2, foo.get("two", cast=True))
 
 
-    def test_getCastedNegativeFloat(self):
+    def testGetCastedNegativeFloat(self):
         foo = pyproperties.Properties()
         foo.set("neg_pi", "-3.14")
         self.assertEqual(-3.14, foo.get("neg_pi", cast=True))
 
 
 class GetsTest(unittest.TestCase):
-    def test_gets_customerNames(self):
+    def testGetsCustomerNames(self):
         foo = pyproperties.Properties(foo_path)
         self.assertEqual({"customer.0.name":"John the Average.", "customer.1.name":"Agent Smith"}, foo.gets("customer.*.name"))
 
 
-    def test_gets_customerPhoneNumbers(self):
+    def testGetsCustomerPhoneNumbers(self):
         foo = pyproperties.Properties(foo_path)
         self.assertEqual({ "customer.0.phone_number.0":"+48 500666101", 
                             "customer.0.phone_number.1":"+48 678992005", 
@@ -147,13 +189,13 @@ class GetsTest(unittest.TestCase):
                             foo.gets("customer.*.phone_number.*"))
 
 
-    def test_gets_exception(self):
+    def testGetsException(self):
         foo = pyproperties.Properties(foo_path)
         self.assertRaises(TypeError, foo.gets, 0)
 
 
 class GetreTest(unittest.TestCase):
-    def test_getre_string(self):
+    def testGetreString(self):
         foo = pyproperties.Properties(foo_path)
         props = {   "customer.0.phone_number.0": "+48 500666101",
                     "customer.0.phone_number.1": "+48 678992005",
@@ -162,7 +204,7 @@ class GetreTest(unittest.TestCase):
         self.assertEqual(props, foo.getre("^customer\.[0-9]+\.phone_number\.[0-9]+$"))
 
 
-    def test_getre_pattern(self):
+    def testGetrePattern(self):
         foo = pyproperties.Properties(foo_path)
         props = {   "customer.0.phone_number.0": "+48 500666101",
                     "customer.0.phone_number.1": "+48 678992005",
@@ -171,13 +213,13 @@ class GetreTest(unittest.TestCase):
         self.assertEqual(props, foo.getre(re.compile("^customer\.[0-9]+\.phone_number\.[0-9]+$")))
 
 
-    def test_getre_exception(self):
+    def testGetreException(self):
         foo = pyproperties.Properties(foo_path)
         self.assertRaises(TypeError, foo.getre, 0)
 
 
 class GroupingTest(unittest.TestCase):
-    def test_getgroups(self):
+    def testGetGroups(self):
         foo = pyproperties.Properties("./data/properties/foo.properties")
         groups = [  "customer.*.name",
                     "customer.*.phone_number.*",
@@ -192,7 +234,7 @@ class GroupingTest(unittest.TestCase):
         self.assertListEqual(sorted(groups), sorted(foo.getgroups()))
 
 
-    def test_getsingles(self):
+    def testGetSingles(self):
         foo = pyproperties.Properties("./data/properties/foo.properties")
         singles = [ "numeral.pi",
                     "numeral.int",
@@ -247,6 +289,67 @@ class CopyTest(unittest.TestCase):
         foo2 = foo.copy()
         foo.set("test", True)
         self.assertNotEqual(foo.properties, foo2.properties)
+
+
+class StoreTest(unittest.TestCase):
+    def test_raisesUnsavedChangesError(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "bar")
+        self.assertRaises(pyproperties.UnsavedChangesError, foo.store, "")
+
+
+    def test_raisesStoreErrorWhenNoPathGiven(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "bar")
+        foo.save()
+        self.assertRaises(pyproperties.StoreError, foo.store, "")
+
+
+    def test_store(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "#   This is a comment for massage.0",
+                    "message.0=Apple $(name.1).",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is a comment for name.0 which",
+                    "#   value is \"John the Average\"",
+                    "name.0=John the Average",
+                    "name.1=Jack  ",
+                    "name.2=  William  ",
+                    "alert=Fire!",
+                    ]
+        bar.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, bar.lines)
+
+
+    def test_storeChangedComments(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "#   This is a comment for massage.0",
+                    "message.0=Apple $(name.1).",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is changed comment for name.0",
+                    "name.0=John the Average",
+                    "name.1=Jack  ",
+                    "name.2=  William  ",
+                    "alert=Fire!",
+                    ]
+        bar.addcomment("name.0", "This is changed comment for name.0")
+        bar.save()
+        bar.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, bar.lines)
+
+
+class CommentTest(unittest.TestCase):
+    def test_addcomment(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "foo")
+        foo.addcomment2("foo", "first", "part")
+        self.assertEqual(["#   first", "#   part"], foo.propcomments["foo"])
 
 
 if __name__ == "__main__" : unittest.main()

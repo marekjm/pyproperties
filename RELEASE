@@ -1,59 +1,33 @@
 Release 0.1.4
 
-        Hi. In this release I bring new exception to you. Yeah, we all like exceptions... 
-    This one prevents saving unsaved changes and is named: UnsavedChangesError. 
-    I know you will like it.
-        Also, improvements in store() method and it's submethods. As a bonus I saved a few 
-    lines with it.
-        This is mainly an updating release. As of new features it brings a copy() method 
-    and new argument in parse() which tells the method to return a Properties() instance 
-    with (values parsed) and not a simple dict.
-        For a dessert - bunch of new unit tests.
-
-        Enjoy.
-
-    ----
-    Post scriptum.
-
-        Could you do one thing for me? It will not take you more than a cpule of minutes. 
-    I would be glad if you could send me an email briefly saying for what things do you use 
-    pyproperties.
-        If you do not want me to reply add '--no-reply' option to the subject. 
-        My email is in README file, but if you do not have it accidentally opened here it is:
-    triviuss [at] gmail [dot] com
-
-        Thanks.
-
+        This release brings new submethod which runs during store(). It is called _dump().
+    While it is yet-another-one submethod in store() it gives programmer even greter control
+    over the process of writing properties to file. By passing 'no_dump' argument as True to
+    store() method you can tell it to only generate lines and use your custom function to write 
+    them to file.
 
 ---------------------------------------------------------------------------------------------
 
 
     This release brings you:
-    *   5 update(s),
-    *   2 fix(es),
-    *   5 new feature(s).
+    *   a update(s),
+    *   b fix(es),
+    *   c new feature(s).
 
     ->  pyproperties.py
-        *   upd:    white space preceding property value is ignored,
-        *   upd:    lines starting with '!' are also considered comments 
-                    this is done so for compatibility, comments added by pyproperties are written 
-                    always as '# comment'; I discourage you to use '!' for commenting,
-        *   upd:    store method now operates on instance variables not a method local variables.
-        *   upd:    _storegroups and _storesrc do not return anything. They change instance 
-                    variables instead.
-        *   upd:    _groupstore renamed to _storegroups and _srcstore renamed to _storesrc,
-                    this will not affect your usage because these are mothods used internaly,
-        *   fix:    preventing unsing store when unsaved changes are present,
-        *   fix:    fixed casting negative integers and floats (minor fix in regular expression),
-        *   new:    UnsavedChangesError exception,
-        *   new:    _appendsrc() method for effective joining two sources,
-                    it prevents errors when join() was used with prefix and gives more control 
-                    over our properties,
-        *   new:    store() accepts new arg: 'force' which can force storing a properties even if 
-                    there are some unsaved changes to them,
-        *   new:    parse() can now return Properties() object,
-        *   new:    copy() method,
-
+        *   upd:    addcomment() takes list of strings as an argumet, read DOC for more
+        *   fix:    fixed regexp used in multi- methods (they were not catching properties 
+                    whose names contained '-' inside),
+        *   new:    store() has new submethod: _dump() which takes previously generated 
+                    lines and writes them to file; read DOC for more,
+        *   new:    store() accepts 'no_dump' argument which tells it to finish after 
+                    generating lines,
+        *   new:    __init__() accepts 'no_read' argument which tells it to dont't read the 
+                    file of specified path, it allows to create properties instance without 
+                    setting the path manually,
+        *   new:    __extractcomments__() method which detects, extracts and cuts comments 
+                    out from the source and saves them to the propcomments variable,
+                    since then - they are available for changing and removing,
 
     Yours,
     Marek Marecki.
