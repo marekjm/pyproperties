@@ -8,7 +8,7 @@ from modules import pyproperties
 foo_path = "./data/properties/foo.properties"
 
 class ParselineTest(unittest.TestCase):
-    def test_parselineInteger(self):
+    def testParselineInteger(self):
         foo = pyproperties.Properties()
         foo.set("two.0", 2)
         foo.set("two.1", "2")
@@ -18,7 +18,7 @@ class ParselineTest(unittest.TestCase):
         self.assertEqual("2", foo.get("two.1", parsed=True, cast=False))
 
 
-    def test_parselineFloat(self):
+    def testParselineFloat(self):
         foo = pyproperties.Properties()
         foo.set("pi.0", 3.14)
         foo.set("pi.1", "3.14")
@@ -28,7 +28,7 @@ class ParselineTest(unittest.TestCase):
         self.assertEqual("3.14", foo.get("pi.1", parsed=True, cast=False))
 
 
-    def test_parselineString(self):
+    def testParselineString(self):
         foo = pyproperties.Properties()
         foo.set("greeting", "Hello $(name)!")
         foo.set("name", "World")
@@ -37,7 +37,7 @@ class ParselineTest(unittest.TestCase):
 
 
 class LoadTest(unittest.TestCase):
-    def testSpaces(self):
+    def testLoad(self):
         props = {
                     "message.0":"Apple $(name.1).",
                     "message.1":"Arr... Welcome, $(name.0)!",
@@ -46,24 +46,6 @@ class LoadTest(unittest.TestCase):
                     "name.2":"  William  ",
                     "alert":"Fire!",
                 }
-        loaded = pyproperties.Properties("./data/properties/bar.properties")
-        self.assertEqual(props, loaded.gets("*"))
-
-
-    def testColonSeparated(self):
-        props = {
-                    "message.0":"Apple $(name.1).",
-                    "message.1":"Arr... Welcome, $(name.0)!",
-                    "name.0":"John the Average",
-                    "name.1":"Jack  ",
-                    "name.2":"  William  ",
-                    "alert":"Fire!",
-                }
-        loaded = pyproperties.Properties("./data/properties/bar.properties")
-        self.assertEqual(props, loaded.gets("*"))
-
-
-    def testComments(self):
         comments = {"message.0":["#   This is a comment for massage.0"], 
                     "name.0":["#   This is a comment for name.0 which", "#   value is \"John the Average\""],
                     }
@@ -78,8 +60,29 @@ class LoadTest(unittest.TestCase):
                 "alert=Fire!"
                 ]
         loaded = pyproperties.Properties("./data/properties/bar.properties")
+        self.assertEqual(props, loaded.properties)
         self.assertEqual(comments, loaded.propcomments)
         self.assertEqual(src, loaded.source)
+
+
+    def testLoadCommented(self):
+        baz = pyproperties.Properties("./data/properties/baz.properties")
+        src =   [
+                "prop.0=Foo",
+                "",
+                "prop.1=Bar",
+                "prop.2=Baz",
+                ]
+        propcomments = {"prop.0":["#   this is a comment"], "prop.1":["#   this is commented property"]}
+        props = {
+                "prop.0":"Foo",
+                "prop.1":"Bar",
+                "prop.2":"Baz",
+                }
+        self.assertEqual(propcomments, baz.propcomments)
+        self.assertEqual(src, baz.source)
+        self.assertEqual(props, baz.properties)
+        self.assertEqual(["prop.1"], baz.commented)
 
 
     def testNoRead(self):
@@ -245,7 +248,7 @@ class GroupingTest(unittest.TestCase):
 
 
 class ParseTest(unittest.TestCase):
-    def test_parseDict(self):
+    def testParseDict(self):
         bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
         parsed =    {
                     "message.0":"Apple Jack  .",
@@ -258,7 +261,7 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(parsed, bar.parse())
 
 
-    def test_parseProps(self):
+    def testParseProps(self):
         bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
         parsed =    {
                     "message.0":"Apple Jack  .",
@@ -274,7 +277,7 @@ class ParseTest(unittest.TestCase):
 
 
 class CopyTest(unittest.TestCase):
-    def test_equality(self):
+    def testEquality(self):
         foo = pyproperties.Properties(foo_path)
         foo2 = foo.copy()
         self.assertEqual(foo.srcorigin, foo2.srcorigin)
@@ -284,7 +287,7 @@ class CopyTest(unittest.TestCase):
         self.assertEqual(foo.propcomments, foo2.propcomments)
 
 
-    def test_diversity(self):
+    def testDiversity(self):
         foo = pyproperties.Properties(foo_path)
         foo2 = foo.copy()
         foo.set("test", True)
@@ -292,20 +295,20 @@ class CopyTest(unittest.TestCase):
 
 
 class StoreTest(unittest.TestCase):
-    def test_raisesUnsavedChangesError(self):
+    def testRaisesUnsavedChangesError(self):
         foo = pyproperties.Properties()
         foo.set("foo", "bar")
         self.assertRaises(pyproperties.UnsavedChangesError, foo.store, "")
 
 
-    def test_raisesStoreErrorWhenNoPathGiven(self):
+    def testRaisesStoreErrorWhenNoPathGiven(self):
         foo = pyproperties.Properties()
         foo.set("foo", "bar")
         foo.save()
         self.assertRaises(pyproperties.StoreError, foo.store, "")
 
 
-    def test_store(self):
+    def testStore(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -324,7 +327,7 @@ class StoreTest(unittest.TestCase):
         self.assertEqual(lines, bar.lines)
 
 
-    def test_storeChangedComments(self):
+    def testStoreChangedComments(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -343,41 +346,123 @@ class StoreTest(unittest.TestCase):
         bar.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, bar.lines)
 
+    def testStoreCommented(self):
+        foo = pyproperties.Properties("foo.properties", no_read=True)
+        foo.set("foo", "Foo")
+        foo.set("bar", "Bar")
+        foo.save()
+        foo.comment("foo")
+        foo.addcomment("foo", "foo's comment")
+        foo.addcomment("bar", "bar's comment")
+        self.assertRaises(pyproperties.UnsavedChangesError, foo.store, "")
+        foo.save()
+        foo.store("", no_dump=True)
+        lines = [
+                "#   bar's comment",
+                "bar=Bar",
+                "#   foo's comment",
+                "#foo=Foo",
+                ]
+        self.assertEqual(lines, foo.lines)
 
-class CommentTest(unittest.TestCase):
-    def test_addcommentTestSimpleString(self):
+
+    def testStoreForced(self):
+        foo = pyproperties.Properties("foo.properties", no_read=True)
+        foo.set("some.prop", "some value")
+        foo.set("other.prop", "other value")
+        foo.save()
+        foo.store(no_dump=True)
+        self.assertEqual(["other.prop=other value", "some.prop=some value"], foo.lines)
+        foo.set("another.prop", "another value")
+        foo.store(no_dump=True, force=True)
+        self.assertEqual(["other.prop=other value", "some.prop=some value"], foo.lines)
+
+
+class AddcommentTest(unittest.TestCase):
+    def testAddcommentTestSimpleString(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", "first part")
         self.assertEqual(["#   first part"], foo.propcomments["foo"])
+        self.assertRaises(KeyError, foo.addcomment, "bar", "")
 
 
-    def test_addcommentTestStringWithNewlines(self):
+    def testAddcommentTestStringWithNewlines(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", "this\nis\na\ncomment")
         self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.propcomments["foo"])
+        self.assertRaises(KeyError, foo.addcomment, "bar", "")
 
 
-    def test_addcommentTestSimpleList(self):
+    def testAddcommentTestSimpleList(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", ["first", "part"])
         self.assertEqual(["#   first", "#   part"], foo.propcomments["foo"])
+        self.assertRaises(KeyError, foo.addcomment, "bar", "")
 
 
-    def test_addcommentTestListWithNewlines(self):
+    def testAddcommentTestListWithNewlines(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", ["this\nis", "a\ncomment"])
         self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.propcomments["foo"])
+        self.assertRaises(KeyError, foo.addcomment, "bar", "")
         
         
-    def test_getcomment(self):
+class GetcommentTest(unittest.TestCase):
+    def testGetcomment(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", ["this\nis", "a\ncomment"])
         self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.getcomment("foo"))
+        self.assertEqual([], foo.getcomment("bar"))
+
+
+class CommentTest(unittest.TestCase):
+    def testComment(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "")
+        foo.comment("foo")
+        self.assertEqual(["foo"], foo.commented)
+        self.assertRaises(KeyError, foo.get, "foo")
+        self.assertRaises(KeyError, foo.comment, "bar")
+
+
+    def testComments(self):
+        foo = pyproperties.Properties()
+        foo.set("foo.0", "")
+        foo.set("foo.1", "")
+        foo.set("bar.0", "")
+        foo.comments("foo.*")
+        self.assertEqual(["foo.0", "foo.1"], foo.commented)
+        self.assertRaises(KeyError, foo.get, "foo.0")
+        self.assertRaises(KeyError, foo.get, "foo.1")
+
+
+    def testUncomment(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "")
+        foo.comment("foo")
+        self.assertEqual(["foo"], foo.commented)
+        self.assertRaises(KeyError, foo.get, "foo")
+        foo.uncomment("foo")
+        self.assertEqual([], foo.commented)
+
+
+    def testUncomments(self):
+        foo = pyproperties.Properties()
+        foo = pyproperties.Properties()
+        foo.set("foo.0", "")
+        foo.set("foo.1", "")
+        foo.set("bar.0", "")
+        foo.comments("foo.*")
+        self.assertEqual(["foo.0", "foo.1"], foo.commented)
+        self.assertRaises(KeyError, foo.get, "foo.0")
+        self.assertRaises(KeyError, foo.get, "foo.1")
+        foo.uncomments("foo.*")
+        self.assertEqual([], foo.commented)
 
 
 if __name__ == "__main__" : unittest.main()

@@ -2,53 +2,35 @@
 
 """Working with *.properties files.
 
-pyproperites aims to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
-
-It features:
-    *   merging different properties with merge() method,
-    *   comleteing different properties with complete() method,
-    *   getter for single and multiple ('foo.*') properties,
-    *   setter for single and multiple ('foo.*') properties,
-    *   joining multiple properties files with join() method,
-    *   storing loaded properties while preserving comments and empty lines,
-    *   parsing loaded properties,
-    *   parsing single lines,
-    *   referencing other properties values with $(foo.bar) syntax, 
-    *   removing and poping single an multiple properties, 
-    *   guessing types of properties (str, int, float) and casting them during load and post-load,
-    *   securing your work by providing you two dictionaries - one for saved work and one as a 'working copy',
-    *   pyproperites is capable of reading properties splitted into several lines, 
-    *   commenting loaded properties,
+pyproperites aim is to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
 """
 
 import os
 import re
 
 
-__version__ = "0.1.5"
-
+__version__ = "0.1.6"
 
 wildcart_re = "[a-z0-9_.-]*"
 guess_int_re = "^[-]{0,1}[0-9]+$"
 guess_float_re = "^[-]{0,1}[0-9]*\.[0-9]+$"
 
-
 class LoadError(IOError): pass
 class StoreError(IOError): pass
 class UnsavedChangesError(BaseException): pass
-
 
 class Properties():
     """
     This class provides methods for working with properties files. 
 
-    Variables describing properties:
+    Variables describing stored properties:
         self.path           -   path used for reading and storing properties,
-        self.source         -   working copy of source file
-        self.srcorigin      -   original lines of source file
-        self.properties     -   working copy of properties dictionary
-        self.propsorigin    -   original dictionary of properties
-        self.propcomments   -   dictionary storing comments of properties (only added by pyproperites interface)
+        self.source         -   working copy of source file,
+        self.srcorigin      -   original lines of source file,
+        self.properties     -   working copy of properties dictionary,
+        self.propsorigin    -   original dictionary of properties,
+        self.propcomments   -   dictionary containing comments of properties,
+        self.commented      -   dictionary containing commented properties,
     """
 
     def __init__(self, path="", cast=False, no_read=False):
@@ -82,7 +64,7 @@ class Properties():
         src = open(path, "rt")
         source = src.readlines()
         src.close()
-        for i in range(len(source)): 
+        for i in range(len(source)):
             source[i] = source[i].lstrip()
             if source[i][-1:] == "\n": source[i] = source[i][:-1]
             srcorigin.append(source[i])
@@ -122,24 +104,32 @@ class Properties():
     def __isvalidline__(self, line):
         """
         Checks if the line contains valid property string. 
-        valid string is not an empty string and its first character is not '#'.
+        Valid string is non-empty string and its first character is not '#' or '!'.
         """
-        result = line != "" and line[0] not in ["#", "!"]
+        result = line != "" and line[0] not in ["#", "!"] and ("=" in line or ":" in line or line[-1] == "\\")
         return result
 
 
-    def __extract__(self):
+    def __iscommentedprop__(self, line):
         """
-        Extracts lines containing valid properties strings from loaded source to self.properties 
-        It parses self.source line by line. 
-        Every line begining with # is considered comment and not parsed. 
-        Lines containing only whitespace are also not parsed. 
+        Defines if commented line is commented property.
+        Used to distinguish comments from commented properties during
+        load.
+        """
+        return self.__isvalidline__(line.strip()[1:]) and not self.__isvalidline__(line.strip())
+
+
+    def __extractprops__(self):
+        """
+        Extracts lines containing valid properties strings from loaded source to self.properties
+        It parses self.source line by line.
+        Lines begining with '#' or '!' are considered comments and not parsed.
+        Lines containing only whitespace are also not parsed.
         """
         extracted = []
         properties = []
         for i in range(len(self.source)):
             if self.__isvalidline__(self.source[i]): extracted.append(self.source[i])
-
         i = 0
         while i < len(extracted):
             line = extracted[i]
@@ -149,6 +139,17 @@ class Properties():
             properties.append(line.lstrip())
             i += 1
         self.properties = properties
+
+
+    def __extractcommentedprops__(self):
+        """
+        Extracts commented properties from file then uncomments them and 
+        saves them to self.commented dictionary.
+        """
+        for i in range(len(self.source)):
+            if self.__iscommentedprop__(self.source[i]):
+                self.commented.append(self.__getkey__(self.source[i][1:]))
+                self.source[i] = self.source[i][1:]
 
 
     def __extractcomments__(self):
@@ -162,39 +163,35 @@ class Properties():
         """
         propcomments = {}
         i = 0
-        while True:
-            if i >= len(self.source): break
+        while i < len(self.source):
             if self.__isvalidline__(self.source[i]):
                 try:
                     if self.source[i-1][0] in ["#", "!"]:
                         n = i-1
                         comment = []
-                        while True:
+                        while n >= 0:
                             try:
-                                if self.source[n][0] in ["#", "!"]: 
-                                    comment.append(self.source[n].rstrip())
-                                    n -= 1
-                                else: break
+                                if self.source[n][0] not in ["#", "!"]: break
+                                comment.append(self.source[n].rstrip())
+                                n -= 1
                             except IndexError: break
                             finally: pass
                         comment.reverse()
                         if comment: propcomments[self.__getkey__(self.source[i])] = comment
                         self.source = self.source[:n+1] + self.source[i:]
-                    else: pass
                 except IndexError: pass
                 finally: pass
             i += 1
         self.propcomments.update(propcomments)
-        self.save()
 
 
     def __split__(self):
         """
-        This methode converts self.properties from list containing extracted lines to a dictionary.
+        This method converts self.properties from list containing extracted lines to a dictionary.
         """
         props = {}
         origin = {}
-        for i in range(len(self.properties)): 
+        for i in range(len(self.properties)):
             key = self.__getkey__(self.properties[i])
             value = self.__getvalue__(self.properties[i])
             origin[key] = props[key] = value
@@ -290,19 +287,14 @@ class Properties():
         self.properties = {}
         self.propsorigin = {}
         self.propcomments = {}
-        self.commented = {}
+        self.commented = []
         self.unsaved = False
 
 
     def read(self, path="", cast=False):
         """
         Reads properties file and processes it to be available in Python 3 program.
-        This method defines self.path and extracts name of loaded properties file and stores it in self.name.
-        Then runs these methods in following order:
-            self.__load__(path)
-            self.__extract__()
-            self.__split__()
-        You can pass cast as True to tell pyproperites that it should guess the type of the property 
+        You can pass 'cast' as True to tell pyproperites that it should guess the type of the property 
         and convert it accordingly (the __tcasts__ method will be called).
         """
         if path == "": path = self.path
@@ -311,13 +303,15 @@ class Properties():
         if os.path.isfile(self.path): self.__loadf__(self.path)
         elif os.path.isdir(self.path): self.__loadd__(self.path)
         else: raise LoadError("'{0}' no such file or directory".format(path))
-        self.__extract__()
+        self.commented = []
+        self.__extractcommentedprops__()
+        self.__extractprops__()
         self.__split__()
         if cast : self.__tcasts__("*")
         self.propcomments = {}
-        self.commented = {}
         self.__extractcomments__()
         self.unsaved = False
+        self.save()
 
 
     def reload(self):
@@ -359,7 +353,7 @@ class Properties():
 
     def parse(self, cast=False, props=False):
         """
-        This methode parses and returns parsed self.properties
+        This method parses and returns parsed self.properties
 
         If props argument is passed as True parse() will return
         an Properties() object with all values parsed.
@@ -425,7 +419,7 @@ class Properties():
 
     def complete(self, props, prefix=""):
         """
-        This methode completes base dictionary with properties of the given one. 
+        This method completes base dictionary with properties of the given one. 
         If the base does not have some property it will be added. 
         Values of the existing properties will be not overwritten. 
 
@@ -439,7 +433,7 @@ class Properties():
 
     def merge(self, props, with_prefix=""):
         """
-        This methode base dictionary with the given one. 
+        This method base dictionary with the given one. 
         If the base does not have some property it will not be added. 
         Values of the existing properties will be overwritten. 
 
@@ -489,12 +483,13 @@ class Properties():
         for i in range(len(self.srcorigin)):
             if self.srcorigin[i] == "" or self.srcorigin[i].isspace() : self.lines.append("{0}".format(self.srcorigin[i]))
             elif self.srcorigin[i][0] == "#" : self.lines.append("{0}".format(self.srcorigin[i]))
-            # checks if current line has a key which is in defined in self.propsorigin and has not been stored yet
+            # checks if current line has a key which is defined in self.propsorigin and has not been stored yet
             elif self.__getkey__(self.srcorigin[i]) != "" and self.__getkey__(self.srcorigin[i]) not in self.stored:
-                # appends comments attached by the program
-                if self.__getkey__(self.srcorigin[i]) in self.propcomments: self._storecomment(self.__getkey__(self.srcorigin[i]))
-                self.lines.append("{0}={1}".format(self.__getkey__(self.srcorigin[i]), self.get(self.__getkey__(self.srcorigin[i]))))
-                self.stored.append(self.__getkey__(self.srcorigin[i]))
+                key = self.__getkey__(self.srcorigin[i])
+                if key in self.propcomments: self._storecomment(key)
+                if key not in self.commented: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
+                else: self.lines.append("#{0}={1}".format(key, self.propsorigin[key]))
+                self.stored.append(key)
             else: pass
 
 
@@ -512,7 +507,8 @@ class Properties():
             for key in sorted(keys):
                 if key not in self.stored and key in self.propsorigin:
                     if key in self.propcomments: self._storecomment(key)
-                    self.lines.append("{0}={1}".format(key, props[key]))
+                    if key not in self.commented: self.lines.append("{0}={1}".format(key, props[key]))
+                    else: self.lines.append("#{0}={1}".format(key, props[key]))
                     self.stored.append(key)
             if len(self.lines) > previous_len: self.lines.append("")
 
@@ -521,10 +517,11 @@ class Properties():
         """
         Preprares single values not found in source.
         """
-        for key, value in self.propsorigin.items():
+        for key, value in sorted(self.propsorigin.items()):
             if key not in self.stored:
                 if key in self.propcomments: self._storecomment(key)
-                self.lines.append("{0}={1}".format(key, value))
+                if key not in self.commented: self.lines.append("{0}={1}".format(key, value))
+                else: self.lines.append("#{0}={1}".format(key, value))
                 self.stored.append(key)
 
 
@@ -577,9 +574,10 @@ class Properties():
     def get(self, identifier, parsed=False, cast=False):
         """
         Returns value of identifier. 
-        If identifier is not found KeyError is raised.
+        KeyError is raised if identifier is not found or property is commented.
         If parsed is set to True value will be parsed before returning.
         """
+        if identifier in self.commented: raise KeyError
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
         if parsed : value = self.parseline(self.properties[identifier])
         else: value = self.properties[identifier]
@@ -595,12 +593,12 @@ class Properties():
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
 
         matched = {}
-        identifier = re.compile("^{0}$".format(identifier.replace("*", wildcart_re).replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key, value in self.properties.items():
             if re.match(identifier, key) and parsed : matched[key] = self.parseline(value)
             elif re.match(identifier, key) and not parsed : matched[key] = value
-        if cast: 
-            for key, value in matched.items(): 
+        if cast:
+            for key, value in matched.items():
                 if type(value) == str: matched[key] = self.__typeguess__(value)(value)
         return matched
 
@@ -648,7 +646,7 @@ class Properties():
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
 
-        identifier = re.compile("^{0}$".format(identifier.replace("*", wildcart_re).replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append(key)
 
@@ -666,7 +664,7 @@ class Properties():
 
     def remove(self, identifier):
         """
-        This methode removes specified property from interal dictionary. 
+        This method removes specified property from interal dictionary. 
         Removed property will be not saved using store().
         """
         self.properties.pop(identifier)
@@ -675,11 +673,11 @@ class Properties():
 
     def removes(self, identifier):
         """
-        This methode removes properties matching given pattern from interal dictionary. 
+        This method removes properties matching given pattern from interal dictionary. 
         Removed properties will be not saved using store().
         """
         to_remove = []
-        identifier = re.compile("^{0}$".format(identifier.replace("*", wildcart_re).replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key in self.properties.keys():
             if re.match(identifier, key): to_remove.append(key)
         for key in to_remove : self.properties.pop(key)
@@ -688,7 +686,7 @@ class Properties():
 
     def pop(self, identifier, cast=False):
         """
-        This methode removes specified property from interal dictionary and returns its value. 
+        This method removes specified property from interal dictionary and returns its value. 
         Removed property will be not saved using store().
         """
         prop = self.properties.pop(identifier)
@@ -703,7 +701,7 @@ class Properties():
         Removed properties will be not saved using store().
         """
         popped = {}
-        identifier = re.compile("^{0}$".format(identifier.replace("*", wildcart_re).replace(".", "\.")))
+        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key, value in self.properties.items():
             if re.match(identifier, key): 
                 popped[key] = value
@@ -784,7 +782,7 @@ class Properties():
         return singles
 
 
-    def addcomment(self, identifier, comment):
+    def addcomment(self, key, comment):
         """
         Attaches comment to property. 
         Comment can be passed as a string or list of strings.
@@ -794,7 +792,10 @@ class Properties():
 
         Multiline comments are supported - either by passing a list of lines or
         by passing a string containing newline characters '\\n'.
+
+        Raises KeyError when property is not found.
         """
+        if key not in self.properties: raise KeyError
         if type(comment) == str: comment = comment.split("\n")
         elif type(comment) == list:
             _comment = []
@@ -802,7 +803,7 @@ class Properties():
             comment = _comment
         else: comment = [comment]
         for i in range(len(comment)): comment[i] = "#   {0}".format(comment[i])
-        self.propcomments[identifier] = comment
+        self.propcomments[key] = comment
         self.unsaved = True
 
 
@@ -821,7 +822,8 @@ class Properties():
             try : self.addcomment(key, comments[i])
             except IndexError: self.addcomment(key, comments[-1])
             finally: i += 1
-                
+        self.unsaved = True
+
 
     def getcomment(self, key):
         """
@@ -831,3 +833,45 @@ class Properties():
         if key in self.propcomments: comment = self.propcomments[key]
         else: comment = []
         return comment
+
+
+    def comment(self, key):
+        """
+        When property gets commented it is no longer available for modifing.
+        Raises KeyError when property is not found.
+        """
+        if key not in self.properties: raise KeyError
+        if key not in self.commented: self.commented.append(key)
+        self.unsaved = True
+        
+
+    def comments(self, identifier):
+        """
+        Comments every property which key will match given identifier. 
+        """
+        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        for key in self.getnames():
+            if re.match(identifier, key): self.comment(key)
+        self.unsaved = True
+
+
+    def uncomment(self, key):
+        """
+        Uncomments property to make it available for modifing.
+        Raises KeyError when commented property is not found.
+        """
+        if key not in self.commented: raise KeyError
+        self.commented.remove(key)
+        self.unsaved = True
+
+
+    def uncomments(self, identifier):
+        """
+        Uncomments every property which key will match given identifier.
+        """
+        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        to_uncomment = []
+        for i in range(len(self.commented)):
+            if re.match(identifier, self.commented[i]): to_uncomment.append(self.commented[i])
+        for key in to_uncomment: self.uncomment(key)
+        self.unsaved = True
