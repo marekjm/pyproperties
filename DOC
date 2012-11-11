@@ -132,6 +132,14 @@ CLASSES
      |      Every line begining with # is considered comment and not parsed. 
      |      Lines containing only whitespace are also not parsed.
      |  
+     |  __extractcomments__(self)
+     |      Extracts comments loaded source to self.propcomments
+     |      It parses self.source line by line. 
+     |      
+     |      When it finds valid line it goes up the file and appends 
+     |      every line which begins with '#' or '!' and stops on 
+     |      line which is only whitespace or a valid line.
+     |  
      |  __getkey__(self, line)
      |      Extracts key from given line and returns it. 
      |      If the line is comment or is blank returns None.
@@ -142,15 +150,18 @@ CLASSES
      |      It is done this way to distinguish properties with empty value 
      |      from lines which do not carry a property.
      |  
-     |  __init__(self, path='', type_convert=False)
+     |  __init__(self, path='', cast=False, no_read=False)
      |      If you give a path as an argument it will be loaded and processed as properties file. 
      |      If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
-     |      foo.read(path, type_convert) to load some properties or 
+     |      foo.read(path, cast) to load some properties or 
      |      you can use the blank properties to create completly new set of properties.
-     |      You can pass type_convert as True to tell pyproperites that it should guess the type of the property 
+     |      You can pass cast as True to tell pyproperites that it should guess the type of the property 
      |      and convert it accordingly.
      |      
-     |      This method (__init__) just calls read() with arguments passed to itself.
+     |      This method just calls read() with arguments passed to itself or blank() when no arguments are passed.
+     |      
+     |      To create a blank instance with path specified you can run: 
+     |          pyproperites.Properties("/home/user/some/path/foo.properties", no_read=True)
      |  
      |  __isvalidline__(self, line)
      |      Checks if the line contains valid property string. 
@@ -177,10 +188,29 @@ CLASSES
      |      convert it accordingly. It can guess three types: int, float and string.
      |  
      |  addcomment(self, identifier, comment)
-     |      Attaches comment to property. 
-     |      Comment can be passed as a string or a list. 
-     |      Multiline comments are supported - either by passing a list of lines or
-     |      by passing a string containing newline characters '\n'.
+     |              Attaches comment to property. 
+     |              Comment can be passed as a string, list or list of strings.
+     |      
+     |                  foo.addcomment("foo", "first", "part")
+     |                  foo.addcomment("foo", ["first", "part"])
+     |                  foo.addcomment("foo", "first
+     |      part")
+     |      
+     |              Multiline comments are supported - either by passing a list of lines or
+     |              by passing a string containing newline characters '\n'.
+     |  
+     |  addcomment2(self, identifier, *comment)
+     |              Attaches comment to property. 
+     |              Comment can be passed as a string or list of strings.
+     |      
+     |                  foo.addcomment("foo", "first", "part")
+     |                  foo.addcomment("foo", ["first", "part"])
+     |                  foo.addcomment("foo", "first
+     |      part")
+     |      
+     |              FOR IMPLEMENTATION:
+     |                  Multiline comments are supported - either by passing a list of lines or
+     |                  by passing a string containing newline characters '\n'.
      |  
      |  addcomments(self, identifier, *comments)
      |              Attaches comment to properties which will match the identifier. 
@@ -291,7 +321,7 @@ CLASSES
      |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
      |      Removed properties will be not saved using store().
      |  
-     |  read(self, path, cast=False)
+     |  read(self, path='', cast=False)
      |      Reads properties file and processes it to be available in Python 3 program.
      |      This method defines self.path and extracts name of loaded properties file and stores it in self.name.
      |      Then runs these methods in following order:
@@ -340,7 +370,7 @@ CLASSES
      |      If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
      |      as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
      |  
-     |  store(self, path='', force=False)
+     |  store(self, path='', force=False, no_dump=False)
      |      Writes properties to given 'path'.
      |      'path' defaults to self.path
      |      
@@ -349,6 +379,9 @@ CLASSES
      |      You can explicitly silence it by passing force as True.
      |      
      |      If self.path is empty it will be set to given path.
+     |      
+     |      If 'no_dump' is passed as True lines will be generated 
+     |      but not written to file.
      |  
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -507,10 +540,10 @@ CLASSES
 DATA
     guess_float_re = r'^[-]{0,1}[0-9]*\.[0-9]+$'
     guess_int_re = '^[-]{0,1}[0-9]+$'
-    wildcart_re = '[a-z0-9_.]*'
+    wildcart_re = '[a-z0-9_.-]*'
 
 VERSION
-    0.1.4
+    0.1.5
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py

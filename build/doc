@@ -1,4 +1,0 @@
-#!/bin/bash
-
-pydoc3 ./modules/pyproperties.py > DOC
-less DOC

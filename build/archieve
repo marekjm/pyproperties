@@ -1,3 +1,0 @@
-#!/bin/bash
-
-tar -Jvcf archives/pyproperties-$1.tar.xz modules/pyproperties.py data/ manual/ DOC LICENSE README RELEASE 
