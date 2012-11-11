@@ -5,6 +5,5 @@
 run.py
 modules/__pycache__/
 archives/
+Makefile
 scitesession
-x.properties
-gnome-*
