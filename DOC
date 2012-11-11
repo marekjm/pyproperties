@@ -189,28 +189,14 @@ CLASSES
      |  
      |  addcomment(self, identifier, comment)
      |              Attaches comment to property. 
-     |              Comment can be passed as a string, list or list of strings.
+     |              Comment can be passed as a string or list of strings.
      |      
-     |                  foo.addcomment("foo", "first", "part")
      |                  foo.addcomment("foo", ["first", "part"])
      |                  foo.addcomment("foo", "first
      |      part")
      |      
      |              Multiline comments are supported - either by passing a list of lines or
      |              by passing a string containing newline characters '\n'.
-     |  
-     |  addcomment2(self, identifier, *comment)
-     |              Attaches comment to property. 
-     |              Comment can be passed as a string or list of strings.
-     |      
-     |                  foo.addcomment("foo", "first", "part")
-     |                  foo.addcomment("foo", ["first", "part"])
-     |                  foo.addcomment("foo", "first
-     |      part")
-     |      
-     |              FOR IMPLEMENTATION:
-     |                  Multiline comments are supported - either by passing a list of lines or
-     |                  by passing a string containing newline characters '\n'.
      |  
      |  addcomments(self, identifier, *comments)
      |              Attaches comment to properties which will match the identifier. 
@@ -238,6 +224,10 @@ CLASSES
      |      Returns value of identifier. 
      |      If identifier is not found KeyError is raised.
      |      If parsed is set to True value will be parsed before returning.
+     |  
+     |  getcomment(self, key)
+     |      Returns comment of given key. 
+     |      Returns empty list if property has no comment.
      |  
      |  getgroups(self)
      |      Returns list of properties-groups in the internal dictionary. 

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 """Working with *.properties files.
 
@@ -290,6 +290,7 @@ class Properties():
         self.properties = {}
         self.propsorigin = {}
         self.propcomments = {}
+        self.commented = {}
         self.unsaved = False
 
 
@@ -314,6 +315,7 @@ class Properties():
         self.__split__()
         if cast : self.__tcasts__("*")
         self.propcomments = {}
+        self.commented = {}
         self.__extractcomments__()
         self.unsaved = False
 
@@ -484,13 +486,13 @@ class Properties():
         """
         Prepares data which came with source for storing.
         """
-        for i in range(len(self.srcorigin)): 
+        for i in range(len(self.srcorigin)):
             if self.srcorigin[i] == "" or self.srcorigin[i].isspace() : self.lines.append("{0}".format(self.srcorigin[i]))
             elif self.srcorigin[i][0] == "#" : self.lines.append("{0}".format(self.srcorigin[i]))
             # checks if current line has a key which is in defined in self.propsorigin and has not been stored yet
-            elif self.__getkey__(self.srcorigin[i]) != "" and self.__getkey__(self.srcorigin[i]) not in self.stored: 
+            elif self.__getkey__(self.srcorigin[i]) != "" and self.__getkey__(self.srcorigin[i]) not in self.stored:
                 # appends comments attached by the program
-                if self.__getkey__(self.srcorigin[i]) in self.propcomments: [ self.lines.append("{0}".format(line)) for line in self.propcomments[self.__getkey__(self.srcorigin[i])] ]
+                if self.__getkey__(self.srcorigin[i]) in self.propcomments: self._storecomment(self.__getkey__(self.srcorigin[i]))
                 self.lines.append("{0}={1}".format(self.__getkey__(self.srcorigin[i]), self.get(self.__getkey__(self.srcorigin[i]))))
                 self.stored.append(self.__getkey__(self.srcorigin[i]))
             else: pass
@@ -509,7 +511,7 @@ class Properties():
             [keys.append(key) for key in props]
             for key in sorted(keys):
                 if key not in self.stored and key in self.propsorigin:
-                    if key in self.propcomments: [self.lines.append("{0}".format(line)) for line in self.propcomments[ key ]]
+                    if key in self.propcomments: self._storecomment(key)
                     self.lines.append("{0}={1}".format(key, props[key]))
                     self.stored.append(key)
             if len(self.lines) > previous_len: self.lines.append("")
@@ -521,9 +523,16 @@ class Properties():
         """
         for key, value in self.propsorigin.items():
             if key not in self.stored:
-                if key in self.propcomments: [self.lines.append("{0}".format(line)) for line in self.propcomments[ key ]]
+                if key in self.propcomments: self._storecomment(key)
                 self.lines.append("{0}={1}".format(key, value))
                 self.stored.append(key)
+
+
+    def _storecomment(self, key):
+        """
+        Appends comment of a property of given key to self.lines
+        """
+        [ self.lines.append("{0}".format(line)) for line in self.getcomment(key) ]
 
 
     def _dump(self, path):
@@ -778,45 +787,22 @@ class Properties():
     def addcomment(self, identifier, comment):
         """
         Attaches comment to property. 
-        Comment can be passed as a string, list or list of strings.
+        Comment can be passed as a string or list of strings.
 
-            foo.addcomment("foo", "first", "part")
             foo.addcomment("foo", ["first", "part"])
             foo.addcomment("foo", "first\npart")
 
         Multiline comments are supported - either by passing a list of lines or
         by passing a string containing newline characters '\\n'.
         """
-        if type(comment) == str and "\n" in comment: comment = comment.split("\n")
-        elif type(comment) == list: pass
+        if type(comment) == str: comment = comment.split("\n")
+        elif type(comment) == list:
+            _comment = []
+            [_comment.extend(l.split("\n")) for l in comment]
+            comment = _comment
         else: comment = [comment]
         for i in range(len(comment)): comment[i] = "#   {0}".format(comment[i])
-        self.propcomments[ identifier ] = comment
-        self.unsaved = True
-
-
-    def addcomment2(self, identifier, *comment):
-        """
-        Attaches comment to property. 
-        Comment can be passed as a string or list of strings.
-
-            foo.addcomment("foo", "first", "part")
-            foo.addcomment("foo", ["first", "part"])
-            foo.addcomment("foo", "first\npart")
-
-        FOR IMPLEMENTATION:
-            Multiline comments are supported - either by passing a list of lines or
-            by passing a string containing newline characters '\\n'.
-        """
-        _comment = []
-        for s in comment: print(s)
-        for s in comment:
-            s = s.split("\n")
-            for i in s:
-                line = "#   {0}".format(i)
-                print(line)
-                _comment.append(line)
-        self.propcomments[ identifier ] = comment
+        self.propcomments[identifier] = comment
         self.unsaved = True
 
 
@@ -835,3 +821,13 @@ class Properties():
             try : self.addcomment(key, comments[i])
             except IndexError: self.addcomment(key, comments[-1])
             finally: i += 1
+                
+
+    def getcomment(self, key):
+        """
+        Returns comment of given key. 
+        Returns empty list if property has no comment.
+        """
+        if key in self.propcomments: comment = self.propcomments[key]
+        else: comment = []
+        return comment

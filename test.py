@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import unittest
 import re
@@ -345,11 +345,39 @@ class StoreTest(unittest.TestCase):
 
 
 class CommentTest(unittest.TestCase):
-    def test_addcomment(self):
+    def test_addcommentTestSimpleString(self):
         foo = pyproperties.Properties()
-        foo.set("foo", "foo")
-        foo.addcomment2("foo", "first", "part")
+        foo.set("foo", "")
+        foo.addcomment("foo", "first part")
+        self.assertEqual(["#   first part"], foo.propcomments["foo"])
+
+
+    def test_addcommentTestStringWithNewlines(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "")
+        foo.addcomment("foo", "this\nis\na\ncomment")
+        self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.propcomments["foo"])
+
+
+    def test_addcommentTestSimpleList(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "")
+        foo.addcomment("foo", ["first", "part"])
         self.assertEqual(["#   first", "#   part"], foo.propcomments["foo"])
+
+
+    def test_addcommentTestListWithNewlines(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "")
+        foo.addcomment("foo", ["this\nis", "a\ncomment"])
+        self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.propcomments["foo"])
+        
+        
+    def test_getcomment(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "")
+        foo.addcomment("foo", ["this\nis", "a\ncomment"])
+        self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.getcomment("foo"))
 
 
 if __name__ == "__main__" : unittest.main()

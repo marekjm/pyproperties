@@ -2,8 +2,8 @@
 !.gitignore
 *.pyc
 *.sh
+*.mdown
 run.py
 modules/__pycache__/
 archives/
-Makefile
 scitesession

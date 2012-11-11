@@ -1,18 +1,19 @@
-Release 0.1.4
+#### Release 0.1.5
 
-        This release brings new submethod which runs during store(). It is called _dump().
-    While it is yet-another-one submethod in store() it gives programmer even greter control
-    over the process of writing properties to file. By passing 'no_dump' argument as True to
-    store() method you can tell it to only generate lines and use your custom function to write 
-    them to file.
+>       This release brings new submethod which runs during store(). It is called _dump().
+>   While it is yet-another-one submethod in store() it gives programmer even greter control
+>   over the process of writing properties to file. By passing 'no_dump' argument as True to
+>   store() method you can tell it to only generate lines and use your custom function to write 
+>   them to file.
 
 ---------------------------------------------------------------------------------------------
 
 
-    This release brings you:
+##### This release brings you:
     *   a update(s),
     *   b fix(es),
     *   c new feature(s).
+
 
     ->  pyproperties.py
         *   upd:    addcomment() takes list of strings as an argumet, read DOC for more
