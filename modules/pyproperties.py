@@ -30,6 +30,7 @@ class Properties():
         self.properties     -   working copy of properties dictionary,
         self.propsorigin    -   original dictionary of properties,
         self.propcomments   -   dictionary containing comments of properties,
+        self.origin_commented-   dictionary containing commented properties,
         self.commented      -   dictionary containing commented properties,
     """
 
@@ -48,7 +49,7 @@ class Properties():
             pyproperites.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
         if path != "" and not path.isspace() and not no_read: self.read(path, cast)
-        elif path == "" : self.blank()
+        elif path == "": self.blank()
         elif path != "" and not path.isspace() and no_read: 
             self.blank()
             self.path = path
@@ -83,7 +84,7 @@ class Properties():
         propvalues = {}
 
         for root, dirs, files in os.walk(self.path):
-            for file in files :
+            for file in files:
                 proppaths.append(os.path.normpath(os.path.abspath("{0}{1}{2}".format(root, os.path.sep, file))))
 
         for i in range(len(proppaths)):
@@ -91,7 +92,7 @@ class Properties():
 
         for i in range(len(proppaths)):
             value = open(proppaths[i]).read()
-            if value[-2:] == "\\n" : value = value[:-2]
+            if value[-2:] == "\\n": value = value[:-2]
             propvalues[ propnames[i] ] = value
 
         for key, value in propvalues.items():
@@ -133,7 +134,7 @@ class Properties():
         i = 0
         while i < len(extracted):
             line = extracted[i]
-            while line[-1] == "\\" :    #  if line ends with backslash read next line and append it to
+            while line[-1] == "\\":    #  if line ends with backslash read next line and append it to
                 i += 1
                 line = line[:-1] + extracted[i].lstrip()
             properties.append(line.lstrip())
@@ -149,6 +150,7 @@ class Properties():
         for i in range(len(self.source)):
             if self.__iscommentedprop__(self.source[i]):
                 self.commented.append(self.__getkey__(self.source[i][1:]))
+                self.origin_commented.append(self.__getkey__(self.source[i][1:]))
                 self.source[i] = self.source[i][1:]
 
 
@@ -172,7 +174,7 @@ class Properties():
                         while n >= 0:
                             try:
                                 if self.source[n][0] not in ["#", "!"]: break
-                                comment.append(self.source[n].rstrip())
+                                comment.append(self.source[n][1:].strip())
                                 n -= 1
                             except IndexError: break
                             finally: pass
@@ -215,7 +217,7 @@ class Properties():
         identifier = re.compile(identifier.replace("*", wildcart_re))
         for key in self.properties.keys():
             if re.match(identifier, key): keys.append(key)
-        for key in keys : self.__tcast__(key)
+        for key in keys: self.__tcast__(key)
 
 
     def __typeguess__(self, prop):
@@ -237,7 +239,7 @@ class Properties():
         Extracts key from given line and returns it. 
         If the line is comment or is blank returns None.
         """
-        if line == "" : key = None
+        if line == "": key = None
         elif line[0] in ["#", "!"] or line.isspace(): key = None
         elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
         else: key = line.split("=", 1)[0].strip()
@@ -252,7 +254,7 @@ class Properties():
         from lines which do not carry a property.
         """
         if line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
-        if line == "" : value = None
+        if line == "": value = None
         elif line[0] in ["#", "!"] or line.isspace(): value = None
         elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
         else: value = line.split("=", 1)[1].lstrip()
@@ -262,8 +264,7 @@ class Properties():
 
     def _appendsrc(self, props, prefix=""):
         """
-        This methods appends source of given properties 
-        to the base.
+        This methods appends source of given properties to the base.
         """
         lines = []
         for line in props.srcorigin:
@@ -287,7 +288,9 @@ class Properties():
         self.properties = {}
         self.propsorigin = {}
         self.propcomments = {}
+        self.origin_propcomments = {}
         self.commented = []
+        self.origin_commented = []
         self.unsaved = False
 
 
@@ -304,11 +307,13 @@ class Properties():
         elif os.path.isdir(self.path): self.__loadd__(self.path)
         else: raise LoadError("'{0}' no such file or directory".format(path))
         self.commented = []
+        self.origin_commented = []
         self.__extractcommentedprops__()
         self.__extractprops__()
         self.__split__()
-        if cast : self.__tcasts__("*")
+        if cast: self.__tcasts__("*")
         self.propcomments = {}
+        self.origin_propcomments = {}
         self.__extractcomments__()
         self.unsaved = False
         self.save()
@@ -333,7 +338,7 @@ class Properties():
         """
         new = Properties(self.path)
         self.complete(new, "")
-        if overwrite : self.merge(new)
+        if overwrite: self.update(new)
 
 
     def parseline(self, value):
@@ -345,8 +350,8 @@ class Properties():
             while "$(" in value and ")" in value:
                 a = value.find("$(")
                 b = value[a:].find(")")
-                name = value[a+2 : a+b]
-                if a == -1 or b == -1 : break
+                name = value[a+2: a+b]
+                if a == -1 or b == -1: break
                 value = value.replace("$({0})".format(name), str(self.properties[name]))
         return value
 
@@ -390,14 +395,12 @@ class Properties():
         """
         path = path.strip()
         new = None
-        try : 
+        try: 
             new = Properties(path)
-            if prefix == " " : prefix = new.name
-        except IOError : 
-            print("\v\tIOError: [Errno 2]: file not found '{0}': properties cannot be joined\v".format(path))
-            raise
-        finally :
-            if new :
+            if prefix == " ": prefix = new.name
+        except IOError: raise
+        finally:
+            if new:
                 self.complete(new, prefix)
                 self._appendsrc(new, prefix)
             else: pass
@@ -406,59 +409,98 @@ class Properties():
 
     def melt(self, properties):
         """
-        Completes and merges 'properties' with the base. 
-
+        Completes and merges properties with the base. 
         Source of melted properties is appended to base.
         """
         self.complete(properties)
-        self.merge(properties)
-        self.source.append("")
-        self.source += properties.source
+        self.update(properties)
+        self._appendsrc(properties)
         self.unsaved = True
 
 
     def complete(self, props, prefix=""):
         """
         This method completes base dictionary with properties of the given one. 
-        If the base does not have some property it will be added. 
-        Values of the existing properties will be not overwritten. 
+        If a property does not exist in base it will be added. 
+        If a property exist in base it's value, comments and status (un/commented) 
+        will not be overwritten. 
 
-        Source of merged properties are not appended to the base.
+        If a prefix is specified - it will be added before each key.
+
+        Source of completed properties is not appended to the base.
+        Comment information is appended to the base.
+
+        Properties for completion are taken from `origins` of given props so 
+        before you complete it's better to call `save()`.
+        During completion properties are not copied directly to `origins` of the base 
+        properties.
         """
-        for key, value in props.properties.items():
+        completed = []
+        for key, value in props.propsorigin.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key not in self.properties : self.properties[key] = value
+            if key not in self.properties: 
+                self.set(key, value)
+                if key not in completed: completed.append(key)
+        for key, value in props.origin_propcomments.items():
+            if prefix: key = "{0}.{1}".format(prefix, key)
+            if key not in self.propcomments and key in completed: self.addcomment(key, value)
+        for key in props.origin_commented:
+            if prefix: key = "{0}.{1}".format(prefix, key)
+            if key not in self.commented and key in completed: self.comment(key)
         self.unsaved = True
 
 
-    def merge(self, props, with_prefix=""):
+    def update(self, props, prefix=""):
         """
-        This method base dictionary with the given one. 
-        If the base does not have some property it will not be added. 
-        Values of the existing properties will be overwritten. 
+        This method updates base properties with the given one. 
+        If a property does not exist in base it will not be added. 
+        If a property exist in base it's value will be overwritten. 
 
         If prefix is specified only properties which are preceded with 
         this key will have their value changed.
 
-        Source of merged properties are not appended to the base.
+        Source of merged properties is not appended to the base.
+        Comment information is appended to the base.
+
+        Properties for merging are taken from `origins` of given props so 
+        before you merge it's better to call `save()`.
+        During merging properties are not copied directly to `origins` of the base 
+        properties.
         """
-        for key, value in props.properties.items(): 
-            if with_prefix: key = "{0}.{1}".format(with_prefix, key)
-            if key in self.properties: self.properties[key] = value
+        for key, value in props.propsorigin.items():
+            if prefix: key = "{0}.{1}".format(prefix, key)
+            if key in self.properties: self.set(key, value)
         self.unsaved = True
+
+
+    def include(self, path):
+        """
+        Includes one file into another. Used only when processing source
+        with __include__ properties.
+        """
+        props = pyproperites.Properties(path)
 
 
     def save(self):
         """
-        Saves changes made in self.properties by moving self.properties to self.propsorigin
-        and self.source to self.srcorigin
+        Saves changes made in properties, source and comments.
         """
         saved = {}
         for key, value in self.properties.items(): saved[key] = value
         self.propsorigin = saved
+        
         saved = []
-        for line in self.source: saved.append(line)
+        [ saved.append(line) for line in self.source ]
         self.srcorigin = saved
+        
+        saved = []
+        [ saved.append(key) for key in self.commented ]
+        self.origin_commented = saved
+
+        saved = {}
+        for key, value in self.propcomments.items(): saved[key] = value
+        self.origin_propcomments = saved
+        
         self.unsaved = False
 
 
@@ -481,13 +523,13 @@ class Properties():
         Prepares data which came with source for storing.
         """
         for i in range(len(self.srcorigin)):
-            if self.srcorigin[i] == "" or self.srcorigin[i].isspace() : self.lines.append("{0}".format(self.srcorigin[i]))
-            elif self.srcorigin[i][0] == "#" : self.lines.append("{0}".format(self.srcorigin[i]))
+            if self.srcorigin[i] == "" or self.srcorigin[i].isspace(): self.lines.append("{0}".format(self.srcorigin[i]))
+            elif self.srcorigin[i][0] == "#": self.lines.append("{0}".format(self.srcorigin[i]))
             # checks if current line has a key which is defined in self.propsorigin and has not been stored yet
             elif self.__getkey__(self.srcorigin[i]) != "" and self.__getkey__(self.srcorigin[i]) not in self.stored:
                 key = self.__getkey__(self.srcorigin[i])
                 if key in self.propcomments: self._storecomment(key)
-                if key not in self.commented: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
+                if key not in self.origin_commented: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
                 else: self.lines.append("#{0}={1}".format(key, self.propsorigin[key]))
                 self.stored.append(key)
             else: pass
@@ -497,7 +539,7 @@ class Properties():
         """
         Prepares groups not found in source file.
         """
-        if self.lines != [] : self.lines.append("")
+        if self.lines != []: self.lines.append("")
         groups = self.getgroups()
         for identifier in groups:
             previous_len = len(self.lines)
@@ -507,7 +549,7 @@ class Properties():
             for key in sorted(keys):
                 if key not in self.stored and key in self.propsorigin:
                     if key in self.propcomments: self._storecomment(key)
-                    if key not in self.commented: self.lines.append("{0}={1}".format(key, props[key]))
+                    if key not in self.origin_commented: self.lines.append("{0}={1}".format(key, props[key]))
                     else: self.lines.append("#{0}={1}".format(key, props[key]))
                     self.stored.append(key)
             if len(self.lines) > previous_len: self.lines.append("")
@@ -520,7 +562,7 @@ class Properties():
         for key, value in sorted(self.propsorigin.items()):
             if key not in self.stored:
                 if key in self.propcomments: self._storecomment(key)
-                if key not in self.commented: self.lines.append("{0}={1}".format(key, value))
+                if key not in self.origin_commented: self.lines.append("{0}={1}".format(key, value))
                 else: self.lines.append("#{0}={1}".format(key, value))
                 self.stored.append(key)
 
@@ -529,7 +571,7 @@ class Properties():
         """
         Appends comment of a property of given key to self.lines
         """
-        [ self.lines.append("{0}".format(line)) for line in self.getcomment(key) ]
+        [ self.lines.append("#   {0}".format(line)) for line in self.getcomment(key) ]
 
 
     def _dump(self, path):
@@ -559,7 +601,7 @@ class Properties():
         but not written to file.
         """
         if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
-        if path == "" : path = self.path    # this line defaults the value
+        if path == "": path = self.path    # this line defaults the value
         if path == "" or path.isspace(): raise StoreError("no path specified")
         if path and not self.path: self.path = path
         self.lines = []
@@ -579,7 +621,7 @@ class Properties():
         """
         if identifier in self.commented: raise KeyError
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
-        if parsed : value = self.parseline(self.properties[identifier])
+        if parsed: value = self.parseline(self.properties[identifier])
         else: value = self.properties[identifier]
         if cast and type(value) == str: value = self.__typeguess__(value)(value)
         return value
@@ -595,8 +637,8 @@ class Properties():
         matched = {}
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key, value in self.properties.items():
-            if re.match(identifier, key) and parsed : matched[key] = self.parseline(value)
-            elif re.match(identifier, key) and not parsed : matched[key] = value
+            if re.match(identifier, key) and parsed: matched[key] = self.parseline(value)
+            elif re.match(identifier, key) and not parsed: matched[key] = value
         if cast:
             for key, value in matched.items():
                 if type(value) == str: matched[key] = self.__typeguess__(value)(value)
@@ -612,12 +654,12 @@ class Properties():
         matched = {}
         if type(identifier) == str: identifier= re.compile(identifier)
         elif str(type(identifier)) == "<class '_sre.SRE_Pattern'>": pass
-        else: raise TypeError("identifer must be either compiled or string regular expression pattern, but '{0}' type was given".format(str(type(identifier))[8:-2]))
+        else: raise TypeError("identifer must be either string or compiled regular expression pattern, but '{0}' type was given".format(str(type(identifier))[8:-2]))
 
         for key, value in self.properties.items():
-            if re.match(identifier, key) and parsed : matched[key] = self.parseline(value)
-            elif re.match(identifier, key) and not parsed : matched[key] = value
-        if cast : 
+            if re.match(identifier, key) and parsed: matched[key] = self.parseline(value)
+            elif re.match(identifier, key) and not parsed: matched[key] = value
+        if cast:
             for key, value in matched.items(): matched[key] = self.__typeguess__(value)(value)
         return matched
 
@@ -649,14 +691,13 @@ class Properties():
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append(key)
-
         keys.sort()
         i = 0
-        for key in keys :
-            try : value = values[i]
-            except IndexError : value = values[-1]
-            finally : 
-                if key in kwargs : value = kwargs[key]
+        for key in keys:
+            try: value = values[i]
+            except IndexError: value = values[-1]
+            finally: 
+                if key in kwargs: value = kwargs[key]
                 else: i += 1   # increasing the counter if value wasn't taken from the kwargs
                 self.set(key, value)
         self.unsaved = True
@@ -680,7 +721,7 @@ class Properties():
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key in self.properties.keys():
             if re.match(identifier, key): to_remove.append(key)
-        for key in to_remove : self.properties.pop(key)
+        for key in to_remove: self.properties.pop(key)
         self.unsaved = True
 
 
@@ -690,7 +731,7 @@ class Properties():
         Removed property will be not saved using store().
         """
         prop = self.properties.pop(identifier)
-        if cast : prop = self.__typeguess__(prop)(prop)
+        if cast: prop = self.__typeguess__(prop)(prop)
         self.unsaved = True
         return prop
 
@@ -706,7 +747,7 @@ class Properties():
             if re.match(identifier, key): 
                 popped[key] = value
         for key in popped.keys(): self.properties.pop(key)
-        if cast : 
+        if cast: 
             for key, value in popped.items():
                 popped[key] = self.__typeguess__(value)(value)
         self.unsaved = True
@@ -717,7 +758,10 @@ class Properties():
         """
         Returns sorted list of the property names. 
         """
-        return sorted(list(self.properties.keys()))
+        keys = []
+        for key in list(self.properties.keys()):
+            if key not in self.commented: keys.append(key)
+        return sorted(keys)
 
 
     def getkeysof(self, value):
@@ -727,7 +771,7 @@ class Properties():
         """
         keys = []
         for propkey, propvalue in self.properties.items():
-            if value == propvalue : keys.append(propkey)
+            if value == propvalue: keys.append(propkey)
         return keys
 
 
@@ -758,13 +802,13 @@ class Properties():
         skeys = []
         [ skeys.append(key.split(".")) for key in self.getnames() ]
         groups = []
-        for skey in skeys :
+        for skey in skeys:
             identifier = ""
-            for key in skey :
-                if key.isdigit() : key = "*"
+            for key in skey:
+                if key.isdigit(): key = "*"
                 identifier = "{}.{}".format(identifier, key)
             identifier = identifier[1:]
-            if identifier not in groups and len(self.gets(identifier)) > 1 : groups.append(identifier)
+            if identifier not in groups and len(self.gets(identifier)) > 1: groups.append(identifier)
         return groups
 
 
@@ -775,10 +819,10 @@ class Properties():
         """
         groups = self.getgroups()
         singles = []
-        for key in self.getnames() :
+        for key in self.getnames():
             key = re.sub(re.compile("\.[0-9]+\."), ".*.", key)
             key = re.sub(re.compile("\.[0-9]+$"), ".*", key)
-            if key not in groups : singles.append(key)
+            if key not in groups: singles.append(key)
         return singles
 
 
@@ -802,7 +846,7 @@ class Properties():
             [_comment.extend(l.split("\n")) for l in comment]
             comment = _comment
         else: comment = [comment]
-        for i in range(len(comment)): comment[i] = "#   {0}".format(comment[i])
+        for i in range(len(comment)): comment[i] = "{0}".format(comment[i])
         self.propcomments[key] = comment
         self.unsaved = True
 
@@ -819,9 +863,18 @@ class Properties():
         keys = self.gets(identifier)
         i = 0
         for key in keys:
-            try : self.addcomment(key, comments[i])
+            try: self.addcomment(key, comments[i])
             except IndexError: self.addcomment(key, comments[-1])
             finally: i += 1
+        self.unsaved = True
+
+
+    def rmcomment(self, key):
+        """
+        Removes comment of property of given key. 
+        Does not raise KeyError when property is not found.
+        """
+        if key in self.propcomments: self.propcomments.pop(key)
         self.unsaved = True
 
 
@@ -840,7 +893,7 @@ class Properties():
         When property gets commented it is no longer available for modifing.
         Raises KeyError when property is not found.
         """
-        if key not in self.properties: raise KeyError
+        if key not in self.properties: raise KeyError("'{0}' is not in properties of {1}".format(key, self))
         if key not in self.commented: self.commented.append(key)
         self.unsaved = True
         
@@ -857,11 +910,10 @@ class Properties():
 
     def uncomment(self, key):
         """
-        Uncomments property to make it available for modifing.
-        Raises KeyError when commented property is not found.
+        Uncomments property to make it available for modifing. 
+        Does not raise any errors when key is not found.
         """
-        if key not in self.commented: raise KeyError
-        self.commented.remove(key)
+        if key in self.commented: self.commented.remove(key)
         self.unsaved = True
 
 

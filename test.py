@@ -46,8 +46,8 @@ class LoadTest(unittest.TestCase):
                     "name.2":"  William  ",
                     "alert":"Fire!",
                 }
-        comments = {"message.0":["#   This is a comment for massage.0"], 
-                    "name.0":["#   This is a comment for name.0 which", "#   value is \"John the Average\""],
+        comments = {"message.0":["This is a comment for massage.0"], 
+                    "name.0":["This is a comment for name.0 which", "value is \"John the Average\""],
                     }
         src = [ "#   second simple properties file",
                 "#   used for testing properties.py module",
@@ -73,7 +73,7 @@ class LoadTest(unittest.TestCase):
                 "prop.1=Bar",
                 "prop.2=Baz",
                 ]
-        propcomments = {"prop.0":["#   this is a comment"], "prop.1":["#   this is commented property"]}
+        propcomments = {"prop.0":["this is a comment"], "prop.1":["this is commented property"]}
         props = {
                 "prop.0":"Foo",
                 "prop.1":"Bar",
@@ -294,6 +294,129 @@ class CopyTest(unittest.TestCase):
         self.assertNotEqual(foo.properties, foo2.properties)
 
 
+class UpdateTest(unittest.TestCase):
+    def testUpdateSimple(self):
+        self.assertEqual(0, 1)
+
+
+    def testUpdateWithComments(self):
+        self.assertEqual(0, 1)
+
+
+class CompleteTest(unittest.TestCase):
+    def testCompleteSimple(self):
+        foo = pyproperties.Properties()
+        bar = pyproperties.Properties()
+        foo_completed = {
+                        "prop.0":"0",
+                        "prop.1":"1",
+                        "prop.2":"2",
+                        "prop.3":"0x3",
+                        "prop.4":"0x4",
+                        }
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        foo.set("prop.2", "2")
+        foo.save()
+        bar.set("prop.2", "0x2")
+        bar.set("prop.3", "0x3")
+        bar.set("prop.4", "0x4")
+        bar.save()
+        foo.complete(bar)
+        self.assertEqual(foo_completed, foo.properties)
+        self.assertNotEqual(foo_completed, foo.propsorigin)
+        foo.save()
+        self.assertEqual(foo_completed, foo.propsorigin)
+
+
+    def testCompleteWithComments(self):
+        foo = pyproperties.Properties()
+        bar = pyproperties.Properties()
+        foo_completed = {
+                        "prop.0":"0",
+                        "prop.1":"1",
+                        "prop.2":"0x2",
+                        }
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        foo.save()
+        bar.set("prop.1", "0x1")
+        bar.set("prop.2", "0x2")
+        bar.addcomment("prop.2", "this is a comment")
+        bar.save()
+        foo.complete(bar)
+        self.assertEqual(foo_completed, foo.properties)
+        self.assertEqual({"prop.2":["this is a comment"]}, foo.propcomments)
+        self.assertNotEqual(foo_completed, foo.propsorigin)
+        self.assertNotEqual({"prop.2":["this is a comment"]}, foo.origin_propcomments)
+        foo.save()
+        self.assertEqual(foo_completed, foo.propsorigin)
+    
+    
+    def testCompleteWithCommentedNotAppend(self):
+        foo = pyproperties.Properties()
+        bar = pyproperties.Properties()
+        foo_completed = {
+                        "prop.0":"0",
+                        "prop.1":"1",
+                        "prop.2":"0x2",
+                        }
+        foo_commented = []
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        foo.save()
+        bar.set("prop.1", "0x1")
+        bar.set("prop.2", "0x2")
+        bar.comment("prop.1")
+        bar.save()
+        foo.complete(bar)
+        self.assertEqual(foo_completed, foo.properties)
+        self.assertEqual(foo_commented, foo.commented)
+
+
+    def testCompleteWithCommentedAppend(self):
+        foo = pyproperties.Properties()
+        bar = pyproperties.Properties()
+        foo_completed = {
+                        "prop.0":"0",
+                        "prop.1":"1",
+                        "prop.2":"0x2",
+                        }
+        foo_commented = ["prop.2"]
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        foo.save()
+        bar.set("prop.1", "0x1")
+        bar.set("prop.2", "0x2")
+        bar.comment("prop.2")
+        bar.save()
+        foo.complete(bar)
+        self.assertEqual(foo_completed, foo.properties)
+        self.assertEqual(foo_commented, foo.commented)
+
+
+class MergeTest(unittest.TestCase):
+    def testMergeSimple(self):
+        self.assertEqual(0, 1)
+
+
+class IncludeTest(unittest.TestCase):
+    def xtestIncludeSimple(self):
+        test_file = pyproperties.Properties("./data/properties/test_include.properties")
+        src =    [
+                "#   this is file used for ",
+                "#   testing include() method",
+                "",
+                "#   this is a comment",
+                "prop.0=Foo",
+                "",
+                "#   this is commented property",
+                "#prop.1=Bar",
+                "prop.2=Baz",
+                ]
+        self.assertEqual(src, test_file.source)
+
+
 class StoreTest(unittest.TestCase):
     def testRaisesUnsavedChangesError(self):
         foo = pyproperties.Properties()
@@ -308,7 +431,7 @@ class StoreTest(unittest.TestCase):
         self.assertRaises(pyproperties.StoreError, foo.store, "")
 
 
-    def testStore(self):
+    def testStoreLoadedWithNoModifications(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -323,6 +446,52 @@ class StoreTest(unittest.TestCase):
                     "name.2=  William  ",
                     "alert=Fire!",
                     ]
+        bar.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, bar.lines)
+
+
+    def testStoreLoadedAndCommented(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "#   This is a comment for massage.0",
+                    "message.0=Apple $(name.1).",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is a comment for name.0 which",
+                    "#   value is \"John the Average\"",
+                    "name.0=John the Average",
+                    "#   possibly Sparrow",
+                    "name.1=Jack  ",
+                    "#   his name is William",
+                    "#   that's for sure",
+                    "name.2=  William  ",
+                    "#alert=Fire!",
+                    ]
+        bar.comment("alert")
+        bar.addcomment("name.2", "his name is William\nthat's for sure")
+        bar.addcomment("name.1", "possibly Sparrow")
+        bar.save()
+        bar.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, bar.lines)
+
+
+    def testStoreLoadedAndCommentsRemoved(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "message.0=Apple $(name.1).",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is a comment for name.0 which",
+                    "#   value is \"John the Average\"",
+                    "name.0=John the Average",
+                    "name.1=Jack  ",
+                    "name.2=  William  ",
+                    "alert=Fire!",
+                    ]
+        bar.rmcomment("message.0")
+        bar.save()
         bar.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, bar.lines)
 
@@ -346,7 +515,7 @@ class StoreTest(unittest.TestCase):
         bar.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, bar.lines)
 
-    def testStoreCommented(self):
+    def testStoreCreatedFromBlankAndCommented(self):
         foo = pyproperties.Properties("foo.properties", no_read=True)
         foo.set("foo", "Foo")
         foo.set("bar", "Bar")
@@ -356,7 +525,7 @@ class StoreTest(unittest.TestCase):
         foo.addcomment("bar", "bar's comment")
         self.assertRaises(pyproperties.UnsavedChangesError, foo.store, "")
         foo.save()
-        foo.store("", no_dump=True)
+        foo.store(no_dump=True)
         lines = [
                 "#   bar's comment",
                 "bar=Bar",
@@ -383,7 +552,7 @@ class AddcommentTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", "first part")
-        self.assertEqual(["#   first part"], foo.propcomments["foo"])
+        self.assertEqual(["first part"], foo.propcomments["foo"])
         self.assertRaises(KeyError, foo.addcomment, "bar", "")
 
 
@@ -391,7 +560,7 @@ class AddcommentTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", "this\nis\na\ncomment")
-        self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.propcomments["foo"])
+        self.assertEqual(["this", "is", "a", "comment"], foo.propcomments["foo"])
         self.assertRaises(KeyError, foo.addcomment, "bar", "")
 
 
@@ -399,7 +568,7 @@ class AddcommentTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", ["first", "part"])
-        self.assertEqual(["#   first", "#   part"], foo.propcomments["foo"])
+        self.assertEqual(["first", "part"], foo.propcomments["foo"])
         self.assertRaises(KeyError, foo.addcomment, "bar", "")
 
 
@@ -407,7 +576,7 @@ class AddcommentTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", ["this\nis", "a\ncomment"])
-        self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.propcomments["foo"])
+        self.assertEqual(["this", "is", "a", "comment"], foo.propcomments["foo"])
         self.assertRaises(KeyError, foo.addcomment, "bar", "")
         
         
@@ -416,7 +585,7 @@ class GetcommentTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.addcomment("foo", ["this\nis", "a\ncomment"])
-        self.assertEqual(["#   this", "#   is", "#   a", "#   comment"], foo.getcomment("foo"))
+        self.assertEqual(["this", "is", "a", "comment"], foo.getcomment("foo"))
         self.assertEqual([], foo.getcomment("bar"))
 
 
