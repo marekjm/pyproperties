@@ -24,14 +24,15 @@ class Properties():
     This class provides methods for working with properties files. 
 
     Variables describing stored properties:
-        self.path           -   path used for reading and storing properties,
-        self.source         -   working copy of source file,
-        self.srcorigin      -   original lines of source file,
-        self.properties     -   working copy of properties dictionary,
-        self.propsorigin    -   original dictionary of properties,
-        self.propcomments   -   dictionary containing comments of properties,
-        self.origin_commented-   dictionary containing commented properties,
-        self.commented      -   dictionary containing commented properties,
+        self.path               -   path used for reading and storing properties,
+        self.source             -   working copy of source file,
+        self.srcorigin          -   original lines of source file,
+        self.properties         -   working copy of properties dictionary,
+        self.propsorigin        -   original dictionary of properties,
+        self.propcomments       -   dictionary containing comments of properties,
+        self.origin_propcomments-   dictionary containing comments of properties,
+        self.origin_commented   -   dictionary containing commented properties,
+        self.commented          -   dictionary containing commented properties,
     """
 
     def __init__(self, path="", cast=False, no_read=False):
@@ -361,11 +362,11 @@ class Properties():
         This method parses and returns parsed self.properties
 
         If props argument is passed as True parse() will return
-        an Properties() object with all values parsed.
+        a Properties() object with all values parsed.
         """
         if props:
             parsed = Properties()
-            parsed.melt(self)
+            parsed.merge(self)
             parsed.properties = parsed.parse()
             parsed.save()
         else:
@@ -407,10 +408,12 @@ class Properties():
         self.unsaved = True
 
 
-    def melt(self, properties):
+    def merge(self, properties):
         """
         Completes and merges properties with the base. 
-        Source of melted properties is appended to base.
+        Source of merged properties is appended to base. 
+        
+        It's not possible to add prefix when merging.
         """
         self.complete(properties)
         self.update(properties)
@@ -438,7 +441,7 @@ class Properties():
         completed = []
         for key, value in props.propsorigin.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key not in self.properties: 
+            if key not in self.properties:
                 self.set(key, value)
                 if key not in completed: completed.append(key)
         for key, value in props.origin_propcomments.items():
@@ -467,9 +470,18 @@ class Properties():
         During merging properties are not copied directly to `origins` of the base 
         properties.
         """
+        updated = []
         for key, value in props.propsorigin.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key in self.properties: self.set(key, value)
+            if key in self.properties: 
+                self.set(key, value)
+                updated.append(key)
+        for key, value in props.origin_propcomments.items():
+            if prefix: key = "{0}.{1}".format(prefix, key)
+            if key in updated: self.addcomment(key, value)
+        for key in props.origin_commented:
+            if prefix: key = "{0}.{1}".format(prefix, key)
+            if key in updated: self.comment(key)
         self.unsaved = True
 
 
@@ -504,17 +516,27 @@ class Properties():
         self.unsaved = False
 
 
-    def rsave(self):
+    def revert(self):
         """
-        Undoes changes made in self.properties by moving self.propsorigin to self.properties
-        and self.srcorigin to self.source
+        Drops changes made in properties, source and comments by reverting them 
+        to the state in which they were during last save().
         """
-        rsaved = {}
-        for key, value in self.propsorigin.items(): rsaved[key] = value
-        self.properties = rsaved
-        rsaved = []
-        for line in self.srcorigin: rsaved.append(line)
-        self.source = rsaved
+        reverted = {}
+        for key, value in self.propsorigin.items(): reverted[key] = value
+        self.properties = reverted
+        
+        reverted = []
+        [ reverted.append(line) for line in self.srcorigin ]
+        self.source = reverted
+        
+        reverted = []
+        [ reverted.append(key) for key in self.origin_commented ]
+        self.commented = reverted
+
+        reverted = {}
+        for key, value in self.origin_propcomments.items(): reverted[key] = value
+        self.propcomments = reverted
+        
         self.unsaved = False
 
 

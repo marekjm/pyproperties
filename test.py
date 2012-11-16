@@ -294,15 +294,6 @@ class CopyTest(unittest.TestCase):
         self.assertNotEqual(foo.properties, foo2.properties)
 
 
-class UpdateTest(unittest.TestCase):
-    def testUpdateSimple(self):
-        self.assertEqual(0, 1)
-
-
-    def testUpdateWithComments(self):
-        self.assertEqual(0, 1)
-
-
 class CompleteTest(unittest.TestCase):
     def testCompleteSimple(self):
         foo = pyproperties.Properties()
@@ -395,6 +386,88 @@ class CompleteTest(unittest.TestCase):
         self.assertEqual(foo_commented, foo.commented)
 
 
+class UpdateTest(unittest.TestCase):
+    def testUpdateSimple(self):
+        supposed =  {
+                    "prop.0":"0",
+                    "prop.1":"0x1",
+                    "prop.2":"0x2",
+                    }
+        foo = pyproperties.Properties()
+        bar = pyproperties.Properties()
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        foo.set("prop.2", "2")
+        bar.set("prop.1", "0x1")
+        bar.set("prop.2", "0x2")
+        foo.save()
+        bar.save()
+        foo.update(bar)
+        self.assertEqual(supposed, foo.properties)
+        self.assertNotEqual(supposed, foo.propsorigin)
+        foo.save()
+        self.assertEqual(supposed, foo.propsorigin)
+
+
+    def testUpdateWithComments(self):
+        props = {
+                "prop.0":"0",
+                "prop.1":"0x1",
+                }
+        comments_bu =   {
+                        "prop.1":["this is original comment"],
+                        }
+        comments_au =   {
+                        "prop.1":["this is updated comment"],
+                        }
+        foo = pyproperties.Properties()
+        bar = pyproperties.Properties()
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        foo.addcomment("prop.1", "this is original comment")
+        bar.set("prop.1", "0x1")
+        bar.set("prop.2", "0x2")
+        bar.addcomment("prop.1", "this is updated comment")
+        foo.save()
+        bar.save()
+        foo.update(bar)
+        self.assertEqual(props, foo.properties)
+        self.assertEqual(comments_au, foo.propcomments)
+        self.assertEqual(comments_bu, foo.origin_propcomments)
+        self.assertNotEqual(props, foo.propsorigin)
+        self.assertNotEqual(comments_au, foo.origin_propcomments)
+        foo.save()
+        self.assertEqual(props, foo.propsorigin)
+        self.assertEqual(comments_au, foo.origin_propcomments)
+
+
+    def testUpdateWithCommented(self):
+        props = {
+                "prop.0":"0",
+                "prop.1":"0x1",
+                }
+        commented_bu = []
+        commented_au = ["prop.1"]
+        foo = pyproperties.Properties()
+        bar = pyproperties.Properties()
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        bar.set("prop.1", "0x1")
+        bar.set("prop.2", "0x2")
+        bar.comment("prop.1")
+        foo.save()
+        bar.save()
+        foo.update(bar)
+        self.assertEqual(props, foo.properties)
+        self.assertEqual(commented_au, foo.commented)
+        self.assertEqual(commented_bu, foo.origin_commented)
+        self.assertNotEqual(props, foo.propsorigin)
+        self.assertNotEqual(commented_au, foo.origin_commented)
+        foo.save()
+        self.assertEqual(props, foo.propsorigin)
+        self.assertEqual(commented_au, foo.origin_commented)
+
+
 class MergeTest(unittest.TestCase):
     def testMergeSimple(self):
         self.assertEqual(0, 1)
@@ -415,6 +488,28 @@ class IncludeTest(unittest.TestCase):
                 "prop.2=Baz",
                 ]
         self.assertEqual(src, test_file.source)
+
+
+class SaveTest(unittest.TestCase):
+    def testSaveSimple(self):
+        foo_saved = {"prop.0":"0", "prop.1":"1"}
+        foo = pyproperties.Properties()
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        self.assertEqual(foo_saved, foo.properties)
+        self.assertNotEqual(foo_saved, foo.propsorigin)
+        foo.save()
+        self.assertEqual(foo_saved, foo.propsorigin)
+
+
+class RevertTest(unittest.TestCase):
+    def testRevertSimple(self):
+        foo = pyproperties.Properties()
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        self.assertEqual({"prop.0":"0", "prop.1":"1"}, foo.properties)
+        foo.revert()
+        self.assertEqual({}, foo.properties)
 
 
 class StoreTest(unittest.TestCase):
