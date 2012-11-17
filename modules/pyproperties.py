@@ -12,12 +12,26 @@ import re
 __version__ = "0.1.6"
 
 wildcart_re = "[a-z0-9_.-]*"
-guess_int_re = "^[-]{0,1}[0-9]+$"
-guess_float_re = "^[-]{0,1}[0-9]*\.[0-9]+$"
+guess_int_re = "^[-]?[0-9]+$"
+guess_float_re = "^[-]?[0-9]*\.[0-9]+$"
 
 class LoadError(IOError): pass
 class StoreError(IOError): pass
 class UnsavedChangesError(BaseException): pass
+
+
+def onlyhexchars(s):
+    """
+    Helper function.
+    Returns True if given string conatins only 
+    hexadecimal characters eg. 0-9a-f
+    It detects hex of form 'beef01' and '0xbeef01'
+    """
+    result = False
+    if re.match(re.compile("^(0x)?[0-9a-f]*$"), s): result = True
+    elif s == "0": result = True
+    return result
+
 
 class Properties():
     """
@@ -819,7 +833,7 @@ class Properties():
         will not form a group although gets('person.*') will return 
         list of length greater than two.
 
-        This is because only digits are considered as 'groupers'.
+        This is because only digits (decimal and hex) are considered as 'groupers'.
         """
         skeys = []
         [ skeys.append(key.split(".")) for key in self.getnames() ]
@@ -827,7 +841,8 @@ class Properties():
         for skey in skeys:
             identifier = ""
             for key in skey:
-                if key.isdigit(): key = "*"
+                #   if key.isdigit(): key = "*"
+                if onlyhexchars(key): key = "*"
                 identifier = "{}.{}".format(identifier, key)
             identifier = identifier[1:]
             if identifier not in groups and len(self.gets(identifier)) > 1: groups.append(identifier)
@@ -854,7 +869,7 @@ class Properties():
         Comment can be passed as a string or list of strings.
 
             foo.addcomment("foo", ["first", "part"])
-            foo.addcomment("foo", "first\npart")
+            foo.addcomment("foo", "first\\npart")
 
         Multiline comments are supported - either by passing a list of lines or
         by passing a string containing newline characters '\\n'.

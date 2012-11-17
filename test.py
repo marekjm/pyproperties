@@ -237,6 +237,22 @@ class GroupingTest(unittest.TestCase):
         self.assertListEqual(sorted(groups), sorted(foo.getgroups()))
 
 
+    def testGetGroupsHexadecimalSeprated(self):
+        foo = pyproperties.Properties()
+        groups =    [
+                    "customer.*.name",
+                    "customer.*.phone_number",
+                    "customer.*.address",
+                    "customer.*.postal_code",
+                    ]
+        for i in range(9, 20):
+            foo.set("customer.{0}.name".format(hex(i)), ""),
+            foo.set("customer.{0}.phone_number".format(hex(i)), "")
+            foo.set("customer.{0}.address".format(hex(i)), "")
+            foo.set("customer.{0}.postal_code".format(hex(i)), "")
+        self.assertListEqual(sorted(groups), sorted(foo.getgroups()))
+
+
     def testGetSingles(self):
         foo = pyproperties.Properties("./data/properties/foo.properties")
         singles = [ "numeral.pi",
