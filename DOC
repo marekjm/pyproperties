@@ -114,8 +114,8 @@ CLASSES
      |  Methods defined here:
      |  
      |  __extractcommentedprops__(self)
-     |      Extracts commented properties from file then uncomments them and 
-     |      saves them to self.commented dictionary.
+     |      Uncomments commented properties so they can be read by ```__extractprops__()``` and 
+     |      saves them to ```commented``` and ```origin_commented``` dictionaries.
      |  
      |  __extractcomments__(self)
      |      Extracts comments loaded source to self.propcomments
@@ -177,24 +177,23 @@ CLASSES
      |      Converts property of the given key from str (default) to int or float if needed.
      |  
      |  __tcasts__(self, identifier)
-     |      Converts properties from str (default) to int or float (if needed).
+     |      Converts properties type from str (default) to int or float if pattern match.
      |  
      |  __typeguess__(self, prop)
      |      Tries to guess the type of property (initially all properties are stored as strings) and 
      |      convert it accordingly. It can guess three types: int, float and string.
      |  
      |  addcomment(self, key, comment)
-     |              Attaches comment to property. 
-     |              Comment can be passed as a string or list of strings.
+     |      Attaches comment to property. 
+     |      Comment can be passed as a string or list of strings.
      |      
-     |                  foo.addcomment("foo", ["first", "part"])
-     |                  foo.addcomment("foo", "first
-     |      part")
+     |          foo.addcomment("foo", ["first", "part"])
+     |          foo.addcomment("foo", "first\npart")
      |      
-     |              Multiline comments are supported - either by passing a list of lines or
-     |              by passing a string containing newline characters '\n'.
+     |      Multiline comments are supported - either by passing a list of lines or
+     |      by passing a string containing newline characters '\n'.
      |      
-     |              Raises KeyError when property is not found.
+     |      Raises KeyError when property is not found.
      |  
      |  addcomments(self, identifier, *comments)
      |              Attaches comment to properties which will match the identifier. 
@@ -286,13 +285,9 @@ CLASSES
      |      Returns list of properties which do not 
      |      belong to any group.
      |  
-     |  include(self, path)
-     |      Includes one file into another. Used only when processing source
-     |      with __include__ properties.
-     |  
      |  join(self, path, prefix=' ')
      |      Loads external properties and completes base. 
-     |      You can pass 'prefix' as empty string to add properties without prefix. 
+     |      You can pass ```prefix``` as empty string to add properties without prefix. 
      |      Prefix defaluts to joined modules name. 
      |      Source of joined properties is appended to base source.
      |  
@@ -558,11 +553,15 @@ CLASSES
      |      T.__new__(S, ...) -> a new object with type S, a subtype of T
 
 FUNCTIONS
-    ishex(s)
+    onlyhexchars(s)
+        Helper function.
+        Returns True if given string conatins only 
+        hexadecimal characters eg. 0-9a-f
+        It detects hex of form 'beef01' and '0xbeef01'
 
 DATA
-    guess_float_re = r'^[-]{0,1}[0-9]*\.[0-9]+$'
-    guess_int_re = '^[-]{0,1}[0-9]+$'
+    guess_float_re = r'^[-]?[0-9]*\.[0-9]+$'
+    guess_int_re = '^[-]?[0-9]+$'
     wildcart_re = '[a-z0-9_.-]*'
 
 VERSION
