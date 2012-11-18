@@ -1,0 +1,34 @@
+#### Typecasting in pyroperties.
+
+
+Typecasting is provided by three internal methods:  
+
+
+*   ```__typeguess__()```: guesses type of property,
+*   ```__tcast__()```: casts single property,
+*   ```__tcasts__()```: casts multiple properties,
+
+
+Guessing is done with regular expressions. They are easily available 
+in sourcecode and I don't want to include them here to avoid this manual 
+going out-of-date. 
+
+This functionality is not exposed - although you can call ```__tcast__()``` and 
+```__tcasts__()``` whenever you wish it is not recommended. The only exception to 
+call them directly is when you want to typecast your properties after parsing 
+them. 
+
+It is worth remembering that ```__tcast__()``` and ```__tcasts__()``` methods DO NOT 
+return anything. If you want to get typecasted value from non-pre-typecasted 
+property set ```get()``` and ```gets()``` both have functionality providing typecasting. 
+You can just call them with 'cast' argument set to ```True```.  
+
+
+        foo = pyproperties.Properties()
+        foo.set("pi", "3.14")
+
+        foo.get("pi")
+        '3.14'
+
+        foo.get("pi", cast=True)
+        3.14

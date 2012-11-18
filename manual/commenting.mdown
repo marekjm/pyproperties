@@ -1,0 +1,70 @@
+#### COMMENTING PROPERTIES
+
+
+When reading from file both ```!``` and ```#``` characters are considered "comments", but 
+when using ```store()``` method all _!-comments_ will be converted to _#-comments_.
+
+This is done so because of the thirteenth line of The Zen of Python:  
+
+    There should be one-- and preferably only one --obvious way to do it.
+
+----
+
+With pyproperties it is possible to manipulate (add/remove) comments ```of``` or ```from``` properties.
+We need to specify meaning of the actions:  
+
+* to _remove comment_ of the property means that we are removing comment _attached to_ this property,
+* to _uncomment_ property means to remove comment _from this_ property,
+
+&nbsp;
+
+#### Adding and removing comments attached to properties
+
+This is done by ```addcomment()``` and ```rmcomment()``` methods.
+
+        ----
+        this.is.a=value
+        ----
+
+        >>> foo.addcomment("this.is.a", "this is s comment")
+
+        ----
+        #   this is s comment
+        this.is.a=value
+        ----
+        
+        >>> props.rmcomment("this.is.a")
+        
+        ----
+        this.is.a=value
+        ----
+
+
+----
+
+&nbsp;
+
+#### Commenting and uncommenting properties
+
+        ----
+        #some=value
+        ----
+        
+        >>> props.uncomment("some")
+
+        ----
+        some=value
+        ----
+        
+        >>> props.comment("some")
+        
+        ----
+        #some=value
+        ----
+
+
+----
+
+SEE ALSO:  
+[saving](saving.txt)  
+[storing](storing.txt)

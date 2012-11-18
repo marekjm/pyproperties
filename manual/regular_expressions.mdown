@@ -1,0 +1,60 @@
+REGULAR EXPRESSIONS USED IN PYPROPERTIES.
+
+Regular expressions are used in pyproperties in 
+methods working with groups of properties:
+
+*   ```gets()```
+*   ```sets()```
+*   ```removes()```
+*   ```pops()```
+*   ```getgroups()```
+*   ```getsingles()```
+
+and with type guessing:
+
+*   ```__tcast__()```
+*   ```__tcasts__()```
+
+
+The first four (```gets()```, ```sets()```, ```removes()``` and ```pops()```) are based on the same 
+pattern. When you pass identifier of the property as a string it's being 
+transformed in such way:
+
+
+        'customer.*.name'   ->  '^customer\.[a-z0-9_.]*\.name$'
+
+
+Every ```*``` character in identifier is replaced by ```wildcart_re``` string and every ```.``` in identifier 
+is escaped.
+
+        *   ->  [a-z0-9_\.]*
+        .   ->  \.
+
+
+----
+
+
+Regular expressions in type guessing:
+
+*   guess_int_re = ```^[-]?[0-9]+$```
+*   guess_float_re = ```^[-]?[0-9]*\.[0-9]+$```
+
+If neither of them is matched type of the property is considered ```str```.
+
+
+----
+
+
+There are four three regular expressions used by pyproperties:
+
+        wildcart_re = "[a-z0-9_.-]*"
+        guess_int_re = "^[-]?[0-9]+$"
+        guess_float_re = "^[-]?[0-9]*\.[0-9]+$"
+
+
+----
+
+SEE ALSO:  
+[setters](setters.mdown)  
+[getters](getters.mdown)  
+[removers](removers.mdown)

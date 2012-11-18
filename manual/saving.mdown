@@ -1,0 +1,54 @@
+#### Structure
+
+When you initialize new properites object you get two dictionaries representing loaded file:
+
+*   one, which you are really working: ```self.properties```,
+*   and secure one: ```self.propsorigin```,
+
+The same thing is with source:
+
+*   secure one: ```self.srcorigin```,
+*   and working copy: ```self.source```,
+
+
+and comments attached to properties:
+
+*   secured: ```self.origin_propcomments```,
+*   and working copy: ```self.propcomments```,
+
+
+and commented properties:
+
+*   secured: ```self.origin_commented```,
+*   and working copy: ```self.commented```,
+
+----
+
+#### Saving changes
+
+Method named ```save()``` does very simple thing. It makes every ```origin``` looks exactly 
+like working variable related to it.
+
+----
+
+#### Reverting changes
+
+To revert (aka undo) changes made to properties but not yet saved you can call ```revert()``` and get back to the previous saved state.
+
+
+Remember - ```save()``` and ```revert()``` are the only methods that should interact with origins. 
+Although you can directly access origins of your properties I would not recommend this.
+
+
+----
+
+#### When I should call ```save()```?
+
+You have to call save after any changes made to properties. This mean after commenting, adding comments, setting or removing some properties, 
+joining or merging files etc.
+
+
+----
+
+SEE ALSO:  
+[storing](storing.mdown)

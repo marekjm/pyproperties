@@ -36,6 +36,16 @@ class ParselineTest(unittest.TestCase):
         self.assertEqual("Hello World!", foo.get("greeting", parsed=True, cast=False))
 
 
+    def testParselineComplex(self):
+        foo = pyproperties.Properties()
+        foo.set("greeting", "Hello $(name)! Happy $(number)th day of week! Did you know that Pi is $(pi.value)?")
+        foo.set("name", "World")
+        foo.set("number", 7)
+        foo.set("pi.value", 3.14159)
+        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parsed=True, cast=True))
+        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parsed=True, cast=False))
+
+
 class LoadTest(unittest.TestCase):
     def testLoad(self):
         props = {
@@ -486,24 +496,49 @@ class UpdateTest(unittest.TestCase):
 
 class MergeTest(unittest.TestCase):
     def testMergeSimple(self):
-        self.assertEqual(0, 1)
+        foo = pyproperties.Properties()
+        bar = pyproperties.Properties()
+        props = {
+                "prop.0":"0",
+                "prop.1":"1",
+                "prop.2":"0x2",
+                "prop.3":"0x3",
+                }
+        comments =  {
+                    "prop.0":["this is a comment"],
+                    "prop.3":["this is another comment"],
+                    }
+        commented = ["prop.0", "prop.3"]
+        foo.set("prop.0", "0")
+        foo.set("prop.1", "1")
+        foo.set("prop.2", "2")
+        foo.addcomment("prop.0", "this is a comment")
+        foo.comment("prop.0")
+        foo.save()
+        bar.set("prop.2", "0x2")
+        bar.set("prop.3", "0x3")
+        bar.addcomment("prop.3", "this is another comment")
+        bar.comment("prop.3")
+        bar.save()
+        foo.merge(bar)
+        foo.save()
+        self.assertEqual(props, foo.properties)
+        self.assertEqual(comments, foo.propcomments)
+        self.assertEqual(commented, foo.commented)
 
 
-class IncludeTest(unittest.TestCase):
-    def xtestIncludeSimple(self):
-        test_file = pyproperties.Properties("./data/properties/test_include.properties")
-        src =    [
-                "#   this is file used for ",
-                "#   testing include() method",
-                "",
-                "#   this is a comment",
-                "prop.0=Foo",
-                "",
-                "#   this is commented property",
-                "#prop.1=Bar",
-                "prop.2=Baz",
-                ]
-        self.assertEqual(src, test_file.source)
+class JoinTest(unittest.TestCase):
+    def testJoinSimple(self):
+        foo = pyproperties.Properties("./data/properties/include_test/foo.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined.properties")
+        foo.join("./data/properties/include_test/bar.properties", prefix="")
+        foo.save()
+        foo.store(no_dump=True)
+        combined.store(no_dump=True)
+        self.assertEqual(combined.lines, foo.lines)
+        self.assertEqual(combined.properties, foo.properties)
+        self.assertEqual(combined.propcomments, foo.propcomments)
+        self.assertEqual(combined.commented, foo.commented)
 
 
 class SaveTest(unittest.TestCase):
@@ -557,6 +592,57 @@ class StoreTest(unittest.TestCase):
                     "name.2=  William  ",
                     "alert=Fire!",
                     ]
+        bar.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, bar.lines)
+
+
+    def testStoreLoadedSomeValuesRemoved(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is a comment for name.0 which",
+                    "#   value is \"John the Average\"",
+                    "name.0=John the Average",
+                    "name.2=  William  ",
+                    "alert=Fire!",
+                    ]
+        bar.remove("message.0")
+        bar.remove("name.1")
+        bar.save()
+        bar.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, bar.lines)
+
+
+    def testStoreLoadedEveryOriginalValueRemoved(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    ]
+        bar.removes("*")
+        bar.save()
+        bar.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, bar.lines)
+
+
+    def testStoreLoadedEveryOriginalPropertyRemovedAndNewPropertiesAdded(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "prop.0=0",
+                    "#   this is a comment for prop.1",
+                    "prop.1=1",
+                    "#prop.2=2",
+                    ]
+        bar.removes("*")
+        bar.set("prop.0", "0")
+        bar.set("prop.1", "1")
+        bar.addcomment("prop.1", "this is a comment for prop.1")
+        bar.set("prop.2", "2")
+        bar.comment("prop.2")
+        bar.save()
         bar.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, bar.lines)
 

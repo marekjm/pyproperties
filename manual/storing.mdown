@@ -1,0 +1,68 @@
+#### Storing properties to file
+
+There is a special method for storing loaded properites: ```store()``` 
+When you want to write yor properites to a file you should call ```store()``` with path to the file you want your properties to be saved in. 
+
+__WARNING!__ Before any ```store()``` call you should call ```save()``` method to save changes made to origins of your properties.
+
+        foo.set("some.property", "foo")
+        foo.save()
+        foo.store("./foo.properties")
+
+Because if you will do just:
+
+        foo.set("some.property", "foo")
+        foo.store( "./foo.properties" )
+        pyproperties.UnsavedChangesError: trying to store with unsaved changes
+
+with any unsaved changes pyproperties will raise ```pyproperties.UnsavedChangesError```.
+
+
+----
+
+
+You can store properties with unsaved changes by passing optional ```force``` argument as ```True```.
+This will prevent ```UnsavedChangesError``` from being raised and store properties as of the state of last saving.
+
+        >>> foo = pyproperties.Properties("./foo.properties")
+        >>> foo.set("some.property", "some value")
+        >>> foo.addcomment("some.property", "some comment\ndivided into\nseveral lines")
+        >>> foo.store()
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "./modules/pyproperties.py", line ???, in store
+            if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
+        pyproperties.UnsavedChangesError: trying to store with unsaved changes
+        >>>
+        >>> foo.store(force=True)
+
+and pyproperties would happily store your props.
+
+----------------
+
+#### Store process
+
+Process of storing (```store()``` method) is divided into smaller submethods.
+
+*   ```_storeprop()``` (introduced in ```0.1.6```) is responsible for generating single property and figuring out if it has a comment, is commented or 
+should not be stored because already is;
+*   ```_storecomment()``` (introduced in ```0.1.5```), generates lines for comment of a property,
+*   ```_storesrc()``` (introduced in ```0.1.4```) generates lines basing on ```self.srcorigin```,
+*   ```_storegroups()``` (introduced in ```0.1.4```) generates lines for grouped properties (uses ```getgroups()``` method),
+*   ```_storesingles()``` (introduced in ```0.1.4```) generates lines with single properties in alphabetical order,
+*   ```_dump()``` (introduced in ```0.1.4```) writes to file,
+
+By passing ```no_dump``` argument as ```True``` to ```store()``` method you can tell it to only generate lines and 
+use your custom function to write them to file.
+
+----------------
+
+Prior to version ```0.1.2``` if ```store()``` was used on properties with no source they were stored as an ugly mess. 
+From ```0.1.2``` and above properties created from blank are stored in groups (thanks to the capability of grouping) and 
+properties which do not belong to any group are appended at the end. A blank line is inserted between each group.
+
+
+----
+
+SEE ALSO:  
+[saving](saving.mdown)

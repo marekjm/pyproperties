@@ -7,7 +7,7 @@ pyproperites aim is to ease manipulation, interaction and use of *.properties fi
 
 import os
 import re
-
+import warnings
 
 __version__ = "0.1.6"
 
@@ -135,6 +135,19 @@ class Properties():
         return self.__isvalidline__(line.strip()[1:]) and not self.__isvalidline__(line.strip())
 
 
+    def __extractcommentedprops__(self):
+        """
+        Uncomments commented properties so they can be read by ```__extractprops__()``` and 
+        saves them to ```commented``` and ```origin_commented``` dictionaries.
+        """
+        for i in range(len(self.source)):
+            if self.__iscommentedprop__(self.source[i]):
+                key = self.__getkey__(self.source[i][1:])
+                if key not in self.commented: self.commented.append(key)
+                if key not in self.origin_commented: self.origin_commented.append(key)
+                self.source[i] = self.source[i][1:]
+
+
     def __extractprops__(self):
         """
         Extracts lines containing valid properties strings from loaded source to self.properties
@@ -149,24 +162,12 @@ class Properties():
         i = 0
         while i < len(extracted):
             line = extracted[i]
-            while line[-1] == "\\":    #  if line ends with backslash read next line and append it to
+            while line[-1] == "\\":    #  if line ends with backslash read next line and append it
                 i += 1
-                line = line[:-1] + extracted[i].lstrip()
+                line = "".join(line[:-1], extracted[i]).lstrip()
             properties.append(line.lstrip())
             i += 1
         self.properties = properties
-
-
-    def __extractcommentedprops__(self):
-        """
-        Extracts commented properties from file then uncomments them and 
-        saves them to self.commented dictionary.
-        """
-        for i in range(len(self.source)):
-            if self.__iscommentedprop__(self.source[i]):
-                self.commented.append(self.__getkey__(self.source[i][1:]))
-                self.origin_commented.append(self.__getkey__(self.source[i][1:]))
-                self.source[i] = self.source[i][1:]
 
 
     def __extractcomments__(self):
@@ -211,6 +212,7 @@ class Properties():
         for i in range(len(self.properties)):
             key = self.__getkey__(self.properties[i])
             value = self.__getvalue__(self.properties[i])
+            if key in props: print("multiple declarations for property '{0}' in '{1}': '{2}' -> '{3}'".format(key, self.path, props[key], value))
             origin[key] = props[key] = value
         self.propsorigin = origin
         self.properties = props
@@ -226,13 +228,11 @@ class Properties():
 
     def __tcasts__(self, identifier):
         """
-        Converts properties from str (default) to int or float (if needed). 
+        Converts properties type from str (default) to int or float if pattern match. 
         """
-        keys = []
-        identifier = re.compile(identifier.replace("*", wildcart_re))
+        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key in self.properties.keys():
-            if re.match(identifier, key): keys.append(key)
-        for key in keys: self.__tcast__(key)
+            if re.match(identifier, key): self.__tcast__(key)
 
 
     def __typeguess__(self, prop):
@@ -321,6 +321,7 @@ class Properties():
         if os.path.isfile(self.path): self.__loadf__(self.path)
         elif os.path.isdir(self.path): self.__loadd__(self.path)
         else: raise LoadError("'{0}' no such file or directory".format(path))
+
         self.commented = []
         self.origin_commented = []
         self.__extractcommentedprops__()
@@ -404,21 +405,14 @@ class Properties():
     def join(self, path, prefix=" "):
         """
         Loads external properties and completes base. 
-        You can pass 'prefix' as empty string to add properties without prefix. 
+        You can pass ```prefix``` as empty string to add properties without prefix. 
         Prefix defaluts to joined modules name. 
         Source of joined properties is appended to base source.
         """
-        path = path.strip()
-        new = None
-        try: 
-            new = Properties(path)
-            if prefix == " ": prefix = new.name
-        except IOError: raise
-        finally:
-            if new:
-                self.complete(new, prefix)
-                self._appendsrc(new, prefix)
-            else: pass
+        props = Properties(path.strip())
+        if prefix == " ": prefix = props.name
+        self.complete(props, prefix)
+        self._appendsrc(props, prefix)
         self.unsaved = True
 
 
@@ -499,14 +493,6 @@ class Properties():
         self.unsaved = True
 
 
-    def include(self, path):
-        """
-        Includes one file into another. Used only when processing source
-        with __include__ properties.
-        """
-        props = pyproperites.Properties(path)
-
-
     def save(self):
         """
         Saves changes made in properties, source and comments.
@@ -554,6 +540,22 @@ class Properties():
         self.unsaved = False
 
 
+    def _storeprop(self, key):
+        """
+        This method stores single property and takes responsibility of storing it's comment and 
+        possibly commenting the property itself. 
+        This method also looks at the ```stored``` list and checks if the given key has already 
+        been stored to prevent storing it two times.
+        It will also check if the key is in ```propsorigin``` dict to ensure that unsaved properties 
+        would not be stored.
+        """
+        if key not in self.stored and key in self.propsorigin:
+            if key in self.propcomments: self._storecomment(key)
+            if key not in self.origin_commented: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
+            else: self.lines.append("#{0}={1}".format(key, self.propsorigin[key]))
+            self.stored.append(key)
+
+
     def _storesrc(self):
         """
         Prepares data which came with source for storing.
@@ -561,46 +563,28 @@ class Properties():
         for i in range(len(self.srcorigin)):
             if self.srcorigin[i] == "" or self.srcorigin[i].isspace(): self.lines.append("{0}".format(self.srcorigin[i]))
             elif self.srcorigin[i][0] == "#": self.lines.append("{0}".format(self.srcorigin[i]))
-            # checks if current line has a key which is defined in self.propsorigin and has not been stored yet
-            elif self.__getkey__(self.srcorigin[i]) != "" and self.__getkey__(self.srcorigin[i]) not in self.stored:
-                key = self.__getkey__(self.srcorigin[i])
-                if key in self.propcomments: self._storecomment(key)
-                if key not in self.origin_commented: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
-                else: self.lines.append("#{0}={1}".format(key, self.propsorigin[key]))
-                self.stored.append(key)
-            else: pass
+            # checks if current line has a key
+            elif self.__getkey__(self.srcorigin[i]) != "": self._storeprop(self.__getkey__(self.srcorigin[i]))
 
 
     def _storegroups(self):
         """
-        Prepares groups not found in source file.
+        Generates lines for groups not found in source.
         """
-        if self.lines != []: self.lines.append("")
-        groups = self.getgroups()
-        for identifier in groups:
+        if self.lines != [] and self.lines[-1] != "": self.lines.append("")
+        for identifier in self.getgroups():
             previous_len = len(self.lines)
-            props = self.gets(identifier)
             keys = []
-            [keys.append(key) for key in props]
-            for key in sorted(keys):
-                if key not in self.stored and key in self.propsorigin:
-                    if key in self.propcomments: self._storecomment(key)
-                    if key not in self.origin_commented: self.lines.append("{0}={1}".format(key, props[key]))
-                    else: self.lines.append("#{0}={1}".format(key, props[key]))
-                    self.stored.append(key)
+            [keys.append(key) for key in self.gets(identifier)]
+            for key in sorted(keys): self._storeprop(key)
             if len(self.lines) > previous_len: self.lines.append("")
 
 
     def _storesingles(self):
         """
-        Preprares single values not found in source.
+        Generates lines for single properties not found in source.
         """
-        for key, value in sorted(self.propsorigin.items()):
-            if key not in self.stored:
-                if key in self.propcomments: self._storecomment(key)
-                if key not in self.origin_commented: self.lines.append("{0}={1}".format(key, value))
-                else: self.lines.append("#{0}={1}".format(key, value))
-                self.stored.append(key)
+        for key in sorted(self.propsorigin.keys()): self._storeprop(key)
 
 
     def _storecomment(self, key):

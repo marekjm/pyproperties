@@ -1,0 +1,16 @@
+#### Merging properties
+
+```melt()``` method does one thing: it tries to makes ```foo``` as similar 
+to ```bar``` as possible. It does following things:
+
+*   runs ```foo.complete(bar)``` to ensure every property of ```bar``` can be found in ```foo```,
+*   runs ```foo.update(bar)``` to update values of ```foo``` properties,
+*   updates information about comments and commented properties,
+*   append source of ```bar``` to source of ```foo```,
+
+----
+
+SEE ALSO:  
+[completing](completing.mdown)  
+[joining](joining.mdown)  
+[saving](saving.mdown)

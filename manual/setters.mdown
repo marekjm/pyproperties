@@ -1,0 +1,22 @@
+#### Setting a property, updating value of a property
+
+pyproperties has two setters.
+
+*   ```set()``` for setting single properties,
+*   ```sets()``` for applying value to groups of pre-set properties,
+
+```sets()``` makes use of standard regexp of ```pyproperties``` when defining list of properties which it will apply a value to.
+
+```sets()``` creates a sorted list of all keys matching given pattern.  
+Then, it assigns __first__ given __value__ to __first key__ on a list.  
+
+If there are more keys then values __last value is added to any key above the number of values given__. 
+In case keyworded values were passed ```sets()``` will check for key in ```**kwargs``` before taking value from ```*args``` list. 
+If the key is in ```**kwargs``` value counter is not increased. This loop is continued for all keys that matched given pattern.
+
+
+----
+
+SEE ALSO:  
+[removers](removers.mdown)  
+[getters](getters.mdown)

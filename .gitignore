@@ -2,7 +2,9 @@
 !.gitignore
 *.pyc
 *.sh
-*.mdown
+README.mdown
+RELEASE.mdown
+Changelog.mdown
 run.py
 modules/__pycache__/
 archives/
