@@ -292,6 +292,24 @@ class Properties():
         self.source.extend(lines)
 
 
+    def _include_(self, line_number, path, prefix=""):
+        """
+        This method is only run when a property file is being read. 
+        It will dump another file in place specified by ```__include__``` directive.
+        """
+        print(line_number)
+        props = open(path).readlines()
+        self.source = self.source[:line_number] + props + self.source[line_number+1:]
+
+
+    def __preprocessincludes__(self):
+        for line in self.source:
+            if self.__getkey__(line) == None: continue
+            elif self.__getkey__(line)[:11] == "__include__":
+                print(line)
+                self._include_(self.source.index(line), self.__getvalue__(line))
+
+
     def blank(self):
         """
         Creates blank properties object.
@@ -322,6 +340,7 @@ class Properties():
         elif os.path.isdir(self.path): self.__loadd__(self.path)
         else: raise LoadError("'{0}' no such file or directory".format(path))
 
+        self.__preprocessincludes__()
         self.commented = []
         self.origin_commented = []
         self.__extractcommentedprops__()

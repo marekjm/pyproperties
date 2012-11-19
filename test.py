@@ -117,6 +117,10 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(bara.propcomments, barb.propcomments)
 
 
+    def testWithIncludes(self):
+        self.assertEqual(0, 1)
+
+
 class KeyGetterTest(unittest.TestCase):
     def testGetKeysOf(self):
         foo = pyproperties.Properties("./data/properties/foo.properties")
