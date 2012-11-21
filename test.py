@@ -118,7 +118,7 @@ class LoadTest(unittest.TestCase):
 
 
     def testWithIncludes(self):
-        self.assertEqual(0, 1)
+        test = pyproperties.Properties("./data/properties/include_test/test.properties")
 
 
 class KeyGetterTest(unittest.TestCase):

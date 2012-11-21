@@ -9,7 +9,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 wildcart_re = "[a-z0-9_.-]*"
 guess_int_re = "^[-]?[0-9]+$"
@@ -49,7 +49,7 @@ class Properties():
         self.commented          -   dictionary containing commented properties,
     """
 
-    def __init__(self, path="", cast=False, no_read=False):
+    def __init__(self, path="", cast=False, no_read=False, includes=True):
         """
         If you give a path as an argument it will be loaded and processed as properties file. 
         If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
@@ -63,7 +63,7 @@ class Properties():
         To create a blank instance with path specified you can run: 
             pyproperites.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
-        if path != "" and not path.isspace() and not no_read: self.read(path, cast)
+        if path != "" and not path.isspace() and not no_read: self.read(path, cast, includes)
         elif path == "": self.blank()
         elif path != "" and not path.isspace() and no_read: 
             self.blank()
@@ -117,7 +117,7 @@ class Properties():
         self.srcorigin = srcorigin
 
 
-    def __isvalidline__(self, line):
+    def _isvalidline(self, line):
         """
         Checks if the line contains valid property string. 
         Valid string is non-empty string and its first character is not '#' or '!'.
@@ -126,13 +126,73 @@ class Properties():
         return result
 
 
-    def __iscommentedprop__(self, line):
+    def _islinecommentedprop(self, line):
         """
         Defines if commented line is commented property.
         Used to distinguish comments from commented properties during
         load.
         """
-        return self.__isvalidline__(line.strip()[1:]) and not self.__isvalidline__(line.strip())
+        return self._isvalidline(line.strip()[1:]) and not self._isvalidline(line.strip())
+
+
+    def _tcast(self, identifier):
+        """
+        Converts property of the given key from str (default) to int or float if needed.
+        """
+        ptype = self._typeguess(self.get(identifier))
+        self.set(identifier, ptype(self.get(identifier)))
+
+
+    def _tcasts(self, identifier):
+        """
+        Converts properties type from str (default) to int or float if pattern match. 
+        """
+        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        for key in self.properties.keys():
+            if re.match(identifier, key): self._tcast(key)
+
+
+    def _typeguess(self, prop):
+        """
+        Tries to guess the type of property (initially all properties are stored as strings) and 
+        convert it accordingly. It can guess three types: int, float and string. 
+        It returns guessed ```type``` of property.
+        """
+        re_int = re.compile(guess_int_re)
+        re_float = re.compile(guess_float_re)
+
+        if re.match(re_int, prop): ptype = int
+        elif re.match(re_float, prop): ptype = float
+        else: ptype = str
+        return ptype
+
+
+    def _getlinekey(self, line):
+        """
+        Extracts key from given line and returns it. 
+        If the line is comment or is blank returns None.
+        """
+        if line == "": key = None
+        elif line[0] in ["#", "!"] or line.isspace(): key = None
+        elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
+        else: key = line.split("=", 1)[0].strip()
+        return key
+
+
+    def _getlinevalue(self, line):
+        """
+        Extracts value from given line and returns it. 
+        If the line is comment or is blank returns None. 
+        It is done this way to distinguish properties with empty value 
+        from lines which do not carry a property.
+        """
+        if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
+        if line == "": value = None
+        elif line[0] in ["#", "!"] or line.isspace(): value = None
+        elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
+        else: value = line.split("=", 1)[1].lstrip()
+        if value != None and value[0] == "\\": value = value[1:]
+        return value
 
 
     def __extractcommentedprops__(self):
@@ -141,8 +201,8 @@ class Properties():
         saves them to ```commented``` and ```origin_commented``` dictionaries.
         """
         for i in range(len(self.source)):
-            if self.__iscommentedprop__(self.source[i]):
-                key = self.__getkey__(self.source[i][1:])
+            if self._islinecommentedprop(self.source[i]):
+                key = self._getlinekey(self.source[i][1:])
                 if key not in self.commented: self.commented.append(key)
                 if key not in self.origin_commented: self.origin_commented.append(key)
                 self.source[i] = self.source[i][1:]
@@ -158,7 +218,7 @@ class Properties():
         extracted = []
         properties = []
         for i in range(len(self.source)):
-            if self.__isvalidline__(self.source[i]): extracted.append(self.source[i])
+            if self._isvalidline(self.source[i]): extracted.append(self.source[i])
         i = 0
         while i < len(extracted):
             line = extracted[i]
@@ -182,7 +242,7 @@ class Properties():
         propcomments = {}
         i = 0
         while i < len(self.source):
-            if self.__isvalidline__(self.source[i]):
+            if self._isvalidline(self.source[i]):
                 try:
                     if self.source[i-1][0] in ["#", "!"]:
                         n = i-1
@@ -195,7 +255,7 @@ class Properties():
                             except IndexError: break
                             finally: pass
                         comment.reverse()
-                        if comment: propcomments[self.__getkey__(self.source[i])] = comment
+                        if comment: propcomments[self._getlinekey(self.source[i])] = comment
                         self.source = self.source[:n+1] + self.source[i:]
                 except IndexError: pass
                 finally: pass
@@ -210,71 +270,12 @@ class Properties():
         props = {}
         origin = {}
         for i in range(len(self.properties)):
-            key = self.__getkey__(self.properties[i])
-            value = self.__getvalue__(self.properties[i])
-            if key in props: print("multiple declarations for property '{0}' in '{1}': '{2}' -> '{3}'".format(key, self.path, props[key], value))
+            key = self._getlinekey(self.properties[i])
+            value = self._getlinevalue(self.properties[i])
+            if key in props: warnings.warn("multiple declarations for property '{0}' in file '{1}': '{2}' -> '{3}'".format(key, self.path, props[key], value))
             origin[key] = props[key] = value
         self.propsorigin = origin
         self.properties = props
-
-
-    def __tcast__(self, identifier):
-        """
-        Converts property of the given key from str (default) to int or float if needed.
-        """
-        ptype = self.__typeguess__(self.get(identifier))
-        self.set(identifier, ptype(self.get(identifier)))
-
-
-    def __tcasts__(self, identifier):
-        """
-        Converts properties type from str (default) to int or float if pattern match. 
-        """
-        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
-        for key in self.properties.keys():
-            if re.match(identifier, key): self.__tcast__(key)
-
-
-    def __typeguess__(self, prop):
-        """
-        Tries to guess the type of property (initially all properties are stored as strings) and 
-        convert it accordingly. It can guess three types: int, float and string.
-        """
-        re_int = re.compile(guess_int_re)
-        re_float = re.compile(guess_float_re)
-
-        if re.match(re_int, prop): ptype = int
-        elif re.match(re_float, prop): ptype = float
-        else: ptype = str
-        return ptype
-
-
-    def __getkey__(self, line):
-        """
-        Extracts key from given line and returns it. 
-        If the line is comment or is blank returns None.
-        """
-        if line == "": key = None
-        elif line[0] in ["#", "!"] or line.isspace(): key = None
-        elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
-        else: key = line.split("=", 1)[0].strip()
-        return key
-
-
-    def __getvalue__(self, line):
-        """
-        Extracts value from given line and returns it. 
-        If the line is comment or is blank returns None. 
-        It is done this way to distinguish properties with empty value 
-        from lines which do not carry a property.
-        """
-        if line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
-        if line == "": value = None
-        elif line[0] in ["#", "!"] or line.isspace(): value = None
-        elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
-        else: value = line.split("=", 1)[1].lstrip()
-        if value[0] == "\\": value = value[1:]
-        return value
 
 
     def _appendsrc(self, props, prefix=""):
@@ -285,29 +286,35 @@ class Properties():
         for line in props.srcorigin:
             if line == "": lines.append(line)
             elif line[0] in ["#", "!"] or line.isspace(): lines.append(line)
-            elif self.__isvalidline__(line) and not prefix: lines.append(line)
-            elif self.__isvalidline__(line) and prefix: lines.append("{0}.{1}".format(prefix, line))
+            elif self._isvalidline(line) and not prefix: lines.append(line)
+            elif self._isvalidline(line) and prefix: lines.append("{0}.{1}".format(prefix, line))
             else: pass
         if self.source: self.source.append("")
         self.source.extend(lines)
 
 
-    def _include_(self, line_number, path, prefix=""):
+    def _include(self, line_number, path, prefix="", commented=False):
         """
         This method is only run when a property file is being read. 
         It will dump another file in place specified by ```__include__``` directive.
         """
         print(line_number)
-        props = open(path).readlines()
-        self.source = self.source[:line_number] + props + self.source[line_number+1:]
-
-
-    def __preprocessincludes__(self):
-        for line in self.source:
-            if self.__getkey__(line) == None: continue
-            elif self.__getkey__(line)[:11] == "__include__":
-                print(line)
-                self._include_(self.source.index(line), self.__getvalue__(line))
+        print(path)
+        print(prefix)
+        print(commented)
+        #   props = open(path).readlines()
+        #   self.source = self.source[:line_number] + props + self.source[line_number+1:]
+    
+    
+    def _makeincludes(self):
+        i = 0
+        while i < len(self.source):
+            key = self._getlinekey(self.source[i])
+            value = self._getlinevalue(self.source[i])
+            if key == "__include__": self._include(i, value)
+            elif key == "__include__.commented": self._include(i, value, commented=True)
+            elif key != None and key[:15] == "__include__.as.": self._include(i, value, prefix=key[15:])
+            i += 1
 
 
     def blank(self):
@@ -327,30 +334,31 @@ class Properties():
         self.unsaved = False
 
 
-    def read(self, path="", cast=False):
+    def read(self, path="", cast=False, includes=True):
         """
         Reads properties file and processes it to be available in Python 3 program.
         You can pass 'cast' as True to tell pyproperites that it should guess the type of the property 
-        and convert it accordingly (the __tcasts__ method will be called).
+        and convert it accordingly (the _tcasts method will be called).
         """
         if path == "": path = self.path
         else: self.path = os.path.expanduser(path).strip()
         self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
+
         if os.path.isfile(self.path): self.__loadf__(self.path)
         elif os.path.isdir(self.path): self.__loadd__(self.path)
         else: raise LoadError("'{0}' no such file or directory".format(path))
 
-        self.__preprocessincludes__()
+        if includes: self._makeincludes()
         self.commented = []
         self.origin_commented = []
         self.__extractcommentedprops__()
         self.__extractprops__()
         self.__split__()
-        if cast: self.__tcasts__("*")
+        if cast: self._tcasts("*")
         self.propcomments = {}
         self.origin_propcomments = {}
         self.__extractcomments__()
-        self.unsaved = False
+        self.unsaved = True
         self.save()
 
 
@@ -417,6 +425,7 @@ class Properties():
         copy._appendsrc(self)
         for key in self.properties: copy.set(key, self.get(key))
         for key in self.propcomments: copy.addcomment(key, self.propcomments[key])
+        for key in self.commented: copy.comment(key)
         copy.save()
         return copy
 
@@ -583,7 +592,7 @@ class Properties():
             if self.srcorigin[i] == "" or self.srcorigin[i].isspace(): self.lines.append("{0}".format(self.srcorigin[i]))
             elif self.srcorigin[i][0] == "#": self.lines.append("{0}".format(self.srcorigin[i]))
             # checks if current line has a key
-            elif self.__getkey__(self.srcorigin[i]) != "": self._storeprop(self.__getkey__(self.srcorigin[i]))
+            elif self._getlinekey(self.srcorigin[i]) != "": self._storeprop(self._getlinekey(self.srcorigin[i]))
 
 
     def _storegroups(self):
@@ -662,7 +671,7 @@ class Properties():
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
         if parsed: value = self.parseline(self.properties[identifier])
         else: value = self.properties[identifier]
-        if cast and type(value) == str: value = self.__typeguess__(value)(value)
+        if cast and type(value) == str: value = self._typeguess(value)(value)
         return value
 
 
@@ -680,7 +689,7 @@ class Properties():
             elif re.match(identifier, key) and not parsed: matched[key] = value
         if cast:
             for key, value in matched.items():
-                if type(value) == str: matched[key] = self.__typeguess__(value)(value)
+                if type(value) == str: matched[key] = self._typeguess(value)(value)
         return matched
 
 
@@ -699,7 +708,7 @@ class Properties():
             if re.match(identifier, key) and parsed: matched[key] = self.parseline(value)
             elif re.match(identifier, key) and not parsed: matched[key] = value
         if cast:
-            for key, value in matched.items(): matched[key] = self.__typeguess__(value)(value)
+            for key, value in matched.items(): matched[key] = self._typeguess(value)(value)
         return matched
 
 
@@ -770,7 +779,7 @@ class Properties():
         Removed property will be not saved using store().
         """
         prop = self.properties.pop(identifier)
-        if cast: prop = self.__typeguess__(prop)(prop)
+        if cast: prop = self._typeguess(prop)(prop)
         self.unsaved = True
         return prop
 
@@ -788,7 +797,7 @@ class Properties():
         for key in popped.keys(): self.properties.pop(key)
         if cast: 
             for key, value in popped.items():
-                popped[key] = self.__typeguess__(value)(value)
+                popped[key] = self._typeguess(value)(value)
         self.unsaved = True
         return popped
 
