@@ -117,8 +117,45 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(bara.propcomments, barb.propcomments)
 
 
-    def testWithIncludes(self):
+class LoadIncludeTest(unittest.TestCase):
+    def testIncludeSimple(self):
         test = pyproperties.Properties("./data/properties/include_test/test.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined.properties")
+
+        self.assertEqual(test.source, combined.source)
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.commented, combined.commented)
+
+
+    def testIncludePrefixed(self):
+        test = pyproperties.Properties("./data/properties/include_test/test.prefix.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined.prefix.properties")
+
+        self.assertEqual(test.source, combined.source)
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.commented, combined.commented)
+
+
+    def testIncludeCommented(self):
+        test = pyproperties.Properties("./data/properties/include_test/test.commented.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined.commented.properties")
+
+        self.assertEqual(test.source, combined.source)
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.commented, combined.commented)
+
+
+    def testIncludeCommentedAndPrefixed(self):
+        test = pyproperties.Properties("./data/properties/include_test/test.commented.prefix.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined.commented.prefix.properties")
+
+        self.assertEqual(test.source, combined.source)
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.commented, combined.commented)
 
 
 class KeyGetterTest(unittest.TestCase):

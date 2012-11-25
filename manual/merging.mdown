@@ -1,6 +1,6 @@
 #### Merging properties
 
-```melt()``` method does one thing: it tries to makes ```foo``` as similar 
+```merge()``` method does one thing: it tries to makes ```foo``` as similar 
 to ```bar``` as possible. It does following things:
 
 *   runs ```foo.complete(bar)``` to ensure every property of ```bar``` can be found in ```foo```,
@@ -13,4 +13,5 @@ to ```bar``` as possible. It does following things:
 SEE ALSO:  
 [completing](completing.mdown)  
 [joining](joining.mdown)  
-[saving](saving.mdown)
+[saving](saving.mdown)  
+[include](include.mdown)

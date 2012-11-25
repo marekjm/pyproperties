@@ -49,7 +49,7 @@ class Properties():
         self.commented          -   dictionary containing commented properties,
     """
 
-    def __init__(self, path="", cast=False, no_read=False, includes=True):
+    def __init__(self, path="", cast=False, no_read=False, no_includes=False):
         """
         If you give a path as an argument it will be loaded and processed as properties file. 
         If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
@@ -63,9 +63,9 @@ class Properties():
         To create a blank instance with path specified you can run: 
             pyproperites.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
-        if path != "" and not path.isspace() and not no_read: self.read(path, cast, includes)
+        if path != "" and not path.isspace() and not no_read: self.read(path, cast, no_includes)
         elif path == "": self.blank()
-        elif path != "" and not path.isspace() and no_read: 
+        elif path != "" and not path.isspace() and no_read:
             self.blank()
             self.path = path
 
@@ -97,6 +97,8 @@ class Properties():
         proppaths = []
         propnames = []
         propvalues = {}
+
+        warnings.warn("this feature is exprerimental and does not receive updates and bugfixes")
 
         for root, dirs, files in os.walk(self.path):
             for file in files:
@@ -200,12 +202,12 @@ class Properties():
         Uncomments commented properties so they can be read by ```__extractprops__()``` and 
         saves them to ```commented``` and ```origin_commented``` dictionaries.
         """
-        for i in range(len(self.source)):
-            if self._islinecommentedprop(self.source[i]):
-                key = self._getlinekey(self.source[i][1:])
+        for i, line in enumerate(self.source):
+            if self._islinecommentedprop(line):
+                key = self._getlinekey(line[1:])
                 if key not in self.commented: self.commented.append(key)
                 if key not in self.origin_commented: self.origin_commented.append(key)
-                self.source[i] = self.source[i][1:]
+                self.source[i] = line[1:]
 
 
     def __extractprops__(self):
@@ -219,14 +221,11 @@ class Properties():
         properties = []
         for i in range(len(self.source)):
             if self._isvalidline(self.source[i]): extracted.append(self.source[i])
-        i = 0
-        while i < len(extracted):
-            line = extracted[i]
+        for i, line in enumerate(extracted):
             while line[-1] == "\\":    #  if line ends with backslash read next line and append it
                 i += 1
                 line = "".join(line[:-1], extracted[i]).lstrip()
             properties.append(line.lstrip())
-            i += 1
         self.properties = properties
 
 
@@ -269,18 +268,19 @@ class Properties():
         """
         props = {}
         origin = {}
-        for i in range(len(self.properties)):
-            key = self._getlinekey(self.properties[i])
-            value = self._getlinevalue(self.properties[i])
-            if key in props: warnings.warn("multiple declarations for property '{0}' in file '{1}': '{2}' -> '{3}'".format(key, self.path, props[key], value))
-            origin[key] = props[key] = value
+        for i, line in enumerate(self.properties):
+            key = self._getlinekey(line)
+            if key in props: warnings.warn("multiple declarations for property '{0}' in file '{1}'".format(key, self.path))
+            origin[key] = props[key] = self._getlinevalue(line)
         self.propsorigin = origin
         self.properties = props
 
 
     def _appendsrc(self, props, prefix=""):
         """
-        This methods appends source of given properties to the base.
+        This methods appends source of given properties to the base. 
+        If ```source``` already contains some lines a blank line is added before actual 
+        source to avoid making comments accidentaly joined.
         """
         lines = []
         for line in props.srcorigin:
@@ -298,14 +298,23 @@ class Properties():
         This method is only run when a property file is being read. 
         It will dump another file in place specified by ```__include__``` directive.
         """
-        print(line_number)
-        print(path)
-        print(prefix)
-        print(commented)
-        #   props = open(path).readlines()
-        #   self.source = self.source[:line_number] + props + self.source[line_number+1:]
-    
-    
+        if os.path.isabs(path): pass
+        else: path = os.path.join(os.path.split(self.path)[0], path)
+        
+        path = open(path)
+        file = path.readlines()
+        path.close()
+        for i, line in enumerate(file):
+            if self._isvalidline(line) and prefix: line = "{0}.{1}".format(prefix, line.lstrip())
+            elif self._islinecommentedprop(line) and prefix: line = "#{0}.{1}".format(prefix, line[1:])
+            if self._isvalidline(line) and commented: line = "#{0}".format(line.lstrip())
+            if line[-1] == "\n": line = line[:-1]
+            file[i] = line
+
+        new_source = [ line for line in file ]
+        self.source = self.source[:line_number] + new_source + self.source[line_number+1:]
+        
+
     def _makeincludes(self):
         i = 0
         while i < len(self.source):
@@ -314,6 +323,7 @@ class Properties():
             if key == "__include__": self._include(i, value)
             elif key == "__include__.commented": self._include(i, value, commented=True)
             elif key != None and key[:15] == "__include__.as.": self._include(i, value, prefix=key[15:])
+            elif key != None and key[:25] == "__include__.commented.as.": self._include(i, value, prefix=key[25:], commented=True)
             i += 1
 
 
@@ -334,7 +344,7 @@ class Properties():
         self.unsaved = False
 
 
-    def read(self, path="", cast=False, includes=True):
+    def read(self, path="", cast=False, no_includes=False):
         """
         Reads properties file and processes it to be available in Python 3 program.
         You can pass 'cast' as True to tell pyproperites that it should guess the type of the property 
@@ -348,7 +358,7 @@ class Properties():
         elif os.path.isdir(self.path): self.__loadd__(self.path)
         else: raise LoadError("'{0}' no such file or directory".format(path))
 
-        if includes: self._makeincludes()
+        if not no_includes: self._makeincludes()
         self.commented = []
         self.origin_commented = []
         self.__extractcommentedprops__()
@@ -389,7 +399,7 @@ class Properties():
         This method searches for every $(reference) string in given line and 
         replaces it with value of corresponding property. 
         """
-        if type(value) == str: 
+        if type(value) == str:
             while "$(" in value and ")" in value:
                 a = value.find("$(")
                 b = value[a:].find(")")
@@ -634,7 +644,7 @@ class Properties():
         self.lines = []
 
 
-    def store(self, path="", force=False, no_dump=False):
+    def store(self, path="", force=False, no_dump=False, no_source=False):
         """
         Writes properties to given 'path'.
         'path' defaults to self.path
@@ -654,7 +664,7 @@ class Properties():
         if path and not self.path: self.path = path
         self.lines = []
         self.stored = []
-        self._storesrc()
+        if not no_source: self._storesrc()
         self._storegroups()
         self._storesingles()
         while self.lines[-1] == "": self.lines = self.lines[:-1]
@@ -792,12 +802,10 @@ class Properties():
         popped = {}
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key, value in self.properties.items():
-            if re.match(identifier, key): 
-                popped[key] = value
+            if re.match(identifier, key): popped[key] = value
         for key in popped.keys(): self.properties.pop(key)
-        if cast: 
-            for key, value in popped.items():
-                popped[key] = self._typeguess(value)(value)
+        if cast:
+            for key, value in popped.items(): popped[key] = self._typeguess(value)(value)
         self.unsaved = True
         return popped
 
@@ -853,7 +861,6 @@ class Properties():
         for skey in skeys:
             identifier = ""
             for key in skey:
-                #   if key.isdigit(): key = "*"
                 if onlyhexchars(key): key = "*"
                 identifier = "{}.{}".format(identifier, key)
             identifier = identifier[1:]
@@ -915,7 +922,6 @@ class Properties():
             try: self.addcomment(key, comments[i])
             except IndexError: self.addcomment(key, comments[-1])
             finally: i += 1
-        self.unsaved = True
 
 
     def rmcomment(self, key):
@@ -954,7 +960,6 @@ class Properties():
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key in self.getnames():
             if re.match(identifier, key): self.comment(key)
-        self.unsaved = True
 
 
     def uncomment(self, key):
@@ -975,4 +980,3 @@ class Properties():
         for i in range(len(self.commented)):
             if re.match(identifier, self.commented[i]): to_uncomment.append(self.commented[i])
         for key in to_uncomment: self.uncomment(key)
-        self.unsaved = True

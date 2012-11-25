@@ -1,0 +1,67 @@
+#### Including properties
+
+```__include__``` directive works the same way as _```#include```_ in C/C++. It replaces line containg the directive with contents of the file it points to. 
+
+
+In ```pyproperties``` you can pass some arguments to ```__include__```.  
+
+
+1.  ```as``` which will add prefix to all included properties,
+2.  ```commented``` which will comment all included properties,
+3.  ```commented.as``` which will comment all included properties _and_ add prefix to them,
+
+
+----
+
+
+##### Example
+
+    __include__=/home/some/file.properties
+    
+    avogardo=6.02+e23
+    pi=3.14
+
+
+----
+
+
+    __include__.as.number=/home/some/file.properties
+    
+    number.avogardo=6.02+e23
+    number.pi=3.14
+
+
+----
+
+
+    __include__.commented=/home/some/file.properties
+    
+    #avogardo=6.02+e23
+    #pi=3.14
+
+
+----
+
+
+    __include__.commente.as.number=/home/some/file.properties
+    
+    number.avogardo=6.02+e23
+    number.pi=3.14
+
+
+----
+
+
+##### Paths
+
+```_include()``` can deal with absolute and relative paths.  
+__Important implementation detail:__ relative path is relatve to ___file___ _in which it will be included_ and __not__ working directory.
+
+
+----
+
+SEE ALSO:  
+[merging](merging.mdown)  
+[completing](completing.mdown)  
+[joining](joining.mdown)  
+[saving](saving.mdown)

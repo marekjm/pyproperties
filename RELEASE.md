@@ -1,29 +1,45 @@
-#### Release 0.1.5
+#### Release 0.1.7
 
->   This release brings new submethod which runs during store(). It is called _dump().
->   While it is yet-another-one submethod in store() it gives programmer even greter control
->   over the process of writing properties to file. By passing 'no_dump' argument as True to
->   store() method you can tell it to only generate lines and use your custom function to write 
->   them to file.
 
----------------------------------------------------------------------------------------------
+>   Fixes in the lowest level internals of ```pyproperties```for bugs which were uncovered by introducing ```_makeincludes()``` and ```_include()``` 
+>   methods. They are not mentioned in Changelog because (shame on me) I have not kept track of them. But since they are fixed I hope you will forgive me.  
+>   What is funny for me that the ```read()``` method which I considered kind of low-level actually turns out to be very _high_ level. 
+>   Adding capability of ```__include__``` directive to it was one line and one new argument. 
+>   And if a method needed only one line to add a whole new functionality which spans multiple lines of backstage implementation it is certainly high level.  
+>   ```__include__``` is covered by four unit tests - for simple, prefixed, commented and prefixed/commented include.  
+>
+>   There is also new manual describing usage of [```__include__```](manual/include.mdown).
+
+
+----
 
 
 ##### This release brings you:
-*   1 update(s),
+*   9 update(s),
 *   1 fix(es),
-*   6 new feature(s).
+*   3 new feature(s).
 
 
-* __upd__:  ```addcomment()``` takes list of strings as an argumet, read DOC for more
-* __fix__:  fixed regexp used in multi- methods (they were not catching properties whose names contained '-' inside)
-* __new__:  ```store()``` has new submethod: ```_dump()``` which takes previously generated lines and writes them to file; read DOC for more,
-* __new__:  ```store()``` accepts ```no_dump``` argument which tells it to finish after generating lines,
-* __new__:  ```__init__()``` accepts ```no_read``` argument which tells it to dont't read the file of specified path, creates blank props with set path
-* __new__:  ```__extractcomments__()``` method which cuts comments out from the source and saves them to the ```propcomments``` variable
-* __new__:  ```getcomment()``` method which returns comment of a property
-* __new__:  ```store()``` has new submethod - ```_storecomment()``` which is responsible for storing comments,
+* __upd__:  ```__tcasts__()```, ```__tcast__()``` and ```__typeguess__()``` were renamed to ```_tcast()```, ```_tcasts()``` and ```_typeguess()``` respectively,
+* __upd__:  ```__getkey__()``` and ```__getvalue__()``` were renamed to ```_getlinekey()```, ```_getlinevalue()```,
+* __upd__:  ```__isvalidline__()``` was renamed to ```_isvalidline()```,
+* __upd__:  ```__iscommentedprop__()``` was renamed to ```_islinecommentedprop()```,
+* __upd__:  ```__iscommentedprop__()``` was renamed to ```_islinecommentedprop()```,
+* __upd__:  ```__iscommentedprop__()``` was renamed to ```_islinecommentedprop()```,
+* __upd__:  ```addcomment()```, ```rmcomment()``` and ```uncomment()``` have ```self.unsaved = True``` line removed because all of these actions implicitly 
+    set this variable to ```False```
+* __upd__:  ```__extracteprops__()``` and ```__extractcommentedprops__()``` use ```enumerate()``` instead of expilict ```while``` loop,
+* __upd__:  ```__split__()``` use ```enumerate()``` instead of expilict ```while``` loop,
 
 
-Yours,
+* __fix__:  ```copy()``` copies status (commented/not-commented) of properties,
+
+
+* __new__:  ```no_includes``` argument in which tell ```read()``` whether it should include other files into one that is being loaded or not,
+* __new__:  ```no_source``` argument in ```store()``` which drops the original source,
+* __new__:  unit tests for ```__include__``` directive,
+
+&nbsp;
+
+Yours,  
 Marek Marecki.
