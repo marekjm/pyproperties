@@ -1,8 +1,32 @@
 #### Changelog file for pyproperties
 
-------------------------------------------------
 
-#### Version 0.1.6 ():
+#### Version 0.1.7 (2012.11.25):
+
+* __upd__:  ```__tcasts__()```, ```__tcast__()``` and ```__typeguess__()``` were renamed to ```_tcast()```, ```_tcasts()``` and ```_typeguess()``` respectively,
+* __upd__:  ```__getkey__()``` and ```__getvalue__()``` were renamed to ```_getlinekey()```, ```_getlinevalue()```,
+* __upd__:  ```__isvalidline__()``` was renamed to ```_isvalidline()```,
+* __upd__:  ```__iscommentedprop__()``` was renamed to ```_islinecommentedprop()```,
+* __upd__:  ```__iscommentedprop__()``` was renamed to ```_islinecommentedprop()```,
+* __upd__:  ```__iscommentedprop__()``` was renamed to ```_islinecommentedprop()```,
+* __upd__:  ```addcomment()```, ```rmcomment()``` and ```uncomment()``` have ```self.unsaved = True``` line removed because all of these actions implicitly 
+    set this variable to ```False```
+* __upd__:  ```__extracteprops__()``` and ```__extractcommentedprops__()``` use ```enumerate()``` instead of expilict ```while``` loop,
+* __upd__:  ```__split__()``` use ```enumerate()``` instead of expilict ```while``` loop,
+
+
+* __fix__:  ```copy()``` copies status (commented/not-commented) of properties,
+
+
+* __new__:  ```no_includes``` argument in which tell ```read()``` whether it should include other files into one that is being loaded or not,
+* __new__:  ```no_source``` argument in ```store()``` which drops the original source,
+* __new__:  unit tests for ```__include__``` directive,
+
+
+----
+
+
+#### Version 0.1.6 (2012.11.18):
 
 * __upd__:  ```__extract__()``` renamed to ```__extractprops__()```
 * __upd__:  changed way of compiling regexp idetifiers
@@ -32,7 +56,9 @@
 * __new__:  unit tests for comments added,
 * __new__:  ```_storeprop()``` method which generate lines for single property, saved a few lines with this reusable code,
 
-&nbsp; 
+
+----
+
 
 #### Version 0.1.5 (2012.11.11):
 

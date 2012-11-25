@@ -131,17 +131,7 @@ CLASSES
      |      Lines begining with '#' or '!' are considered comments and not parsed.
      |      Lines containing only whitespace are also not parsed.
      |  
-     |  __getkey__(self, line)
-     |      Extracts key from given line and returns it. 
-     |      If the line is comment or is blank returns None.
-     |  
-     |  __getvalue__(self, line)
-     |      Extracts value from given line and returns it. 
-     |      If the line is comment or is blank returns None. 
-     |      It is done this way to distinguish properties with empty value 
-     |      from lines which do not carry a property.
-     |  
-     |  __init__(self, path='', cast=False, no_read=False)
+     |  __init__(self, path='', cast=False, no_read=False, no_includes=False)
      |      If you give a path as an argument it will be loaded and processed as properties file. 
      |      If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
      |      foo.read(path, cast) to load some properties or 
@@ -154,15 +144,6 @@ CLASSES
      |      To create a blank instance with path specified you can run: 
      |          pyproperites.Properties("/home/user/some/path/foo.properties", no_read=True)
      |  
-     |  __iscommentedprop__(self, line)
-     |      Defines if commented line is commented property.
-     |      Used to distinguish comments from commented properties during
-     |      load.
-     |  
-     |  __isvalidline__(self, line)
-     |      Checks if the line contains valid property string. 
-     |      Valid string is non-empty string and its first character is not '#' or '!'.
-     |  
      |  __loadd__(self, path)
      |      This method reads directory tree as if it was properties file.
      |  
@@ -172,16 +153,6 @@ CLASSES
      |  
      |  __split__(self)
      |      This method converts self.properties from list containing extracted lines to a dictionary.
-     |  
-     |  __tcast__(self, identifier)
-     |      Converts property of the given key from str (default) to int or float if needed.
-     |  
-     |  __tcasts__(self, identifier)
-     |      Converts properties type from str (default) to int or float if pattern match.
-     |  
-     |  __typeguess__(self, prop)
-     |      Tries to guess the type of property (initially all properties are stored as strings) and 
-     |      convert it accordingly. It can guess three types: int, float and string.
      |  
      |  addcomment(self, key, comment)
      |      Attaches comment to property. 
@@ -315,10 +286,10 @@ CLASSES
      |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
      |      Removed properties will be not saved using store().
      |  
-     |  read(self, path='', cast=False)
+     |  read(self, path='', cast=False, no_includes=False)
      |      Reads properties file and processes it to be available in Python 3 program.
      |      You can pass 'cast' as True to tell pyproperites that it should guess the type of the property 
-     |      and convert it accordingly (the __tcasts__ method will be called).
+     |      and convert it accordingly (the _tcasts method will be called).
      |  
      |  refresh(self, overwrite=True)
      |      Refreshes from file. Missing values are added.
@@ -362,7 +333,7 @@ CLASSES
      |      If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
      |      as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
      |  
-     |  store(self, path='', force=False, no_dump=False)
+     |  store(self, path='', force=False, no_dump=False, no_source=False)
      |      Writes properties to given 'path'.
      |      'path' defaults to self.path
      |      
@@ -565,7 +536,7 @@ DATA
     wildcart_re = '[a-z0-9_.-]*'
 
 VERSION
-    0.1.6
+    0.1.7
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py

@@ -9,7 +9,8 @@ by providing getters, setters and methods like ```merge()```, ```complete()```, 
 
 ----
 
-Since version 0.1.4 is loosly trying to stick to the specification described [here](http://docs.oracle.com/cd/E23095_01/Platform.93/ATGProgGuide/html/s0204propertiesfileformat01.html).
+Since version 0.1.4 ```pyproperties``` is considering specification described [here](http://docs.oracle.com/cd/E23095_01/Platform.93/ATGProgGuide/html/s0204propertiesfileformat01.html) 
+as the one which ```pyproperties``` will try stick to.
 
 ----
 
@@ -23,4 +24,6 @@ Projects website:       [SourceForge](https://sourceforge.net/projects/pypropert
 
 __HOW TO__
 
-Manuals are placed in ```manual``` directory.
+Manuals are placed in ```manual``` directory in every released package.  
+Since version ```0.1.6``` they are in the [Markdown](http://daringfireball.net/projects/markdown/) format. If you do not have any viewer (I did not find any myself) you can install an 
+[addon](https://addons.mozilla.org/pl/firefox/addon/markdown-viewer/) for Firefox and view Markdown files in nice, formatted way.
