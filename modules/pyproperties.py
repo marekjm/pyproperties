@@ -2,14 +2,14 @@
 
 """Working with *.properties files.
 
-pyproperites aim is to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
+pyproperties aim is to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
 """
 
 import os
 import re
 import warnings
 
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 
 wildcart_re = "[a-z0-9_.-]*"
 guess_int_re = "^[-]?[0-9]+$"
@@ -55,19 +55,16 @@ class Properties():
         If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
         foo.read(path, cast) to load some properties or 
         you can use the blank properties to create completly new set of properties.
-        You can pass cast as True to tell pyproperites that it should guess the type of the property 
+        You can pass cast as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly.
 
         This method just calls read() with arguments passed to itself or blank() when no arguments are passed.
         
         To create a blank instance with path specified you can run: 
-            pyproperites.Properties("/home/user/some/path/foo.properties", no_read=True)
+            pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
         if path != "" and not path.isspace() and not no_read: self.read(path, cast, no_includes)
-        elif path == "": self.blank()
-        elif path != "" and not path.isspace() and no_read:
-            self.blank()
-            self.path = path
+        else: self.blank(path)
 
 
     def __loadf__(self, path):
@@ -316,6 +313,11 @@ class Properties():
         
 
     def _makeincludes(self):
+        """
+        This method runs during load and is kind of preprocessor. It will replace 
+        every line which key begins with ```__include__``` with lines of file 
+        it will try to read from the path specified in the value of the mentioned line.
+        """
         i = 0
         while i < len(self.source):
             key = self._getlinekey(self.source[i])
@@ -327,12 +329,13 @@ class Properties():
             i += 1
 
 
-    def blank(self):
+    def blank(self, path=""):
         """
-        Creates blank properties object.
+        Creates blank properties object. 
+        Can be used to erase contents of your ```pyproperties``` object.
         """
-        self.path = ""
-        self.name = ""
+        self.path = os.path.expanduser(path.strip())
+        self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
         self.srcorigin = []
         self.source = []
         self.properties = {}
@@ -347,28 +350,24 @@ class Properties():
     def read(self, path="", cast=False, no_includes=False):
         """
         Reads properties file and processes it to be available in Python 3 program.
-        You can pass 'cast' as True to tell pyproperites that it should guess the type of the property 
+        You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly (the _tcasts method will be called).
         """
-        if path == "": path = self.path
-        else: self.path = os.path.expanduser(path).strip()
-        self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
+        try: 
+            if self.path != "": path = self.path
+        except AttributeError: pass
+        finally: self.blank(path)
 
         if os.path.isfile(self.path): self.__loadf__(self.path)
         elif os.path.isdir(self.path): self.__loadd__(self.path)
-        else: raise LoadError("'{0}' no such file or directory".format(path))
+        else: raise LoadError("'{0}' no such file or directory".format(self.path))
 
         if not no_includes: self._makeincludes()
-        self.commented = []
-        self.origin_commented = []
         self.__extractcommentedprops__()
         self.__extractprops__()
         self.__split__()
         if cast: self._tcasts("*")
-        self.propcomments = {}
-        self.origin_propcomments = {}
         self.__extractcomments__()
-        self.unsaved = True
         self.save()
 
 
@@ -380,18 +379,21 @@ class Properties():
         new = Properties(self.path)
         self.source = new.source
         self.properties = new.properties
+        self.propcomments = new.propcomments
+        self.commented = new.commented
+        self.unsaved = True
 
 
     def refresh(self, overwrite=True):
         """
         Refreshes from file. Missing values are added.
-        If 'overwrite' is set to True existing values are overwritten - merge() is used.
-        'overwrite' defaults to True.
+        If ```overwrite``` is set to True existing values are overwritten - ```update()``` is used.
         Values which are not found in file are not deleted.
         """
         new = Properties(self.path)
         self.complete(new, "")
         if overwrite: self.update(new)
+        self.unsaved = True
 
 
     def parseline(self, value):
@@ -429,11 +431,11 @@ class Properties():
 
     def copy(self):
         """
-        Returns exact copy of a Properties() object.
+        Returns exact copy of a pyproperties.Properties() object.
         """
-        copy = Properties()
+        copy = Properties(self.path, no_read=True)
         copy._appendsrc(self)
-        for key in self.properties: copy.set(key, self.get(key))
+        for key in self.properties: copy.set(key, self.properties[key])
         for key in self.propcomments: copy.addcomment(key, self.propcomments[key])
         for key in self.commented: copy.comment(key)
         copy.save()
@@ -447,7 +449,7 @@ class Properties():
         Prefix defaluts to joined modules name. 
         Source of joined properties is appended to base source.
         """
-        props = Properties(path.strip())
+        props = Properties(path)
         if prefix == " ": prefix = props.name
         self.complete(props, prefix)
         self._appendsrc(props, prefix)
@@ -539,12 +541,10 @@ class Properties():
         for key, value in self.properties.items(): saved[key] = value
         self.propsorigin = saved
         
-        saved = []
-        [ saved.append(line) for line in self.source ]
+        saved = [ line for line in self.source ]
         self.srcorigin = saved
         
-        saved = []
-        [ saved.append(key) for key in self.commented ]
+        saved = [ key for key in self.commented ]
         self.origin_commented = saved
 
         saved = {}
@@ -563,12 +563,10 @@ class Properties():
         for key, value in self.propsorigin.items(): reverted[key] = value
         self.properties = reverted
         
-        reverted = []
-        [ reverted.append(line) for line in self.srcorigin ]
+        reverted = [ line for line in self.srcorigin ]
         self.source = reverted
         
-        reverted = []
-        [ reverted.append(key) for key in self.origin_commented ]
+        reverted = [ key for key in self.origin_commented ]
         self.commented = reverted
 
         reverted = {}
@@ -601,7 +599,6 @@ class Properties():
         for i in range(len(self.srcorigin)):
             if self.srcorigin[i] == "" or self.srcorigin[i].isspace(): self.lines.append("{0}".format(self.srcorigin[i]))
             elif self.srcorigin[i][0] == "#": self.lines.append("{0}".format(self.srcorigin[i]))
-            # checks if current line has a key
             elif self._getlinekey(self.srcorigin[i]) != "": self._storeprop(self._getlinekey(self.srcorigin[i]))
 
 
@@ -644,7 +641,7 @@ class Properties():
         self.lines = []
 
 
-    def store(self, path="", force=False, no_dump=False, no_source=False):
+    def store(self, path="", force=False, no_dump=False, drop_source=False):
         """
         Writes properties to given 'path'.
         'path' defaults to self.path
@@ -664,11 +661,14 @@ class Properties():
         if path and not self.path: self.path = path
         self.lines = []
         self.stored = []
-        if not no_source: self._storesrc()
+        if not drop_source: self._storesrc()
         self._storegroups()
         self._storesingles()
-        while self.lines[-1] == "": self.lines = self.lines[:-1]
-        if not no_dump: self._dump(path)
+        try:
+            while self.lines[-1] == "": self.lines = self.lines[:-1]
+        except IndexError: pass
+        finally:
+            if not no_dump: self._dump(path)
 
 
     def get(self, identifier, parsed=False, cast=False):
@@ -707,7 +707,7 @@ class Properties():
         """
         Returns dict of properties which names matched given pattern.
         If parsed is set to True values will be parsed before returning. 
-        If cast is passed as True pyproperites will try to cast types of properties.
+        If cast is passed as True pyproperties will try to cast types of properties.
         """
         matched = {}
         if type(identifier) == str: identifier= re.compile(identifier)
@@ -761,14 +761,15 @@ class Properties():
         self.unsaved = True
 
 
-    def remove(self, identifier):
+    def remove(self, key):
         """
         This method removes specified property from interal dictionary. 
         Removed property will be not saved using store().
         """
-        self.properties.pop(identifier)
+        self.properties.pop(key)
+        if key in self.propcomments: self.propcomments.pop(key)
+        if key in self.commented: self.commented.remove(key)
         self.unsaved = True
-
 
     def removes(self, identifier):
         """
@@ -779,25 +780,20 @@ class Properties():
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key in self.properties.keys():
             if re.match(identifier, key): to_remove.append(key)
-        for key in to_remove: self.properties.pop(key)
-        self.unsaved = True
-
+        for key in to_remove: self.remove(key)
 
     def pop(self, identifier, cast=False):
         """
         This method removes specified property from interal dictionary and returns its value. 
-        Removed property will be not saved using store().
         """
         prop = self.properties.pop(identifier)
         if cast: prop = self._typeguess(prop)(prop)
         self.unsaved = True
         return prop
 
-
     def pops(self, identifier, cast=False):
         """
         This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
-        Removed properties will be not saved using store().
         """
         popped = {}
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
@@ -810,30 +806,36 @@ class Properties():
         return popped
 
 
-    def getnames(self):
+    def getnames(self, commented=False):
         """
-        Returns sorted list of the property names. 
+        Returns sorted list of the non-commented properties names. 
+        If ```commented``` arg was passed as ```True``` returns sorted list 
+        of commented properties names.
         """
         keys = []
         for key in list(self.properties.keys()):
-            if key not in self.commented: keys.append(key)
+            if key not in self.commented and not commented: keys.append(key)
+            else: keys.append(key)
         return sorted(keys)
 
 
-    def getkeysof(self, value):
+    def getkeysof(self, value, no_commented=True):
         """
         Returns list of keys containing given value. 
-        Returns empty list if no key was matched.
+        Returns empty list if no key was matched. 
+        If ```no_commented``` was passed as ```False``` includes also 
+        commented properties.
         """
         keys = []
         for propkey, propvalue in self.properties.items():
-            if value == propvalue: keys.append(propkey)
+            if value == propvalue and propkey not in self.commented and no_commented: keys.append(propkey)
+            elif value == propvalue and propkey in self.commented and not no_commented: keys.append(propkey)
         return keys
 
 
     def getgroups(self):
         """
-        Returns list of properties-groups in the internal dictionary. 
+        Returns list of non-commented properties-groups in the internal dictionary. 
         Group is understood by two or more properties which can 
         be obtained with the same gets() identifier.
 
@@ -855,8 +857,7 @@ class Properties():
 
         This is because only digits (decimal and hex) are considered as 'groupers'.
         """
-        skeys = []
-        [ skeys.append(key.split(".")) for key in self.getnames() ]
+        skeys = [ key.split(".") for key in self.getnames() ]
         groups = []
         for skey in skeys:
             identifier = ""
@@ -870,8 +871,7 @@ class Properties():
 
     def getsingles(self):
         """
-        Returns list of properties which do not 
-        belong to any group.
+        Returns list of properties which do not belong to any group.
         """
         groups = self.getgroups()
         singles = []
@@ -935,6 +935,8 @@ class Properties():
 
     def getcomment(self, key):
         """
+        usage: getcomment(str key) -> list_of_str
+        
         Returns comment of given key. 
         Returns empty list if property has no comment.
         """
