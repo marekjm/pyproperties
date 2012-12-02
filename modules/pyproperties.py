@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 """Working with *.properties files.
-
-pyproperties aim is to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
 """
 
 import os

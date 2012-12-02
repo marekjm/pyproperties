@@ -4,7 +4,7 @@ NAME
     pyproperties - Working with *.properties files.
 
 DESCRIPTION
-    pyproperites aim is to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
+    pyproperties aim is to ease manipulation, interaction and use of *.properties files in Python 3.x programs.
 
 CLASSES
     builtins.BaseException(builtins.object)
@@ -136,13 +136,13 @@ CLASSES
      |      If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
      |      foo.read(path, cast) to load some properties or 
      |      you can use the blank properties to create completly new set of properties.
-     |      You can pass cast as True to tell pyproperites that it should guess the type of the property 
+     |      You can pass cast as True to tell pyproperties that it should guess the type of the property 
      |      and convert it accordingly.
      |      
      |      This method just calls read() with arguments passed to itself or blank() when no arguments are passed.
      |      
      |      To create a blank instance with path specified you can run: 
-     |          pyproperites.Properties("/home/user/some/path/foo.properties", no_read=True)
+     |          pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
      |  
      |  __loadd__(self, path)
      |      This method reads directory tree as if it was properties file.
@@ -175,8 +175,9 @@ CLASSES
      |              addcomments('foo.*.bar', 'first comment', 'second
      |      comment', ['third', 'comment'])
      |  
-     |  blank(self)
-     |      Creates blank properties object.
+     |  blank(self, path='')
+     |      Creates blank properties object. 
+     |      Can be used to erase contents of your ```pyproperties``` object.
      |  
      |  comment(self, key)
      |      When property gets commented it is no longer available for modifing.
@@ -202,7 +203,7 @@ CLASSES
      |      properties.
      |  
      |  copy(self)
-     |      Returns exact copy of a Properties() object.
+     |      Returns exact copy of a pyproperties.Properties() object.
      |  
      |  get(self, identifier, parsed=False, cast=False)
      |      Returns value of identifier. 
@@ -210,11 +211,13 @@ CLASSES
      |      If parsed is set to True value will be parsed before returning.
      |  
      |  getcomment(self, key)
+     |      usage: getcomment(str key) -> list_of_str
+     |      
      |      Returns comment of given key. 
      |      Returns empty list if property has no comment.
      |  
      |  getgroups(self)
-     |      Returns list of properties-groups in the internal dictionary. 
+     |      Returns list of non-commented properties-groups in the internal dictionary. 
      |      Group is understood by two or more properties which can 
      |      be obtained with the same gets() identifier.
      |      
@@ -236,25 +239,28 @@ CLASSES
      |      
      |      This is because only digits (decimal and hex) are considered as 'groupers'.
      |  
-     |  getkeysof(self, value)
+     |  getkeysof(self, value, no_commented=True)
      |      Returns list of keys containing given value. 
-     |      Returns empty list if no key was matched.
+     |      Returns empty list if no key was matched. 
+     |      If ```no_commented``` was passed as ```False``` includes also 
+     |      commented properties.
      |  
-     |  getnames(self)
-     |      Returns sorted list of the property names.
+     |  getnames(self, commented=False)
+     |      Returns sorted list of the non-commented properties names. 
+     |      If ```commented``` arg was passed as ```True``` returns sorted list 
+     |      of commented properties names.
      |  
      |  getre(self, identifier, parsed=False, cast=False)
      |      Returns dict of properties which names matched given pattern.
      |      If parsed is set to True values will be parsed before returning. 
-     |      If cast is passed as True pyproperites will try to cast types of properties.
+     |      If cast is passed as True pyproperties will try to cast types of properties.
      |  
      |  gets(self, identifier, parsed=False, cast=False)
      |      Returns dict of properties which names matched pattern given as identifier.
      |      If parsed is set to True values will be parsed before returning.
      |  
      |  getsingles(self)
-     |      Returns list of properties which do not 
-     |      belong to any group.
+     |      Returns list of properties which do not belong to any group.
      |  
      |  join(self, path, prefix=' ')
      |      Loads external properties and completes base. 
@@ -279,29 +285,26 @@ CLASSES
      |      replaces it with value of corresponding property.
      |  
      |  pop(self, identifier, cast=False)
-     |      This method removes specified property from interal dictionary and returns its value. 
-     |      Removed property will be not saved using store().
+     |      This method removes specified property from interal dictionary and returns its value.
      |  
      |  pops(self, identifier, cast=False)
-     |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
-     |      Removed properties will be not saved using store().
+     |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them.
      |  
      |  read(self, path='', cast=False, no_includes=False)
      |      Reads properties file and processes it to be available in Python 3 program.
-     |      You can pass 'cast' as True to tell pyproperites that it should guess the type of the property 
+     |      You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
      |      and convert it accordingly (the _tcasts method will be called).
      |  
      |  refresh(self, overwrite=True)
      |      Refreshes from file. Missing values are added.
-     |      If 'overwrite' is set to True existing values are overwritten - merge() is used.
-     |      'overwrite' defaults to True.
+     |      If ```overwrite``` is set to True existing values are overwritten - ```update()``` is used.
      |      Values which are not found in file are not deleted.
      |  
      |  reload(self)
      |      Reloads from file. Missing values are added. Existing values are overwritten. 
      |      Values which are not found in file are deleted.
      |  
-     |  remove(self, identifier)
+     |  remove(self, key)
      |      This method removes specified property from interal dictionary. 
      |      Removed property will be not saved using store().
      |  
@@ -333,7 +336,7 @@ CLASSES
      |      If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
      |      as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
      |  
-     |  store(self, path='', force=False, no_dump=False, no_source=False)
+     |  store(self, path='', force=False, no_dump=False, drop_source=False)
      |      Writes properties to given 'path'.
      |      'path' defaults to self.path
      |      
@@ -536,7 +539,7 @@ DATA
     wildcart_re = '[a-z0-9_.-]*'
 
 VERSION
-    0.1.7
+    0.1.8
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py
