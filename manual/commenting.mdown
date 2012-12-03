@@ -1,67 +1,70 @@
-#### COMMENTING PROPERTIES
+#### Commenting properties
 
 
-When reading from file both ```!``` and ```#``` characters are considered "comments", but 
+When reading from file both ```!``` and ```#``` characters are considered _comments_, but 
 when using ```store()``` method all _!-comments_ will be converted to _#-comments_.
 
 This is done so because of the thirteenth line of The Zen of Python:  
 
     There should be one-- and preferably only one --obvious way to do it.
 
+
 ----
 
-With pyproperties it is possible to manipulate (add/remove) comments ```of``` or ```from``` properties.
-We need to specify meaning of the actions:  
 
-* to _remove comment_ of the property means that we are removing comment _attached to_ this property,
-* to _uncomment_ property means to remove comment _from this_ property,
+With ```pyproperties``` it is possible to manipulate (add/remove/change) comments of properties.
 
-&nbsp;
+
+----
+
 
 #### Adding and removing comments attached to properties
 
-This is done by ```addcomment()``` and ```rmcomment()``` methods.
+This is done by ```comment()``` and ```uncomment()``` methods.
 
-        ----
-        this.is.a=value
-        ----
-
-        >>> foo.addcomment("this.is.a", "this is s comment")
-
-        ----
-        #   this is s comment
-        this.is.a=value
-        ----
-        
-        >>> props.rmcomment("this.is.a")
-        
-        ----
-        this.is.a=value
-        ----
-
+        Python 3.3.0 (default, Oct 24 2012, 19:57:05) 
+        [GCC 4.7.2 20120921 (Red Hat 4.7.2-2)] on linux
+        Type "help", "copyright", "credits" or "license" for more information.
+        >>> from modules import pyproperties
+        >>> p = pyproperties.Properties()
+        >>> p.set("foo")
+        >>> p.get("foo")
+        ''
+        >>> p.addcomment("foo", "this is a comment")
+        >>> p.getcomment("foo")
+        'this is a comment'
+        >>> p.rmcomment("foo")
+        >>> p.getcomment("foo")
+        ''
+        >>> p.addcomment("foo", "this is a comment")
+        >>> p.addcomment("foo", "this is a newer comment")
+        >>> p.getcomment("foo")
+        'this is a newer comment'
+        >>>
 
 ----
 
 &nbsp;
 
-#### Commenting and uncommenting properties
+#### Hiding and _un_-hiding properties
 
-        ----
-        #some=value
-        ----
-        
-        >>> props.uncomment("some")
-
-        ----
-        some=value
-        ----
-        
-        >>> props.comment("some")
-        
-        ----
-        #some=value
-        ----
-
+        Python 3.3.0 (default, Oct 24 2012, 19:57:05) 
+        [GCC 4.7.2 20120921 (Red Hat 4.7.2-2)] on linux
+        Type "help", "copyright", "credits" or "license" for more information.
+        >>> p.set("foo")
+        >>> p.get("foo")
+        ''
+        >>> p.hide("foo")
+        >>> p.get("foo")
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "./modules/pyproperties.py", line 666, in get
+            if identifier in self.hidden: raise KeyError
+        KeyError
+        >>> p.unhide("foo")
+        >>> p.get("foo")
+        ''
+        >>>
 
 ----
 

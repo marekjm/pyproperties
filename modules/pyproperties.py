@@ -71,6 +71,14 @@ class Properties():
         self.srcorigin = srcorigin
 
 
+    def _notavailable(self, key):
+        """
+        Raises KeyError which will tell user that the property is not available eg. 
+        is not in currently used set of properties or is hidden.
+        """
+        if key in self.hidden: raise KeyError("'{0}' is not available in {1}: hidden property".format(key, self))
+        else: raise KeyError("'{0}' is not available in {1}".format(key, self))
+
     def __loadd__(self, path):
         """
         This method reads directory tree as if it was properties file.
@@ -422,7 +430,7 @@ class Properties():
         copy = Properties(self.path, no_read=True)
         copy._appendsrc(self)
         for key in self.properties: copy.set(key, self.properties[key])
-        for key in self.propcomments: copy.comment(key, self.propcomments[key])
+        for key in self.propcomments: copy.addcomment(key, self.propcomments[key])
         for key in self.hidden: copy.hide(key)
         copy.save()
         return copy
@@ -480,7 +488,7 @@ class Properties():
                 if key not in completed: completed.append(key)
         for key, value in props.origin_propcomments.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key not in self.propcomments and key in completed: self.comment(key, value)
+            if key not in self.propcomments and key in completed: self.addcomment(key, value)
         for key in props.origin_hidden:
             if prefix: key = "{0}.{1}".format(prefix, key)
             if key not in self.hidden and key in completed: self.hide(key)
@@ -512,7 +520,7 @@ class Properties():
                 updated.append(key)
         for key, value in props.origin_propcomments.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key in updated: self.comment(key, value)
+            if key in updated: self.addcomment(key, value)
         for key in props.origin_hidden:
             if prefix: key = "{0}.{1}".format(prefix, key)
             if key in updated: self.hide(key)
@@ -572,7 +580,7 @@ class Properties():
         would not be stored.
         """
         if key not in self.stored and key in self.propsorigin:
-            if key in self.propcomments: self._storecomment(key)
+            if key in self.origin_propcomments: self._storecomment(key)
             if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
             else: self.lines.append("#{0}={1}".format(key, self.propsorigin[key]))
             self.stored.append(key)
@@ -612,7 +620,7 @@ class Properties():
         """
         Appends comment of a property of given key to self.lines
         """
-        [ self.lines.append("#   {0}".format(line)) for line in self.getcomment(key) ]
+        [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key] ]
 
 
     def _dump(self, path):
@@ -657,16 +665,16 @@ class Properties():
             if not no_dump: self._dump(path)
 
 
-    def get(self, identifier, parsed=False, cast=False):
+    def get(self, key, parsed=False, cast=False):
         """
         Returns value of identifier. 
-        KeyError is raised if identifier is not found or property is commented.
         If parsed is set to True value will be parsed before returning.
+        KeyError is raised if key is not available (not found or is hidden).
         """
-        if identifier in self.hidden: raise KeyError
-        if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
-        if parsed: value = self.parseline(self.properties[identifier])
-        else: value = self.properties[identifier]
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
+        
+        if parsed: value = self.parseline(self.properties[key])
+        else: value = self.properties[key]
         if cast and type(value) == str: value = self.typeguess(value)(value)
         return value
 
@@ -708,11 +716,16 @@ class Properties():
         return matched
 
 
-    def set(self, identifier, value):
+    def set(self, key, value=""):
         """
         Sets key to value. 
+        Raises TypeError if key is not if ```str``` type.
         """
-        self.properties[identifier] = value
+        if type(key) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(key))[8:-2]))
+        self.properties[key] = value
+        if key in self.hidden:
+            self.unhide(key)
+            self.rmcomment(key)
         self.unsaved = True
 
 
@@ -746,13 +759,12 @@ class Properties():
                 self.set(key, value)
         self.unsaved = True
 
-
     def remove(self, key):
         """
         This method removes specified property from interal dictionary. 
-        Removed property will be not saved using store().
+        Removed property will be not saved using store(). 
         """
-        self.properties.pop(key)
+        if key in self.properties: self.properties.pop(key)
         if key in self.propcomments: self.propcomments.pop(key)
         if key in self.hidden: self.hidden.remove(key)
         self.unsaved = True
@@ -771,7 +783,10 @@ class Properties():
     def pop(self, identifier, cast=False):
         """
         This method removes specified property from interal dictionary and returns its value. 
+        KeyError is raised if key is not found or property is hidden.
         """
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
+
         prop = self.properties.pop(identifier)
         if cast: prop = self.typeguess(prop)(prop)
         self.unsaved = True
@@ -791,7 +806,6 @@ class Properties():
         self.unsaved = True
         return popped
 
-
     def getnames(self, hidden=False):
         """
         Returns sorted list of the non-commented properties names. 
@@ -803,7 +817,6 @@ class Properties():
             if key not in self.hidden and not hidden: keys.append(key)
             else: keys.append(key)
         return sorted(keys)
-
 
     def getkeysof(self, value, no_hidden=True):
         """
@@ -854,7 +867,6 @@ class Properties():
             if identifier not in groups and len(self.gets(identifier)) > 1: groups.append(identifier)
         return groups
 
-
     def getsingles(self):
         """
         Returns list of properties which do not belong to any group.
@@ -867,33 +879,32 @@ class Properties():
             if key not in groups: singles.append(key)
         return singles
 
-
-    def comment(self, key, comment):
+    def addcomment(self, key, comment):
         """
         Attaches comment to property. 
         Comment can be passed as a string or list of strings.
 
-            foo.comment("foo", ["first", "part"])
-            foo.comment("foo", "first\\npart")
+            foo.addcomment("foo", ["first", "part"])
+            foo.addcomment("foo", "first\\npart")
 
         Multiline comments are supported - either by passing a list of lines or
         by passing a string containing newline characters '\\n'.
 
-        Raises KeyError when property is not found.
+        KeyError is raised if key is not available (not found or is hidden).
         """
-        if key not in self.properties: raise KeyError
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
+
         if type(comment) == str: comment = comment.split("\n")
         elif type(comment) == list:
             _comment = []
-            [_comment.extend(l.split("\n")) for l in comment]
+            [ _comment.extend(l.split("\n")) for l in comment ]
             comment = _comment
         else: comment = [comment]
         for i in range(len(comment)): comment[i] = "{0}".format(comment[i])
         self.propcomments[key] = comment
         self.unsaved = True
 
-
-    def comments(self, identifier, *comments):
+    def addcomments(self, identifier, *comments):
         """
         Attaches comment to properties which will match the identifier. 
         Comment can be passed as a string or a list. 
@@ -905,10 +916,9 @@ class Properties():
         keys = self.gets(identifier)
         i = 0
         for key in keys:
-            try: self.comment(key, comments[i])
-            except IndexError: self.comment(key, comments[-1])
+            try: self.addcomment(key, comments[i])
+            except IndexError: self.addcomment(key, comments[-1])
             finally: i += 1
-
 
     def rmcomment(self, key):
         """
@@ -918,29 +928,32 @@ class Properties():
         if key in self.propcomments: self.propcomments.pop(key)
         self.unsaved = True
 
-
-    def getcomment(self, key):
+    def getcomment(self, key, lines=False):
         """
-        usage: getcomment(str key) -> list_of_str
+        usage: getcomment(str key, bool lines=False) -> str
         
         Returns comment of given key. 
-        Returns empty list if property has no comment.
+        Returns empty string if the property has no comment. 
+        Returns empty list if the property has no comment and ```lines``` was passed as True. 
+        KeyError is raised if key is not available (not found or is hidden).
         """
-        if key in self.propcomments: comment = self.propcomments[key]
-        else: comment = []
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
+        
+        if key in self.propcomments: comment = "\n".join(self.propcomments[key])
+        else: comment = ""
+        if lines and comment != "": comment = comment.split("\n")
+        elif lines and comment == "": comment = []
         return comment
-
 
     def hide(self, key):
         """
         When property is hidden it is no longer available for modifing. 
-        Raises KeyError when property is not found.
+        KeyError is raised if key is not available (not found or is hidden).
         """
-        if key not in self.properties: raise KeyError("'{0}' is not in properties of {1}".format(key, self))
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
         if key not in self.hidden: self.hidden.append(key)
         self.unsaved = True
         
-
     def hides(self, identifier):
         """
         Hides every property which key will match given identifier. 
@@ -949,7 +962,6 @@ class Properties():
         for key in self.getnames():
             if re.match(identifier, key): self.hide(key)
 
-
     def unhide(self, key):
         """
         Remove property from ```hidden``` list to make it available for modifing. 
@@ -957,7 +969,6 @@ class Properties():
         """
         if key in self.hidden: self.hidden.remove(key)
         self.unsaved = True
-
 
     def unhides(self, identifier):
         """
