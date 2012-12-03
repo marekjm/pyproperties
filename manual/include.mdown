@@ -1,14 +1,16 @@
 #### Including properties
 
 ```__include__``` directive works the same way as _```#include```_ in C/C++. It replaces line containg the directive with contents of the file it points to. 
+The idea to implement it in ```pyproperties``` came from [this](http://commons.apache.org/configuration/howto_properties.html) site on [apache.org](http://apache.org) but 
+I expanded it's functionality a little bit and changed the name of _special_ key from ```include``` to ```__include__```.
 
 
 In ```pyproperties``` you can pass some arguments to ```__include__```.  
 
 
 1.  ```as``` which will add prefix to all included properties,
-2.  ```commented``` which will comment all included properties,
-3.  ```commented.as``` which will comment all included properties _and_ add prefix to them,
+2.  ```hidden``` which will comment all included properties,
+3.  ```hidden.as``` which will comment all included properties _and_ add prefix to them,
 
 
 ----
@@ -34,7 +36,7 @@ In ```pyproperties``` you can pass some arguments to ```__include__```.
 ----
 
 
-    __include__.commented=/home/some/file.properties
+    __include__.hidden=/home/some/file.properties
     
     #avogardo=6.02+e23
     #pi=3.14

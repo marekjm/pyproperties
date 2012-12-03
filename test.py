@@ -75,7 +75,7 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(src, loaded.source)
 
 
-    def testLoadCommented(self):
+    def testLoadHidden(self):
         baz = pyproperties.Properties("./data/properties/baz.properties")
         src =   [
                 "prop.0=Foo",
@@ -92,7 +92,7 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(propcomments, baz.propcomments)
         self.assertEqual(src, baz.source)
         self.assertEqual(props, baz.properties)
-        self.assertEqual(["prop.1"], baz.commented)
+        self.assertEqual(["prop.1"], baz.hidden)
 
 
     def testNoRead(self):
@@ -106,15 +106,16 @@ class LoadTest(unittest.TestCase):
 
 
     def testDifferentReadCustoms(self):
-        #   bara = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
+        bara = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
         barb = pyproperties.Properties()
-        #   bara.read()
+        bara.read()
         barb.read("./data/properties/bar.properties")
-        #   self.assertEqual(bara.srcorigin, barb.srcorigin)
-        #   self.assertEqual(bara.source, barb.source)
-        #   self.assertEqual(bara.propsorigin, barb.propsorigin)
-        #   self.assertEqual(bara.properties, barb.properties)
-        #   self.assertEqual(bara.propcomments, barb.propcomments)
+        self.assertEqual(bara.srcorigin, barb.srcorigin)
+        self.assertEqual(bara.source, barb.source)
+        self.assertEqual(bara.propsorigin, barb.propsorigin)
+        self.assertEqual(bara.properties, barb.properties)
+        self.assertEqual(bara.propcomments, barb.propcomments)
+        self.assertEqual(bara.hidden, barb.hidden)
 
 
 class LoadIncludeTest(unittest.TestCase):
@@ -125,7 +126,7 @@ class LoadIncludeTest(unittest.TestCase):
         self.assertEqual(test.source, combined.source)
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
-        self.assertEqual(test.commented, combined.commented)
+        self.assertEqual(test.hidden, combined.hidden)
 
 
     def testIncludePrefixed(self):
@@ -135,27 +136,27 @@ class LoadIncludeTest(unittest.TestCase):
         self.assertEqual(test.source, combined.source)
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
-        self.assertEqual(test.commented, combined.commented)
+        self.assertEqual(test.hidden, combined.hidden)
 
 
-    def testIncludeCommented(self):
+    def testIncludeHidden(self):
         test = pyproperties.Properties("./data/properties/include_test/test.commented.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined.commented.properties")
 
         self.assertEqual(test.source, combined.source)
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
-        self.assertEqual(test.commented, combined.commented)
+        self.assertEqual(test.hidden, combined.hidden)
 
 
-    def testIncludeCommentedAndPrefixed(self):
+    def testIncludeHiddenAndPrefixed(self):
         test = pyproperties.Properties("./data/properties/include_test/test.commented.prefix.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined.commented.prefix.properties")
 
         self.assertEqual(test.source, combined.source)
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
-        self.assertEqual(test.commented, combined.commented)
+        self.assertEqual(test.hidden, combined.hidden)
 
 
 class KeyGetterTest(unittest.TestCase):
@@ -400,7 +401,7 @@ class CompleteTest(unittest.TestCase):
         foo.save()
         bar.set("prop.1", "0x1")
         bar.set("prop.2", "0x2")
-        bar.addcomment("prop.2", "this is a comment")
+        bar.comment("prop.2", "this is a comment")
         bar.save()
         foo.complete(bar)
         self.assertEqual(foo_completed, foo.properties)
@@ -419,17 +420,17 @@ class CompleteTest(unittest.TestCase):
                         "prop.1":"1",
                         "prop.2":"0x2",
                         }
-        foo_commented = []
+        foo_hidden = []
         foo.set("prop.0", "0")
         foo.set("prop.1", "1")
         foo.save()
         bar.set("prop.1", "0x1")
         bar.set("prop.2", "0x2")
-        bar.comment("prop.1")
+        bar.hide("prop.1")
         bar.save()
         foo.complete(bar)
         self.assertEqual(foo_completed, foo.properties)
-        self.assertEqual(foo_commented, foo.commented)
+        self.assertEqual(foo_hidden, foo.hidden)
 
 
     def testCompleteWithCommentedAppend(self):
@@ -440,17 +441,17 @@ class CompleteTest(unittest.TestCase):
                         "prop.1":"1",
                         "prop.2":"0x2",
                         }
-        foo_commented = ["prop.2"]
+        foo_hidden = ["prop.2"]
         foo.set("prop.0", "0")
         foo.set("prop.1", "1")
         foo.save()
         bar.set("prop.1", "0x1")
         bar.set("prop.2", "0x2")
-        bar.comment("prop.2")
+        bar.hide("prop.2")
         bar.save()
         foo.complete(bar)
         self.assertEqual(foo_completed, foo.properties)
-        self.assertEqual(foo_commented, foo.commented)
+        self.assertEqual(foo_hidden, foo.hidden)
 
 
 class UpdateTest(unittest.TestCase):
@@ -491,10 +492,10 @@ class UpdateTest(unittest.TestCase):
         bar = pyproperties.Properties()
         foo.set("prop.0", "0")
         foo.set("prop.1", "1")
-        foo.addcomment("prop.1", "this is original comment")
+        foo.comment("prop.1", "this is original comment")
         bar.set("prop.1", "0x1")
         bar.set("prop.2", "0x2")
-        bar.addcomment("prop.1", "this is updated comment")
+        bar.comment("prop.1", "this is updated comment")
         foo.save()
         bar.save()
         foo.update(bar)
@@ -513,26 +514,26 @@ class UpdateTest(unittest.TestCase):
                 "prop.0":"0",
                 "prop.1":"0x1",
                 }
-        commented_bu = []
-        commented_au = ["prop.1"]
+        hidden_bu = []
+        hidden_au = ["prop.1"]
         foo = pyproperties.Properties()
         bar = pyproperties.Properties()
         foo.set("prop.0", "0")
         foo.set("prop.1", "1")
         bar.set("prop.1", "0x1")
         bar.set("prop.2", "0x2")
-        bar.comment("prop.1")
+        bar.hide("prop.1")
         foo.save()
         bar.save()
         foo.update(bar)
         self.assertEqual(props, foo.properties)
-        self.assertEqual(commented_au, foo.commented)
-        self.assertEqual(commented_bu, foo.origin_commented)
+        self.assertEqual(hidden_au, foo.hidden)
+        self.assertEqual(hidden_bu, foo.origin_hidden)
         self.assertNotEqual(props, foo.propsorigin)
-        self.assertNotEqual(commented_au, foo.origin_commented)
+        self.assertNotEqual(hidden_au, foo.origin_hidden)
         foo.save()
         self.assertEqual(props, foo.propsorigin)
-        self.assertEqual(commented_au, foo.origin_commented)
+        self.assertEqual(hidden_au, foo.origin_hidden)
 
 
 class MergeTest(unittest.TestCase):
@@ -549,23 +550,23 @@ class MergeTest(unittest.TestCase):
                     "prop.0":["this is a comment"],
                     "prop.3":["this is another comment"],
                     }
-        commented = ["prop.0", "prop.3"]
+        hidden = ["prop.0", "prop.3"]
         foo.set("prop.0", "0")
         foo.set("prop.1", "1")
         foo.set("prop.2", "2")
-        foo.addcomment("prop.0", "this is a comment")
-        foo.comment("prop.0")
+        foo.comment("prop.0", "this is a comment")
+        foo.hide("prop.0")
         foo.save()
         bar.set("prop.2", "0x2")
         bar.set("prop.3", "0x3")
-        bar.addcomment("prop.3", "this is another comment")
-        bar.comment("prop.3")
+        bar.comment("prop.3", "this is another comment")
+        bar.hide("prop.3")
         bar.save()
         foo.merge(bar)
         foo.save()
         self.assertEqual(props, foo.properties)
         self.assertEqual(comments, foo.propcomments)
-        self.assertEqual(commented, foo.commented)
+        self.assertEqual(hidden, foo.hidden)
 
 
 class JoinTest(unittest.TestCase):
@@ -579,7 +580,7 @@ class JoinTest(unittest.TestCase):
         self.assertEqual(combined.lines, foo.lines)
         self.assertEqual(combined.properties, foo.properties)
         self.assertEqual(combined.propcomments, foo.propcomments)
-        self.assertEqual(combined.commented, foo.commented)
+        self.assertEqual(combined.hidden, foo.hidden)
 
 
 class ReloadTest(unittest.TestCase):
@@ -590,8 +591,8 @@ class ReloadTest(unittest.TestCase):
         self.assertEqual(foo0.propsorigin, foo1.propsorigin)
         self.assertEqual(foo0.propcomments, foo1.propcomments)
         self.assertEqual(foo0.origin_propcomments, foo1.origin_propcomments)
-        self.assertEqual(foo0.commented, foo1.commented)
-        self.assertEqual(foo0.origin_commented, foo1.origin_commented)
+        self.assertEqual(foo0.hidden, foo1.hidden)
+        self.assertEqual(foo0.origin_hidden, foo1.origin_hidden)
         foo1.set("some.key", "value")
         foo1.removes("customer.0.*")
         foo1.save()
@@ -599,16 +600,16 @@ class ReloadTest(unittest.TestCase):
         self.assertNotEqual(foo0.propsorigin, foo1.propsorigin)
         self.assertNotEqual(foo0.propcomments, foo1.propcomments)
         self.assertNotEqual(foo0.origin_propcomments, foo1.origin_propcomments)
-        self.assertNotEqual(foo0.commented, foo1.commented)
-        self.assertNotEqual(foo0.origin_commented, foo1.origin_commented)
+        self.assertNotEqual(foo0.hidden, foo1.hidden)
+        self.assertNotEqual(foo0.origin_hidden, foo1.origin_hidden)
         foo1.reload()
         foo1.save()
         self.assertEqual(foo0.properties, foo1.properties)
         self.assertEqual(foo0.propsorigin, foo1.propsorigin)
         self.assertEqual(foo0.propcomments, foo1.propcomments)
         self.assertEqual(foo0.origin_propcomments, foo1.origin_propcomments)
-        self.assertEqual(foo0.commented, foo1.commented)
-        self.assertEqual(foo0.origin_commented, foo1.origin_commented)
+        self.assertEqual(foo0.hidden, foo1.hidden)
+        self.assertEqual(foo0.origin_hidden, foo1.origin_hidden)
 
 
 class SaveTest(unittest.TestCase):
@@ -709,9 +710,9 @@ class StoreTest(unittest.TestCase):
         bar.removes("*")
         bar.set("prop.0", "0")
         bar.set("prop.1", "1")
-        bar.addcomment("prop.1", "this is a comment for prop.1")
+        bar.comment("prop.1", "this is a comment for prop.1")
         bar.set("prop.2", "2")
-        bar.comment("prop.2")
+        bar.hide("prop.2")
         bar.save()
         bar.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, bar.lines)
@@ -735,9 +736,9 @@ class StoreTest(unittest.TestCase):
                     "name.2=  William  ",
                     "#alert=Fire!",
                     ]
-        bar.comment("alert")
-        bar.addcomment("name.2", "his name is William\nthat's for sure")
-        bar.addcomment("name.1", "possibly Sparrow")
+        bar.hide("alert")
+        bar.comment("name.2", "his name is William\nthat's for sure")
+        bar.comment("name.1", "possibly Sparrow")
         bar.save()
         bar.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, bar.lines)
@@ -777,7 +778,7 @@ class StoreTest(unittest.TestCase):
                     "name.2=  William  ",
                     "alert=Fire!",
                     ]
-        bar.addcomment("name.0", "This is changed comment for name.0")
+        bar.comment("name.0", "This is changed comment for name.0")
         bar.save()
         bar.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, bar.lines)
@@ -787,9 +788,9 @@ class StoreTest(unittest.TestCase):
         foo.set("foo", "Foo")
         foo.set("bar", "Bar")
         foo.save()
-        foo.comment("foo")
-        foo.addcomment("foo", "foo's comment")
-        foo.addcomment("bar", "bar's comment")
+        foo.hide("foo")
+        foo.comment("foo", "foo's comment")
+        foo.comment("bar", "bar's comment")
         self.assertRaises(pyproperties.UnsavedChangesError, foo.store, "")
         foo.save()
         foo.store(no_dump=True)
@@ -818,87 +819,86 @@ class AddcommentTest(unittest.TestCase):
     def testAddcommentTestSimpleString(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
-        foo.addcomment("foo", "first part")
+        foo.comment("foo", "first part")
         self.assertEqual(["first part"], foo.propcomments["foo"])
-        self.assertRaises(KeyError, foo.addcomment, "bar", "")
+        self.assertRaises(KeyError, foo.comment, "bar", "")
 
 
     def testAddcommentTestStringWithNewlines(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
-        foo.addcomment("foo", "this\nis\na\ncomment")
+        foo.comment("foo", "this\nis\na\ncomment")
         self.assertEqual(["this", "is", "a", "comment"], foo.propcomments["foo"])
-        self.assertRaises(KeyError, foo.addcomment, "bar", "")
+        self.assertRaises(KeyError, foo.comment, "bar", "")
 
 
     def testAddcommentTestSimpleList(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
-        foo.addcomment("foo", ["first", "part"])
+        foo.comment("foo", ["first", "part"])
         self.assertEqual(["first", "part"], foo.propcomments["foo"])
-        self.assertRaises(KeyError, foo.addcomment, "bar", "")
+        self.assertRaises(KeyError, foo.comment, "bar", "")
 
 
     def testAddcommentTestListWithNewlines(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
-        foo.addcomment("foo", ["this\nis", "a\ncomment"])
+        foo.comment("foo", ["this\nis", "a\ncomment"])
         self.assertEqual(["this", "is", "a", "comment"], foo.propcomments["foo"])
-        self.assertRaises(KeyError, foo.addcomment, "bar", "")
+        self.assertRaises(KeyError, foo.comment, "bar", "")
         
         
 class GetcommentTest(unittest.TestCase):
     def testGetcomment(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
-        foo.addcomment("foo", ["this\nis", "a\ncomment"])
+        foo.comment("foo", ["this\nis", "a\ncomment"])
         self.assertEqual(["this", "is", "a", "comment"], foo.getcomment("foo"))
         self.assertEqual([], foo.getcomment("bar"))
 
 
-class CommentTest(unittest.TestCase):
-    def testComment(self):
+class HideTest(unittest.TestCase):
+    def testHide(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
-        foo.comment("foo")
-        self.assertEqual(["foo"], foo.commented)
+        foo.hide("foo")
+        self.assertEqual(["foo"], foo.hidden)
         self.assertRaises(KeyError, foo.get, "foo")
-        self.assertRaises(KeyError, foo.comment, "bar")
+        self.assertRaises(KeyError, foo.hide, "bar")
 
 
-    def testComments(self):
+    def testHides(self):
         foo = pyproperties.Properties()
         foo.set("foo.0", "")
         foo.set("foo.1", "")
         foo.set("bar.0", "")
-        foo.comments("foo.*")
-        self.assertEqual(["foo.0", "foo.1"], foo.commented)
+        foo.hides("foo.*")
+        self.assertEqual(["foo.0", "foo.1"], foo.hidden)
         self.assertRaises(KeyError, foo.get, "foo.0")
         self.assertRaises(KeyError, foo.get, "foo.1")
 
 
-    def testUncomment(self):
+    def testUnhide(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
-        foo.comment("foo")
-        self.assertEqual(["foo"], foo.commented)
+        foo.hide("foo")
+        self.assertEqual(["foo"], foo.hidden)
         self.assertRaises(KeyError, foo.get, "foo")
-        foo.uncomment("foo")
-        self.assertEqual([], foo.commented)
+        foo.unhide("foo")
+        self.assertEqual([], foo.hidden)
 
 
-    def testUncomments(self):
-        foo = pyproperties.Properties()
+    def testUnhides(self):
         foo = pyproperties.Properties()
         foo.set("foo.0", "")
         foo.set("foo.1", "")
         foo.set("bar.0", "")
-        foo.comments("foo.*")
-        self.assertEqual(["foo.0", "foo.1"], foo.commented)
+        foo.hides("foo.*")
+        self.assertEqual(["foo.0", "foo.1"], foo.hidden)
         self.assertRaises(KeyError, foo.get, "foo.0")
         self.assertRaises(KeyError, foo.get, "foo.1")
-        foo.uncomments("foo.*")
-        self.assertEqual([], foo.commented)
+        foo.unhides("foo.*")
+        self.assertEqual([], foo.hidden)
 
 
 if __name__ == "__main__" : unittest.main()

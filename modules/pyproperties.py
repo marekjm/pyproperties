@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-"""Working with *.properties files.
-"""
+"""Working with *.properties files."""
 
 import os
 import re
 import warnings
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 
 wildcart_re = "[a-z0-9_.-]*"
 guess_int_re = "^[-]?[0-9]+$"
@@ -34,17 +33,6 @@ def onlyhexchars(s):
 class Properties():
     """
     This class provides methods for working with properties files. 
-
-    Variables describing stored properties:
-        self.path               -   path used for reading and storing properties,
-        self.source             -   working copy of source file,
-        self.srcorigin          -   original lines of source file,
-        self.properties         -   working copy of properties dictionary,
-        self.propsorigin        -   original dictionary of properties,
-        self.propcomments       -   dictionary containing comments of properties,
-        self.origin_propcomments-   dictionary containing comments of properties,
-        self.origin_commented   -   dictionary containing commented properties,
-        self.commented          -   dictionary containing commented properties,
     """
 
     def __init__(self, path="", cast=False, no_read=False, no_includes=False):
@@ -65,10 +53,10 @@ class Properties():
         else: self.blank(path)
 
 
-    def __loadf__(self, path):
+    def _loadf(self, path):
         """
-        This method loads properties file from given path to a self.source list. 
-        It also strips it of any newline character and whitespace on both sides but leaves it otherwise unprocessed. 
+        This method loads properties file from given path to a ```self.source```. 
+        It also strips it of newline characters at the end and preceding whitespace and but leaves it unprocessed in any different way. 
         """
         srcorigin = []
         source = []
@@ -93,7 +81,7 @@ class Properties():
         propnames = []
         propvalues = {}
 
-        warnings.warn("this feature is exprerimental and does not receive updates and bugfixes")
+        warnings.warn("this feature was exprerimental and will be removed in version 0.1.10", DeprecationWarning)
 
         for root, dirs, files in os.walk(self.path):
             for file in files:
@@ -123,7 +111,7 @@ class Properties():
         return result
 
 
-    def _islinecommentedprop(self, line):
+    def _islinehiddenprop(self, line):
         """
         Defines if commented line is commented property.
         Used to distinguish comments from commented properties during
@@ -136,7 +124,7 @@ class Properties():
         """
         Converts property of the given key from str (default) to int or float if needed.
         """
-        ptype = self._typeguess(self.get(identifier))
+        ptype = self.typeguess(self.get(identifier))
         self.set(identifier, ptype(self.get(identifier)))
 
 
@@ -149,7 +137,7 @@ class Properties():
             if re.match(identifier, key): self._tcast(key)
 
 
-    def _typeguess(self, prop):
+    def typeguess(self, prop):
         """
         Tries to guess the type of property (initially all properties are stored as strings) and 
         convert it accordingly. It can guess three types: int, float and string. 
@@ -164,7 +152,7 @@ class Properties():
         return ptype
 
 
-    def _getlinekey(self, line):
+    def getlinekey(self, line):
         """
         Extracts key from given line and returns it. 
         If the line is comment or is blank returns None.
@@ -176,7 +164,7 @@ class Properties():
         return key
 
 
-    def _getlinevalue(self, line):
+    def getlinevalue(self, line):
         """
         Extracts value from given line and returns it. 
         If the line is comment or is blank returns None. 
@@ -192,20 +180,20 @@ class Properties():
         return value
 
 
-    def __extractcommentedprops__(self):
+    def _extracthidden(self):
         """
-        Uncomments commented properties so they can be read by ```__extractprops__()``` and 
-        saves them to ```commented``` and ```origin_commented``` dictionaries.
+        Uncomments commented properties so they can be read by ```_extractprops()``` and 
+        saves them to ```commented``` and ```origin_hidden``` dictionaries.
         """
         for i, line in enumerate(self.source):
-            if self._islinecommentedprop(line):
-                key = self._getlinekey(line[1:])
-                if key not in self.commented: self.commented.append(key)
-                if key not in self.origin_commented: self.origin_commented.append(key)
+            if self._islinehiddenprop(line):
+                key = self.getlinekey(line[1:])
+                if key not in self.hidden: self.hidden.append(key)
+                if key not in self.origin_hidden: self.origin_hidden.append(key)
                 self.source[i] = line[1:]
 
 
-    def __extractprops__(self):
+    def _extractprops(self):
         """
         Extracts lines containing valid properties strings from loaded source to self.properties
         It parses self.source line by line.
@@ -224,7 +212,7 @@ class Properties():
         self.properties = properties
 
 
-    def __extractcomments__(self):
+    def _extractcomments(self):
         """
         Extracts comments loaded source to self.propcomments
         It parses self.source line by line. 
@@ -249,7 +237,7 @@ class Properties():
                             except IndexError: break
                             finally: pass
                         comment.reverse()
-                        if comment: propcomments[self._getlinekey(self.source[i])] = comment
+                        if comment: propcomments[self.getlinekey(self.source[i])] = comment
                         self.source = self.source[:n+1] + self.source[i:]
                 except IndexError: pass
                 finally: pass
@@ -257,16 +245,16 @@ class Properties():
         self.propcomments.update(propcomments)
 
 
-    def __split__(self):
+    def _split(self):
         """
         This method converts self.properties from list containing extracted lines to a dictionary.
         """
         props = {}
         origin = {}
         for i, line in enumerate(self.properties):
-            key = self._getlinekey(line)
+            key = self.getlinekey(line)
             if key in props: warnings.warn("multiple declarations for property '{0}' in file '{1}'".format(key, self.path))
-            origin[key] = props[key] = self._getlinevalue(line)
+            origin[key] = props[key] = self.getlinevalue(line)
         self.propsorigin = origin
         self.properties = props
 
@@ -288,7 +276,7 @@ class Properties():
         self.source.extend(lines)
 
 
-    def _include(self, line_number, path, prefix="", commented=False):
+    def _include(self, line_number, path, prefix="", hidden=False):
         """
         This method is only run when a property file is being read. 
         It will dump another file in place specified by ```__include__``` directive.
@@ -301,8 +289,8 @@ class Properties():
         path.close()
         for i, line in enumerate(file):
             if self._isvalidline(line) and prefix: line = "{0}.{1}".format(prefix, line.lstrip())
-            elif self._islinecommentedprop(line) and prefix: line = "#{0}.{1}".format(prefix, line[1:])
-            if self._isvalidline(line) and commented: line = "#{0}".format(line.lstrip())
+            elif self._islinehiddenprop(line) and prefix: line = "#{0}.{1}".format(prefix, line[1:])
+            if self._isvalidline(line) and hidden: line = "#{0}".format(line.lstrip())
             if line[-1] == "\n": line = line[:-1]
             file[i] = line
 
@@ -318,12 +306,12 @@ class Properties():
         """
         i = 0
         while i < len(self.source):
-            key = self._getlinekey(self.source[i])
-            value = self._getlinevalue(self.source[i])
+            key = self.getlinekey(self.source[i])
+            value = self.getlinevalue(self.source[i])
             if key == "__include__": self._include(i, value)
-            elif key == "__include__.commented": self._include(i, value, commented=True)
+            elif key == "__include__.hidden": self._include(i, value, hidden=True)
             elif key != None and key[:15] == "__include__.as.": self._include(i, value, prefix=key[15:])
-            elif key != None and key[:25] == "__include__.commented.as.": self._include(i, value, prefix=key[25:], commented=True)
+            elif key != None and key[:22] == "__include__.hidden.as.": self._include(i, value, prefix=key[22:], hidden=True)
             i += 1
 
 
@@ -340,8 +328,8 @@ class Properties():
         self.propsorigin = {}
         self.propcomments = {}
         self.origin_propcomments = {}
-        self.commented = []
-        self.origin_commented = []
+        self.hidden = []
+        self.origin_hidden = []
         self.unsaved = False
 
 
@@ -351,21 +339,21 @@ class Properties():
         You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly (the _tcasts method will be called).
         """
-        try: 
+        try:
             if self.path != "": path = self.path
         except AttributeError: pass
         finally: self.blank(path)
 
-        if os.path.isfile(self.path): self.__loadf__(self.path)
+        if os.path.isfile(self.path): self._loadf(self.path)
         elif os.path.isdir(self.path): self.__loadd__(self.path)
         else: raise LoadError("'{0}' no such file or directory".format(self.path))
 
         if not no_includes: self._makeincludes()
-        self.__extractcommentedprops__()
-        self.__extractprops__()
-        self.__split__()
+        self._extracthidden()
+        self._extractprops()
+        self._split()
         if cast: self._tcasts("*")
-        self.__extractcomments__()
+        self._extractcomments()
         self.save()
 
 
@@ -378,7 +366,7 @@ class Properties():
         self.source = new.source
         self.properties = new.properties
         self.propcomments = new.propcomments
-        self.commented = new.commented
+        self.hidden = new.hidden
         self.unsaved = True
 
 
@@ -434,8 +422,8 @@ class Properties():
         copy = Properties(self.path, no_read=True)
         copy._appendsrc(self)
         for key in self.properties: copy.set(key, self.properties[key])
-        for key in self.propcomments: copy.addcomment(key, self.propcomments[key])
-        for key in self.commented: copy.comment(key)
+        for key in self.propcomments: copy.comment(key, self.propcomments[key])
+        for key in self.hidden: copy.hide(key)
         copy.save()
         return copy
 
@@ -492,10 +480,10 @@ class Properties():
                 if key not in completed: completed.append(key)
         for key, value in props.origin_propcomments.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key not in self.propcomments and key in completed: self.addcomment(key, value)
-        for key in props.origin_commented:
+            if key not in self.propcomments and key in completed: self.comment(key, value)
+        for key in props.origin_hidden:
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key not in self.commented and key in completed: self.comment(key)
+            if key not in self.hidden and key in completed: self.hide(key)
         self.unsaved = True
 
 
@@ -524,10 +512,10 @@ class Properties():
                 updated.append(key)
         for key, value in props.origin_propcomments.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key in updated: self.addcomment(key, value)
-        for key in props.origin_commented:
+            if key in updated: self.comment(key, value)
+        for key in props.origin_hidden:
             if prefix: key = "{0}.{1}".format(prefix, key)
-            if key in updated: self.comment(key)
+            if key in updated: self.hide(key)
         self.unsaved = True
 
 
@@ -542,8 +530,8 @@ class Properties():
         saved = [ line for line in self.source ]
         self.srcorigin = saved
         
-        saved = [ key for key in self.commented ]
-        self.origin_commented = saved
+        saved = [ key for key in self.hidden ]
+        self.origin_hidden = saved
 
         saved = {}
         for key, value in self.propcomments.items(): saved[key] = value
@@ -564,8 +552,8 @@ class Properties():
         reverted = [ line for line in self.srcorigin ]
         self.source = reverted
         
-        reverted = [ key for key in self.origin_commented ]
-        self.commented = reverted
+        reverted = [ key for key in self.origin_hidden ]
+        self.hidden = reverted
 
         reverted = {}
         for key, value in self.origin_propcomments.items(): reverted[key] = value
@@ -585,7 +573,7 @@ class Properties():
         """
         if key not in self.stored and key in self.propsorigin:
             if key in self.propcomments: self._storecomment(key)
-            if key not in self.origin_commented: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
+            if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
             else: self.lines.append("#{0}={1}".format(key, self.propsorigin[key]))
             self.stored.append(key)
 
@@ -597,7 +585,7 @@ class Properties():
         for i in range(len(self.srcorigin)):
             if self.srcorigin[i] == "" or self.srcorigin[i].isspace(): self.lines.append("{0}".format(self.srcorigin[i]))
             elif self.srcorigin[i][0] == "#": self.lines.append("{0}".format(self.srcorigin[i]))
-            elif self._getlinekey(self.srcorigin[i]) != "": self._storeprop(self._getlinekey(self.srcorigin[i]))
+            elif self.getlinekey(self.srcorigin[i]) != "": self._storeprop(self.getlinekey(self.srcorigin[i]))
 
 
     def _storegroups(self):
@@ -675,11 +663,11 @@ class Properties():
         KeyError is raised if identifier is not found or property is commented.
         If parsed is set to True value will be parsed before returning.
         """
-        if identifier in self.commented: raise KeyError
+        if identifier in self.hidden: raise KeyError
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
         if parsed: value = self.parseline(self.properties[identifier])
         else: value = self.properties[identifier]
-        if cast and type(value) == str: value = self._typeguess(value)(value)
+        if cast and type(value) == str: value = self.typeguess(value)(value)
         return value
 
 
@@ -697,7 +685,7 @@ class Properties():
             elif re.match(identifier, key) and not parsed: matched[key] = value
         if cast:
             for key, value in matched.items():
-                if type(value) == str: matched[key] = self._typeguess(value)(value)
+                if type(value) == str: matched[key] = self.typeguess(value)(value)
         return matched
 
 
@@ -716,7 +704,7 @@ class Properties():
             if re.match(identifier, key) and parsed: matched[key] = self.parseline(value)
             elif re.match(identifier, key) and not parsed: matched[key] = value
         if cast:
-            for key, value in matched.items(): matched[key] = self._typeguess(value)(value)
+            for key, value in matched.items(): matched[key] = self.typeguess(value)(value)
         return matched
 
 
@@ -766,7 +754,7 @@ class Properties():
         """
         self.properties.pop(key)
         if key in self.propcomments: self.propcomments.pop(key)
-        if key in self.commented: self.commented.remove(key)
+        if key in self.hidden: self.hidden.remove(key)
         self.unsaved = True
 
     def removes(self, identifier):
@@ -785,7 +773,7 @@ class Properties():
         This method removes specified property from interal dictionary and returns its value. 
         """
         prop = self.properties.pop(identifier)
-        if cast: prop = self._typeguess(prop)(prop)
+        if cast: prop = self.typeguess(prop)(prop)
         self.unsaved = True
         return prop
 
@@ -799,12 +787,12 @@ class Properties():
             if re.match(identifier, key): popped[key] = value
         for key in popped.keys(): self.properties.pop(key)
         if cast:
-            for key, value in popped.items(): popped[key] = self._typeguess(value)(value)
+            for key, value in popped.items(): popped[key] = self.typeguess(value)(value)
         self.unsaved = True
         return popped
 
 
-    def getnames(self, commented=False):
+    def getnames(self, hidden=False):
         """
         Returns sorted list of the non-commented properties names. 
         If ```commented``` arg was passed as ```True``` returns sorted list 
@@ -812,22 +800,22 @@ class Properties():
         """
         keys = []
         for key in list(self.properties.keys()):
-            if key not in self.commented and not commented: keys.append(key)
+            if key not in self.hidden and not hidden: keys.append(key)
             else: keys.append(key)
         return sorted(keys)
 
 
-    def getkeysof(self, value, no_commented=True):
+    def getkeysof(self, value, no_hidden=True):
         """
         Returns list of keys containing given value. 
         Returns empty list if no key was matched. 
-        If ```no_commented``` was passed as ```False``` includes also 
+        If ```no_hidden``` was passed as ```False``` includes also 
         commented properties.
         """
         keys = []
         for propkey, propvalue in self.properties.items():
-            if value == propvalue and propkey not in self.commented and no_commented: keys.append(propkey)
-            elif value == propvalue and propkey in self.commented and not no_commented: keys.append(propkey)
+            if value == propvalue and propkey not in self.hidden and no_hidden: keys.append(propkey)
+            elif value == propvalue and propkey in self.hidden and not no_hidden: keys.append(propkey)
         return keys
 
 
@@ -880,13 +868,13 @@ class Properties():
         return singles
 
 
-    def addcomment(self, key, comment):
+    def comment(self, key, comment):
         """
         Attaches comment to property. 
         Comment can be passed as a string or list of strings.
 
-            foo.addcomment("foo", ["first", "part"])
-            foo.addcomment("foo", "first\\npart")
+            foo.comment("foo", ["first", "part"])
+            foo.comment("foo", "first\\npart")
 
         Multiline comments are supported - either by passing a list of lines or
         by passing a string containing newline characters '\\n'.
@@ -905,20 +893,20 @@ class Properties():
         self.unsaved = True
 
 
-    def addcomments(self, identifier, *comments):
+    def comments(self, identifier, *comments):
         """
         Attaches comment to properties which will match the identifier. 
         Comment can be passed as a string or a list. 
         Multiline comments are supported - either by passing a list of lines or
         by passing a string containing newline characters '\\n'.
 
-        addcomments('foo.*.bar', 'first comment', 'second\ncomment', ['third', 'comment'])
+        comments('foo.*.bar', 'first comment', 'second\ncomment', ['third', 'comment'])
         """
         keys = self.gets(identifier)
         i = 0
         for key in keys:
-            try: self.addcomment(key, comments[i])
-            except IndexError: self.addcomment(key, comments[-1])
+            try: self.comment(key, comments[i])
+            except IndexError: self.comment(key, comments[-1])
             finally: i += 1
 
 
@@ -943,40 +931,40 @@ class Properties():
         return comment
 
 
-    def comment(self, key):
+    def hide(self, key):
         """
-        When property gets commented it is no longer available for modifing.
+        When property is hidden it is no longer available for modifing. 
         Raises KeyError when property is not found.
         """
         if key not in self.properties: raise KeyError("'{0}' is not in properties of {1}".format(key, self))
-        if key not in self.commented: self.commented.append(key)
+        if key not in self.hidden: self.hidden.append(key)
         self.unsaved = True
         
 
-    def comments(self, identifier):
+    def hides(self, identifier):
         """
-        Comments every property which key will match given identifier. 
+        Hides every property which key will match given identifier. 
         """
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key in self.getnames():
-            if re.match(identifier, key): self.comment(key)
+            if re.match(identifier, key): self.hide(key)
 
 
-    def uncomment(self, key):
+    def unhide(self, key):
         """
-        Uncomments property to make it available for modifing. 
+        Remove property from ```hidden``` list to make it available for modifing. 
         Does not raise any errors when key is not found.
         """
-        if key in self.commented: self.commented.remove(key)
+        if key in self.hidden: self.hidden.remove(key)
         self.unsaved = True
 
 
-    def uncomments(self, identifier):
+    def unhides(self, identifier):
         """
-        Uncomments every property which key will match given identifier.
+        Unhides every property which key will match given identifier.
         """
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
-        to_uncomment = []
-        for i in range(len(self.commented)):
-            if re.match(identifier, self.commented[i]): to_uncomment.append(self.commented[i])
-        for key in to_uncomment: self.uncomment(key)
+        to_unhide = []
+        for i in range(len(self.hidden)):
+            if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
+        for key in to_unhide: self.unhide(key)
