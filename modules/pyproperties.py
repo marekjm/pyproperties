@@ -52,7 +52,6 @@ class Properties():
         if path != "" and not path.isspace() and not no_read: self.read(path, cast, no_includes)
         else: self.blank(path)
 
-
     def _loadf(self, path):
         """
         This method loads properties file from given path to a ```self.source```. 
@@ -69,7 +68,6 @@ class Properties():
             srcorigin.append(source[i])
         self.source = source
         self.srcorigin = srcorigin
-
 
     def _notavailable(self, key):
         """
@@ -128,12 +126,11 @@ class Properties():
         return self._isvalidline(line.strip()[1:]) and not self._isvalidline(line.strip())
 
 
-    def _tcast(self, identifier):
+    def _tcast(self, key):
         """
-        Converts property of the given key from str (default) to int or float if needed.
+        Converts property of the given key from str (default) to int, float, bool or None if needed.
         """
-        ptype = self.typeguess(self.get(identifier))
-        self.set(identifier, ptype(self.get(identifier)))
+        self.set(key, self._convert(self.get(key)))
 
 
     def _tcasts(self, identifier):
@@ -145,10 +142,24 @@ class Properties():
             if re.match(identifier, key): self._tcast(key)
 
 
+    def _convert(self, value, from_key=False):
+        """
+        Returns value with it's type casted. 
+        Can convert from str to: int, float, True/False and None.
+        If `from_key` is passed as True then `value` is treated as a key and used to obtain value of this key.
+        """
+        if from_key: value = self.get(value)
+        
+        if value == "True": value = True
+        elif value == "False": value = False
+        elif value == "None": value = None
+        else: value = self.typeguess(value)(value)
+        return value
+
     def typeguess(self, prop):
         """
         Tries to guess the type of property (initially all properties are stored as strings) and 
-        convert it accordingly. It can guess three types: int, float and string. 
+        convert it accordingly. It can guess three types: int, float and str. 
         It returns guessed ```type``` of property.
         """
         re_int = re.compile(guess_int_re)
@@ -390,7 +401,7 @@ class Properties():
         self.unsaved = True
 
 
-    def parseline(self, value):
+    def _parseline(self, value):
         """
         This method searches for every $(reference) string in given line and 
         replaces it with value of corresponding property. 
@@ -404,24 +415,16 @@ class Properties():
                 value = value.replace("$({0})".format(name), str(self.properties[name]))
         return value
 
-
-    def parse(self, cast=False, props=False):
+    def parse(self, cast=False):
         """
         This method parses and returns parsed self.properties
-
-        If props argument is passed as True parse() will return
-        a Properties() object with all values parsed.
         """
-        if props:
-            parsed = Properties()
-            parsed.merge(self)
-            parsed.properties = parsed.parse()
-            parsed.save()
-        else:
-            parsed = {}
-            for key in self.properties: parsed[key] = self.get(key, True, cast)
+        parsed = Properties()
+        parsed.merge(self)
+        for key in parsed.getnames(): parsed.set(key, parsed.get(key, parse=True))
+        parsed.save()
+        if cast: parsed._tcasts("*")
         return parsed
-
 
     def copy(self):
         """
@@ -574,7 +577,7 @@ class Properties():
         """
         This method stores single property and takes responsibility of storing it's comment and 
         possibly commenting the property itself. 
-        This method also looks at the ```stored``` list and checks if the given key has already 
+        This method looks at the ```stored``` list and checks if the given key has already 
         been stored to prevent storing it two times.
         It will also check if the key is in ```propsorigin``` dict to ensure that unsaved properties 
         would not be stored.
@@ -665,21 +668,21 @@ class Properties():
             if not no_dump: self._dump(path)
 
 
-    def get(self, key, parsed=False, cast=False):
+    def get(self, key, parse=False, cast=False):
         """
-        Returns value of identifier. 
+        Returns value of given key. 
         If parsed is set to True value will be parsed before returning.
         KeyError is raised if key is not available (not found or is hidden).
         """
         if key not in self.properties or key in self.hidden: self._notavailable(key)
         
-        if parsed: value = self.parseline(self.properties[key])
+        if parse: value = self._parseline(self.properties[key])
         else: value = self.properties[key]
-        if cast and type(value) == str: value = self.typeguess(value)(value)
+        if cast and type(value) == str: value = self._convert(value)
         return value
 
 
-    def gets(self, identifier, parsed=False, cast=False):
+    def gets(self, identifier, parse=False, cast=False):
         """
         Returns dict of properties which names matched pattern given as identifier.
         If parsed is set to True values will be parsed before returning.
@@ -689,15 +692,15 @@ class Properties():
         matched = {}
         identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
         for key, value in self.properties.items():
-            if re.match(identifier, key) and parsed: matched[key] = self.parseline(value)
-            elif re.match(identifier, key) and not parsed: matched[key] = value
+            if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
+            elif re.match(identifier, key) and not parse: matched[key] = value
         if cast:
             for key, value in matched.items():
                 if type(value) == str: matched[key] = self.typeguess(value)(value)
         return matched
 
 
-    def getre(self, identifier, parsed=False, cast=False):
+    def getre(self, identifier, parse=False, cast=False):
         """
         Returns dict of properties which names matched given pattern.
         If parsed is set to True values will be parsed before returning. 
@@ -709,8 +712,8 @@ class Properties():
         else: raise TypeError("identifer must be either string or compiled regular expression pattern, but '{0}' type was given".format(str(type(identifier))[8:-2]))
 
         for key, value in self.properties.items():
-            if re.match(identifier, key) and parsed: matched[key] = self.parseline(value)
-            elif re.match(identifier, key) and not parsed: matched[key] = value
+            if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
+            elif re.match(identifier, key) and not parse: matched[key] = value
         if cast:
             for key, value in matched.items(): matched[key] = self.typeguess(value)(value)
         return matched
@@ -788,7 +791,7 @@ class Properties():
         if key not in self.properties or key in self.hidden: self._notavailable(key)
 
         prop = self.properties.pop(identifier)
-        if cast: prop = self.typeguess(prop)(prop)
+        if cast: prop = self._convert(prop)
         self.unsaved = True
         return prop
 

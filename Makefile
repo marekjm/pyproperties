@@ -9,6 +9,9 @@ tar: DOC LICENSE README.md RELEASE.md Changelog.md test.py modules/pyproperties.
 doc: ./modules/pyproperties.py
 	pydoc3 ./modules/pyproperties.py > DOC
 
+manual: ./manual/*.mdown
+	pandoc -o ./manual/manual.pdf ./manual/*.mdown
+
 test:
 	python3 ./test.py -v
 

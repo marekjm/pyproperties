@@ -2,6 +2,7 @@
 !.gitignore
 *.pyc
 *.sh
+*.pdf
 README.mdown
 RELEASE.mdown
 Changelog.mdown

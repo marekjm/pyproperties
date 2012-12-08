@@ -12,28 +12,28 @@ class ParselineTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("two.0", 2)
         foo.set("two.1", "2")
-        self.assertEqual(2, foo.get("two.0", parsed=True, cast=True))
-        self.assertEqual(2, foo.get("two.0", parsed=True, cast=False))
-        self.assertEqual(2, foo.get("two.1", parsed=True, cast=True))
-        self.assertEqual("2", foo.get("two.1", parsed=True, cast=False))
+        self.assertEqual(2, foo.get("two.0", parse=True, cast=True))
+        self.assertEqual(2, foo.get("two.0", parse=True, cast=False))
+        self.assertEqual(2, foo.get("two.1", parse=True, cast=True))
+        self.assertEqual("2", foo.get("two.1", parse=True, cast=False))
 
 
     def testParselineFloat(self):
         foo = pyproperties.Properties()
         foo.set("pi.0", 3.14)
         foo.set("pi.1", "3.14")
-        self.assertEqual(3.14, foo.get("pi.0", parsed=True, cast=True))
-        self.assertEqual(3.14, foo.get("pi.0", parsed=True, cast=False))
-        self.assertEqual(3.14, foo.get("pi.1", parsed=True, cast=True))
-        self.assertEqual("3.14", foo.get("pi.1", parsed=True, cast=False))
+        self.assertEqual(3.14, foo.get("pi.0", parse=True, cast=True))
+        self.assertEqual(3.14, foo.get("pi.0", parse=True, cast=False))
+        self.assertEqual(3.14, foo.get("pi.1", parse=True, cast=True))
+        self.assertEqual("3.14", foo.get("pi.1", parse=True, cast=False))
 
 
     def testParselineString(self):
         foo = pyproperties.Properties()
         foo.set("greeting", "Hello $(name)!")
         foo.set("name", "World")
-        self.assertEqual("Hello World!", foo.get("greeting", parsed=True, cast=True))
-        self.assertEqual("Hello World!", foo.get("greeting", parsed=True, cast=False))
+        self.assertEqual("Hello World!", foo.get("greeting", parse=True, cast=True))
+        self.assertEqual("Hello World!", foo.get("greeting", parse=True, cast=False))
 
 
     def testParselineComplex(self):
@@ -42,8 +42,8 @@ class ParselineTest(unittest.TestCase):
         foo.set("name", "World")
         foo.set("number", 7)
         foo.set("pi.value", 3.14159)
-        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parsed=True, cast=True))
-        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parsed=True, cast=False))
+        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parse=True, cast=True))
+        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parse=True, cast=False))
 
 
 class LoadTest(unittest.TestCase):
@@ -201,9 +201,9 @@ class GetTest(unittest.TestCase):
         self.assertEqual("Agent Smith", foo.get("customer.1.name"))
 
 
-    def testGet_exception(self):
+    def testGetException(self):
         foo = pyproperties.Properties(foo_path)
-        self.assertRaises(KeyError, foo.get, 0)
+        self.assertRaises(KeyError, foo.get, "foo")
 
 
     def testGetCastedInteger(self):
@@ -228,6 +228,22 @@ class GetTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("neg_pi", "-3.14")
         self.assertEqual(-3.14, foo.get("neg_pi", cast=True))
+
+    def testGetCastedNone(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "None")
+        self.assertEqual(None, foo.get("foo", cast=True))
+
+    def testGetCastedBooleanTrue(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "True")
+        self.assertEqual(True, foo.get("foo", cast=True))
+
+
+    def testGetCastedBooleanFalse(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "False")
+        self.assertEqual(False, foo.get("foo", cast=True))
 
 
 class GetsTest(unittest.TestCase):
@@ -316,7 +332,7 @@ class GroupingTest(unittest.TestCase):
 
 
 class ParseTest(unittest.TestCase):
-    def testParseDict(self):
+    def testParse(self):
         bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
         parsed =    {
                     "message.0":"Apple Jack  .",
@@ -326,20 +342,7 @@ class ParseTest(unittest.TestCase):
                     "name.2":"  William  ",
                     "alert":"Fire!",
                     }
-        self.assertEqual(parsed, bar.parse())
-
-
-    def testParseProps(self):
-        bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
-        parsed =    {
-                    "message.0":"Apple Jack  .",
-                    "message.1":"Arr... Welcome, John the Average!",
-                    "name.0":"John the Average",
-                    "name.1":"Jack  ",
-                    "name.2":"  William  ",
-                    "alert":"Fire!",
-                    }
-        pbar = bar.parse(props=True)
+        pbar = bar.parse()
         self.assertEqual(parsed, pbar.gets("*"))
         self.assertEqual(pyproperties.Properties, type(pbar))
 
