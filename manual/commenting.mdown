@@ -1,5 +1,8 @@
 #### Commenting properties
 
+###### [Index](index.mdown)
+----
+
 
 When reading from file both ```!``` and ```#``` characters are considered _comments_, but 
 when using ```store()``` method all _!-comments_ will be converted to _#-comments_.
@@ -48,23 +51,29 @@ This is done by ```comment()``` and ```uncomment()``` methods.
 
 #### Hiding and _un_-hiding properties
 
+You can use ```hide()``` and ```unhide()``` methods to change status of a property.
+
         Python 3.3.0 (default, Oct 24 2012, 19:57:05) 
         [GCC 4.7.2 20120921 (Red Hat 4.7.2-2)] on linux
         Type "help", "copyright", "credits" or "license" for more information.
-        >>> p.set("foo")
-        >>> p.get("foo")
+        >>> from modules import pyproperties
+        >>> foo = pyproperties.Properties()
+        >>> foo.set("foo")
+        >>> foo.get("foo")
         ''
-        >>> p.hide("foo")
-        >>> p.get("foo")
+        >>> foo.hide("foo")
+        >>> foo.get("foo")
         Traceback (most recent call last):
           File "<stdin>", line 1, in <module>
-          File "./modules/pyproperties.py", line 666, in get
-            if identifier in self.hidden: raise KeyError
-        KeyError
-        >>> p.unhide("foo")
-        >>> p.get("foo")
+          File "./modules/pyproperties.py", line 672, in get
+            if key not in self.properties or key in self.hidden: self._notavailable(key)
+          File "./modules/pyproperties.py", line 105, in _notavailable
+            raise KeyError(message)
+        KeyError: "'foo' is not available in <modules.pyproperties.Properties object at 0x7fb3f862e150>: hidden property"
+        >>> 
+        >>> foo.unhide("foo")
+        >>> foo.get("foo")
         ''
-        >>>
 
 ----
 

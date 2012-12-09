@@ -1,5 +1,9 @@
 #### Getters in pyproperties
 
+###### [Index](index.mdown)
+----
+
+
 ```pyproperties``` comes with many handy getters. There are three basic get-type methods:  
 
 *   ```get()```
@@ -8,7 +12,7 @@
 
 ----
 
-#### ```get()```
+##### ```get()```
 
 Is used to get single properties for example ```customer.0.name```.
 It does not do anything more than that. 
@@ -24,7 +28,7 @@ and then its type is casted if neccessary.
 
 ----
 
-#### ```gets()```
+##### ```gets()```
 
 Is designed to return groups of properties. It is achieved by passing keys like this one ```customer.*.name```
 
@@ -33,11 +37,11 @@ Every property in properties dictionary which key will match the pattern will be
 
 ----
 
-#### ```getre()```
+##### ```getre()```
 
 The only difference between ```getre()``` and ```gets()``` is that the ```getre()``` accepts custom regular expression patterns and 
-will not modify the (see escaping dots and replacing ```*``` in ```gets()```). 
-You can pass identifier as compiled regexp or a string - it will be then compiled.
+will not modify them (see escaping dots and replacing ```*``` in ```gets()```). 
+You can pass identifier as compiled regexp or a string - it will be then compiled. 
 
 ----
 

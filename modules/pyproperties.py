@@ -16,16 +16,14 @@ class LoadError(IOError): pass
 class StoreError(IOError): pass
 class UnsavedChangesError(BaseException): pass
 
-
 def onlyhexchars(s):
     """
     Helper function.
-    Returns True if given string conatins only 
-    hexadecimal characters eg. 0-9a-f
-    It detects hex of form 'beef01' and '0xbeef01'
+    Returns True if given string conatins only hexadecimal numbers.
+    It detects hex of form 'beef01' and '0xbEEf01'
     """
     result = False
-    if re.match(re.compile("^(0x)?[0-9a-f]*$"), s): result = True
+    if re.match(re.compile("^(0x)?[0-9a-fA-F]*$"), s): result = True
     elif s == "0": result = True
     return result
 
@@ -39,13 +37,10 @@ class Properties():
         """
         If you give a path as an argument it will be loaded and processed as properties file. 
         If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
-        foo.read(path, cast) to load some properties or 
-        you can use the blank properties to create completly new set of properties.
+        foo.read(path) to load some properties or you can use the blank properties to create completly new set of properties.
         You can pass cast as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly.
 
-        This method just calls read() with arguments passed to itself or blank() when no arguments are passed.
-        
         To create a blank instance with path specified you can run: 
             pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
@@ -69,15 +64,7 @@ class Properties():
         self.source = source
         self.srcorigin = srcorigin
 
-    def _notavailable(self, key):
-        """
-        Raises KeyError which will tell user that the property is not available eg. 
-        is not in currently used set of properties or is hidden.
-        """
-        if key in self.hidden: raise KeyError("'{0}' is not available in {1}: hidden property".format(key, self))
-        else: raise KeyError("'{0}' is not available in {1}".format(key, self))
-
-    def __loadd__(self, path):
+    def _loadd(self, path):
         """
         This method reads directory tree as if it was properties file.
         """
@@ -87,7 +74,7 @@ class Properties():
         propnames = []
         propvalues = {}
 
-        warnings.warn("this feature was exprerimental and will be removed in version 0.1.10", DeprecationWarning)
+        warnings.warn("this feature is experimental and might not behave as expected")
 
         for root, dirs, files in os.walk(self.path):
             for file in files:
@@ -107,6 +94,15 @@ class Properties():
         self.source = source
         self.srcorigin = srcorigin
 
+
+    def _notavailable(self, key):
+        """
+        Raises KeyError which will tell user that the property is not available eg. 
+        is not in currently used set of properties or is hidden.
+        """
+        if key in self.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, self)
+        else: message = "'{0}' is not available in {1}".format(key, self)
+        raise KeyError(message)
 
     def _isvalidline(self, line):
         """
@@ -195,7 +191,6 @@ class Properties():
         elif line[0] in ["#", "!"] or line.isspace(): value = None
         elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
         else: value = line.split("=", 1)[1].lstrip()
-        if value != None and value[0] == "\\": value = value[1:]
         return value
 
 
@@ -364,7 +359,7 @@ class Properties():
         finally: self.blank(path)
 
         if os.path.isfile(self.path): self._loadf(self.path)
-        elif os.path.isdir(self.path): self.__loadd__(self.path)
+        elif os.path.isdir(self.path): self._loadd(self.path)
         else: raise LoadError("'{0}' no such file or directory".format(self.path))
 
         if not no_includes: self._makeincludes()

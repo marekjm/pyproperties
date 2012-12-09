@@ -1,6 +1,10 @@
 #### Joining properties files in pyproperties
 
-pyproperties allows you to join several ```*.properties``` files together using ```join()``` method.
+###### [Index](index.mdown)
+----
+
+
+```pyproperties``` allows you to join several ```properties``` files together using ```foo.join("/path/to/joined/file.properties")``` method.
 ```join()``` does the following things:
 
 *   makes new properties object by loading the path,
@@ -15,7 +19,7 @@ Join __does not merge__ properties!
 
 ----
 
-SEE ALSO:
+SEE ALSO:  
 [merging](merging.mdown)  
 [completing](completing.mdown)  
 [saving](saving.mdown)

@@ -1,6 +1,10 @@
 #### Removing properties
 
-pyproperties has to types of removers: remove and pop. 
+###### [Index](index.mdown)
+----
+
+
+pyproperties has two types of removers: ```remove()``` and ```pop()```. Both of them come with single- and multi- version.
 
 *   ```remove()``` for removing single properties,
 *   ```removes()``` for removing groups of properties,

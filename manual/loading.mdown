@@ -1,63 +1,46 @@
 #### Loading properties files
 
-
-There are two ways of doing so.
-First - you just call a class with path as an argument:
-
-
-        foo = pyproperties.Properties("/path/to/file.properties")
+###### [Index](index.mdown)
+----
 
 
+There are several patterns for loading properties files.
 
+_stadard way_
 
-And second - you call a class with no argument an later call ```read()``` 
-method with path as an argument.
+        foo = pyproperties.Properties("/path/to/foo.properties")
 
+&nbsp;
+
+_intruduced in ```0.1.5```_
+
+        foo = pyproperties.Properties("/path/to/foo.properties", no_read=True)
+        # some stuff being done
+        foo.read()
+
+&nbsp;
+
+_third way_
 
         foo = pyproperties.Properties()
-        foo.read("/path/to/file.properties")
+        foo.read("/path/to/foo.properties")
 
 
-The second method can be useful when you know that you will need some 
-properites object but the path is unknown at the moment.
+Either way will result with ```pyproperties.Properties``` object with exactly the same values.
+
 
 ----
 
-From version 0.1.5 you can load blank properties with path specified and read them later.
 
-        >>> import pyproperties
-        >>> foo = pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
-        >>> foo.read()
+##### Whitespace
 
-is equivalent to:
-
-        >>> import pyproperties
-        >>> foo = pyproperties.Properties()
-        >>> foo.read("/home/user/some/path/foo.properties")
-
-----
-
-#### Whitespace
-
+Whitespace preceding and trailing the key is stripped.  
+Whitespace preceding value is stripped but the trailing is preserved.
 
         'key = value'       'key' / 'value'
         'key= value '       'key' / 'value '
         'key = value  '     'key' / 'value  '
         'key : value '      'key' / 'value'
-
-
-White space preceding and trailing the key are both stripped. 
-White space preceding value is stripped but the trailing are preserved.
-You can preserve preceding whitespace of the value by escaping first 
-whitespace of it's value.
-
-
-        'key =\  value '       'key' / '  value '
-
-
-You need to remember that this escape will be lost during load.
-It will probably be fixed in future release (0.1.6-7?) with possible 
-introduction of property write-rules.
 
 ----
 

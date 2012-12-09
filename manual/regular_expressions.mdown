@@ -1,4 +1,8 @@
-REGULAR EXPRESSIONS USED IN PYPROPERTIES.
+#### Regular expressions used in ```pyproperties```
+
+###### [Index](index.mdown)
+----
+
 
 Regular expressions are used in pyproperties in 
 methods working with groups of properties:
@@ -12,8 +16,10 @@ methods working with groups of properties:
 
 and with type guessing:
 
-*   ```__tcast__()```
-*   ```__tcasts__()```
+*   ```typeguess()```
+
+
+----
 
 
 The first four (```gets()```, ```sets()```, ```removes()``` and ```pops()```) are based on the same 
@@ -34,18 +40,7 @@ is escaped.
 ----
 
 
-Regular expressions in type guessing:
-
-*   guess_int_re = ```^[-]?[0-9]+$```
-*   guess_float_re = ```^[-]?[0-9]*\.[0-9]+$```
-
-If neither of them is matched type of the property is considered ```str```.
-
-
-----
-
-
-There are four three regular expressions used by pyproperties:
+There are three regular expressions used in ```pyproperties```:
 
         wildcart_re = "[a-z0-9_.-]*"
         guess_int_re = "^[-]?[0-9]+$"
@@ -53,6 +48,7 @@ There are four three regular expressions used by pyproperties:
 
 
 ----
+
 
 SEE ALSO:  
 [setters](setters.mdown)  

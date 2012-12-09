@@ -1,5 +1,9 @@
 #### Including properties
 
+###### [Index](index.mdown)
+----
+
+
 ```__include__``` directive works the same way as _```#include```_ in C/C++. It replaces line containg the directive with contents of the file it points to. 
 The idea to implement it in ```pyproperties``` came from [this](http://commons.apache.org/configuration/howto_properties.html) site on [apache.org](http://apache.org) but 
 I expanded it's functionality a little bit and changed the name of _special_ key from ```include``` to ```__include__```.

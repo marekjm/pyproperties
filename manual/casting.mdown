@@ -1,5 +1,8 @@
 #### Typecasting in ```pyroperties```
 
+###### [Index](index.mdown)
+----
+
 
 Typecasting is provided by three internal methods and one method available publicly:  
 
@@ -48,7 +51,6 @@ You can just call them with ```cast``` argument set to ```True```.
 
 
 ----
-
 
 ```_convert()``` takes value as an argument and is able to convert it from ```str``` to: 
 

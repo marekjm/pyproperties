@@ -53,7 +53,7 @@ class LoadTest(unittest.TestCase):
                     "message.1":"Arr... Welcome, $(name.0)!",
                     "name.0":"John the Average",
                     "name.1":"Jack  ",
-                    "name.2":"  William  ",
+                    "name.2":"\\  William  ",
                     "alert":"Fire!",
                 }
         comments = {"message.0":["This is a comment for massage.0"], 
@@ -339,7 +339,7 @@ class ParseTest(unittest.TestCase):
                     "message.1":"Arr... Welcome, John the Average!",
                     "name.0":"John the Average",
                     "name.1":"Jack  ",
-                    "name.2":"  William  ",
+                    "name.2":"\\  William  ",
                     "alert":"Fire!",
                     }
         pbar = bar.parse()
@@ -663,7 +663,7 @@ class StoreTest(unittest.TestCase):
                     "#   value is \"John the Average\"",
                     "name.0=John the Average",
                     "name.1=Jack  ",
-                    "name.2=  William  ",
+                    "name.2=\\  William  ",
                     "alert=Fire!",
                     ]
         bar.store(path="./test.properties~", no_dump=True)
@@ -679,7 +679,7 @@ class StoreTest(unittest.TestCase):
                     "#   This is a comment for name.0 which",
                     "#   value is \"John the Average\"",
                     "name.0=John the Average",
-                    "name.2=  William  ",
+                    "name.2=\\  William  ",
                     "alert=Fire!",
                     ]
         bar.remove("message.0")
@@ -736,7 +736,7 @@ class StoreTest(unittest.TestCase):
                     "name.1=Jack  ",
                     "#   his name is William",
                     "#   that's for sure",
-                    "name.2=  William  ",
+                    "name.2=\\  William  ",
                     "#alert=Fire!",
                     ]
         bar.hide("alert")
@@ -758,7 +758,7 @@ class StoreTest(unittest.TestCase):
                     "#   value is \"John the Average\"",
                     "name.0=John the Average",
                     "name.1=Jack  ",
-                    "name.2=  William  ",
+                    "name.2=\\  William  ",
                     "alert=Fire!",
                     ]
         bar.rmcomment("message.0")
@@ -778,7 +778,7 @@ class StoreTest(unittest.TestCase):
                     "#   This is changed comment for name.0",
                     "name.0=John the Average",
                     "name.1=Jack  ",
-                    "name.2=  William  ",
+                    "name.2=\\  William  ",
                     "alert=Fire!",
                     ]
         bar.addcomment("name.0", "This is changed comment for name.0")

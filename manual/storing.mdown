@@ -1,5 +1,9 @@
 #### Storing properties to file
 
+###### [Index](index.mdown)
+----
+
+
 There is a special method for storing loaded properites: ```store()``` 
 When you want to write yor properites to a file you should call ```store()``` with path to the file you want your properties to be saved in. 
 
@@ -9,13 +13,13 @@ __WARNING!__ Before any ```store()``` call you should call ```save()``` method t
         foo.save()
         foo.store("./foo.properties")
 
-Because if you will do just:
+Because if you will just call ```store()```:
 
         foo.set("some.property", "foo")
         foo.store( "./foo.properties" )
         pyproperties.UnsavedChangesError: trying to store with unsaved changes
 
-with any unsaved changes pyproperties will raise ```pyproperties.UnsavedChangesError```.
+with any unsaved changes ```pyproperties``` will raise ```pyproperties.UnsavedChangesError```.
 
 
 ----
@@ -38,9 +42,9 @@ This will prevent ```UnsavedChangesError``` from being raised and store properti
 
 and pyproperties would happily store your props.
 
-----------------
+----
 
-#### Store process
+#### Storing process
 
 Process of storing (```store()``` method) is divided into smaller submethods.
 
@@ -52,10 +56,23 @@ should not be stored because already is;
 *   ```_storesingles()``` (introduced in ```0.1.4```) generates lines with single properties in alphabetical order,
 *   ```_dump()``` (introduced in ```0.1.4```) writes to file,
 
-By passing ```no_dump``` argument as ```True``` to ```store()``` method you can tell it to only generate lines and 
-use your custom function to write them to file.
 
-----------------
+----
+
+
+##### Optional arguments of ```store()```
+
+By passing ```no_dump``` argument as ```True``` you can tell ```store()``` to only generate lines and not write them to file.
+
+By passing ```drop_source``` argument as ```True``` you can tell ```store()``` to not to follow original source but generate completely 
+new source (and file). New source will not be messy - ```pyproperties``` will try to group properties and will separate each group with one blank line. 
+Comments will not be lost.
+
+By passing ```force``` argument as ```True``` you can tell ```store()``` discard unsaved changes when storing.
+
+
+----
+
 
 Prior to version ```0.1.2``` if ```store()``` was used on properties with no source they were stored as an ugly mess. 
 From ```0.1.2``` and above properties created from blank are stored in groups (thanks to the capability of grouping) and 
@@ -64,5 +81,6 @@ properties which do not belong to any group are appended at the end. A blank lin
 
 ----
 
+
 SEE ALSO:  
-[saving](saving.mdown)
+[saving](saving.mdown)  
