@@ -1,38 +1,65 @@
-#### Release 0.1.8
+#### Release 0.1.9
 
 
->   This is very poor release. I am sorry but I was busy with school stuff. 
->   After all I need to pass this semester (rember your highschool time?). 
+>   This release breaks backwards compatibility with all previous versions. It is due to changes in behaviour of some methods and 
+>   renamed methods related to properties comments and _hiding_. Yes - _hiding_. I have finally found a proper name for this.  
+>   Commented properties are the ones which have comments attached to them. And hidden properties (don't you think it is a good name?) are 
+>   the ones which are, well, hidden.  
+>   
+>   &nbsp;
 >
->   This release brings just three updates, and five bug fixes. Not impressive at all. 
->   I will try to do better next week.
+>   In this release one unit test was removed due to simplification of the ```parse()``` method.  
+>
+>   &nbsp;
+>
+>   Many internal methods were renamed to use ```_single()``` preceding underscore instead of two ```__underscores__()``` on both sides. 
+>   This change improved readablility and provided easily spottable distinction between provided API and internal methods.  
+>
+>   &nbsp;
+>
+>   ```0.1.9``` is the last _alpha_ release and last from line ```0.1.x```. ```pyproperties``` is now entering _beta_ stage and line ```0.2.x```. 
 
 
 ----
 
 
 ##### This release brings you:
-*   3 update(s),
-*   5 fix(es),
-*   1 new feature(s).
+*   19 update(s),
+*   1 fix(es),
+*   4 new feature(s).
 
 
-#### Version 0.1.8 ():
+#### Version 0.1.9 (2012.12.09):
 
-* __upd__:  ```no_source``` argument in ```store()``` renamed to ```drop_source```,
-* __upd__:  changes in ```read()```, it now uses ```blank()``` to create all initial variables and generate path and name,
-* __upd__:  argument ```idetifier``` in ```remove()``` renamed to ```key``` - it only applies to one key, identifiers apply to many keys,
+* __upd__:  ```_typeguess()``` renamed to ```typeguess()```,
+* __upd__:  ```__tcast__()``` and ```__tcasts__()``` renamed to ```_tcast()``` and ```_tcasts()``` respectively,
+* __upd__:  ```_getlinekey()``` renamed to ```getlinekey()```,
+* __upd__:  ```_getlinevalue()``` renamed to ```getlinevalue()```,
+* __upd__:  ```comment()``` renamed to ```hide()```,
+* __upd__:  ```commented``` argument in ```_include()``` renamed to ```hidden```,
+* __upd__:  ```commented``` keyword in properties files renamed to ```hidden```,
+* __upd__:  ```commented``` internal variable was renamed to ```hidden```,
+* __upd__:  all ```__extract*__``` methods were renamed to ```_extract*```,
+* __upd__:  ```__split__()``` renamed to ```_split()```,
+* __upd__:  ```__loadf__()``` renamed to ```_loadf()```,
+* __upd__:  ```getcomment()``` returns a string (lines are joined with unescaped ```\n```),
+* __upd__:  ```remove()``` no longer issues KeyErrors,
+* __upd__:  ```parse()``` returns ```pyproperties.Properties``` object by deafult, functionality for returning simple dict is removed,
+* __upd__:  ```parseline()``` renamed to ```_parseline()```,
+* __upd__:  ```parsed``` argument in ```get()```, ```gets()```, ```getre()``` renamed to ```parse```,
+* __upd__:  ```_tcast()``` now uses ```_convert()``` as backend (it provides convertion to more types),
+* __upd__:  ```__loadd__()``` renamed to ```_loadd()``` and issues a warning when used,
+* __upd__:  ```getlinevalue()``` no longer removes backslash preceding whitespace at the beginning of value,
 
 
-* __fix__:  ```reload()``` requires ```save()```,
-* __fix__:  ```refresh()``` requires ```save()```,
-* __fix__:  ```remove()``` removes comment attached to the property from the dict,
-* __fix__:  ```copy()``` now works with files containing commented properties,
-* __fix__:  ```getnames()``` has new argument - ```commented``` which if set to ```True``` returns names of commented properties 
-    (this fixes situation when you were not able to get names of commented properties at all),
+* __fix__:  ```hide()``` does not allow duplicates,
 
 
-* __new__:  ```path``` argument in ```blank()``` method,
+* __new__:  ```set()``` now has default value (empty string) for new properties,
+* __new__:  ```_notavailable()``` method which issuse KeyError with appropriate message,
+* __new__:  ```getcomment()``` has new argument - ___```(bool)```___```lines``` which will tell it to give you lines (list of strings) instead of string,
+* __new__:  ```_convert()``` method which can convert property from ```str``` to ```bool``` (```True``` & ```False```), ```int```, ```float```, ```None```,
+    read ```manual/casting.mdown``` for more details,
 
 &nbsp;
 
