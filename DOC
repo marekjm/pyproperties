@@ -500,6 +500,7 @@ FUNCTIONS
         It detects hex of form 'beef01' and '0xbEEf01'
 
 DATA
+    __version_tuple__ = (0, 1, 9)
     guess_float_re = r'^[-]?[0-9]*\.[0-9]+$'
     guess_int_re = '^[-]?[0-9]+$'
     wildcart_re = '[a-z0-9_.-]*'

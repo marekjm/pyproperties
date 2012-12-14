@@ -7,24 +7,36 @@ import re
 import warnings
 
 __version__ = "0.1.9"
+__vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-z0-9_.-]*"
-guess_int_re = "^[-]?[0-9]+$"
-guess_float_re = "^[-]?[0-9]*\.[0-9]+$"
+guess_int_re = "^-?[0-9]+$"
+guess_hex_re = "^-?(0x)?[0-9a-fA-F]+$"
+guess_oct_re = "^-?(0o)?[0-7]+$"
+guess_float_re = "^-?[0-9]*\.[0-9]+$"
 
 class LoadError(IOError): pass
 class StoreError(IOError): pass
 class UnsavedChangesError(BaseException): pass
 
-def onlyhexchars(s):
+def ishex(s):
     """
     Helper function.
     Returns True if given string conatins only hexadecimal numbers.
     It detects hex of form 'beef01' and '0xbEEf01'
     """
     result = False
-    if re.match(re.compile("^(0x)?[0-9a-fA-F]*$"), s): result = True
-    elif s == "0": result = True
+    if re.match(re.compile(guess_hex_re), s): result = True
+    return result
+
+
+def isoct(s):
+    """
+    Helper function.
+    Returns True if given string conatins only octal numbers.
+    """
+    result = False
+    if re.match(re.compile(guess_oct_re), s): result = True
     return result
 
 
@@ -143,12 +155,15 @@ class Properties():
         Returns value with it's type casted. 
         Can convert from str to: int, float, True/False and None.
         If `from_key` is passed as True then `value` is treated as a key and used to obtain value of this key.
+        Be aware that this can cause a KeyError to be raised.
         """
         if from_key: value = self.get(value)
         
         if value == "True": value = True
         elif value == "False": value = False
         elif value == "None": value = None
+        elif ishex(value): value = int(value, 16)
+        elif isoct(value): value = int(value, 8)
         else: value = self.typeguess(value)(value)
         return value
 
@@ -373,8 +388,7 @@ class Properties():
 
     def reload(self):
         """
-        Reloads from file. Missing values are added. Existing values are overwritten. 
-        Values which are not found in file are deleted.
+        Reloads properties from `self.path`.
         """
         new = Properties(self.path)
         self.source = new.source
@@ -859,7 +873,7 @@ class Properties():
         for skey in skeys:
             identifier = ""
             for key in skey:
-                if onlyhexchars(key): key = "*"
+                if ishex(key): key = "*"
                 identifier = "{}.{}".format(identifier, key)
             identifier = identifier[1:]
             if identifier not in groups and len(self.gets(identifier)) > 1: groups.append(identifier)

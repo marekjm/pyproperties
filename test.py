@@ -906,4 +906,44 @@ class HideTest(unittest.TestCase):
         self.assertEqual([], foo.hidden)
 
 
+class TypecastingTest(unittest.TestCase):
+    def testHexadecimalConversion(self):
+        examples = [("0x0", 0),
+                    ("-0x1", -1),
+                    ("0x16", 22),
+                    ("-0xa2", -162),
+                    ("0x45", 69),
+                    ("29a", 666),
+                    ("-0x7cb", -1995),
+                    ("7dc", 2012),
+                    ("0x22b8", 8888),
+                    ("0x582", 1410),
+                    ("-0x582", -1410),
+                    ("0x75bcd15", 123456789),
+                    ("-f44e", -62542),
+                    ]
+        foo = pyproperties.Properties()
+        for hex, dec in examples:
+            self.assertEqual(foo._convert(hex), dec)
+
+    def testOctalConversion(self):
+        examples = [("0o0", 0),
+                    ("-0o1", -1),
+                    ("0o26", 22),
+                    ("-0o242", -162),
+                    ("0o105", 69),
+                    ("0o1232", 666),
+                    ("-0o3713", -1995),
+                    ("0o3734", 2012),
+                    ("0o21270", 8888),
+                    ("0o2602", 1410),
+                    ("-0o2602", -1410),
+                    ("0o726746425", 123456789),
+                    ("-0o172116", -62542),
+                    ]
+        foo = pyproperties.Properties()
+        for oct, dec in examples: 
+            self.assertEqual(foo._convert(oct), dec)
+
+
 if __name__ == "__main__" : unittest.main()
