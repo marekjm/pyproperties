@@ -167,9 +167,8 @@ CLASSES
      |      KeyError is raised if key is not available (not found or is hidden).
      |  
      |  getgroups(self)
-     |      Returns list of non-commented properties-groups in the internal dictionary. 
-     |      Group is understood by two or more properties which can 
-     |      be obtained with the same gets() identifier.
+     |      Returns list of non-hidden properties groups in the internal dictionary. 
+     |      Group is two or more properties which can be obtained with the same `gets()` identifier.
      |      
      |      For example:
      |          language.0=Python 2.x
@@ -184,10 +183,10 @@ CLASSES
      |      But:
      |          person.name=John
      |          person.surname=Average
-     |      will not form a group although gets('person.*') will return 
+     |      will not form a group although `gets('person.*')` will return 
      |      list of length greater than two.
      |      
-     |      This is because only digits (decimal and hex) are considered as 'groupers'.
+     |      This is because only digits are considered 'groupers'.
      |  
      |  getkeysof(self, value, no_hidden=True)
      |      Returns list of keys containing given value. 
@@ -195,9 +194,14 @@ CLASSES
      |      If ```no_hidden``` was passed as ```False``` includes also 
      |      commented properties.
      |  
-     |  getlinekey(self, line)
+     |  getlinekey(self, line, strict=None)
      |      Extracts key from given line and returns it. 
-     |      If the line is comment or is blank returns None.
+     |      If the line is comment or is blank returns None. 
+     |      
+     |      If in strict mode (default) and find a whitespace in key it will 
+     |      complain with a warning and return None. 
+     |      If in non-strict mode (strict passed as `False`) it will only complain and 
+     |      do nothing else.
      |  
      |  getlinevalue(self, line)
      |      Extracts value from given line and returns it. 
@@ -232,7 +236,7 @@ CLASSES
      |  join(self, path, prefix=' ')
      |      Loads external properties and completes base. 
      |      You can pass ```prefix``` as empty string to add properties without prefix. 
-     |      Prefix defaluts to joined modules name. 
+     |      Prefix defaluts to the name of joined file. 
      |      Source of joined properties is appended to base source.
      |  
      |  merge(self, properties)
@@ -262,8 +266,7 @@ CLASSES
      |      Values which are not found in file are not deleted.
      |  
      |  reload(self)
-     |      Reloads from file. Missing values are added. Existing values are overwritten. 
-     |      Values which are not found in file are deleted.
+     |      Reloads properties from `self.path`.
      |  
      |  remove(self, key)
      |      This method removes specified property from interal dictionary. 
@@ -274,7 +277,7 @@ CLASSES
      |      Removed properties will be not saved using store().
      |  
      |  revert(self)
-     |      Drops changes made in properties, source and comments by reverting them 
+     |      Drops changes made in properties object by reverting it's variables
      |      to the state in which they were during last save().
      |  
      |  rmcomment(self, key)
@@ -282,7 +285,7 @@ CLASSES
      |      Does not raise KeyError when property is not found.
      |  
      |  save(self)
-     |      Saves changes made in properties, source and comments.
+     |      Saves changes made in object's variables.
      |  
      |  set(self, key, value='')
      |      Sets key to value. 
@@ -494,19 +497,25 @@ CLASSES
      |      T.__new__(S, ...) -> a new object with type S, a subtype of T
 
 FUNCTIONS
-    onlyhexchars(s)
+    ishex(s)
         Helper function.
         Returns True if given string conatins only hexadecimal numbers.
         It detects hex of form 'beef01' and '0xbEEf01'
+    
+    isoct(s)
+        Helper function.
+        Returns True if given string conatins only octal numbers.
 
 DATA
-    __version_tuple__ = (0, 1, 9)
-    guess_float_re = r'^[-]?[0-9]*\.[0-9]+$'
-    guess_int_re = '^[-]?[0-9]+$'
+    __vertuple__ = (0, 2, 0)
+    guess_float_re = r'^-?[0-9]*\.[0-9]+$'
+    guess_hex_re = '^-?(0x)?[0-9a-fA-F]+$'
+    guess_int_re = '^-?[0-9]+$'
+    guess_oct_re = '^-?(0o)?[0-7]+$'
     wildcart_re = '[a-z0-9_.-]*'
 
 VERSION
-    0.1.9
+    0.2.0
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py

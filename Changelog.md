@@ -2,6 +2,31 @@
 
 ----
 
+
+#### Version 0.2.0 (2012.12.16):
+
+* __upd__:  ```_convert()``` can convert positive and negative hexadecimal and octal integers,
+* __upd__:  slight change in regular expression patterns; ```[-]?``` changed to ```-?```,
+* __upd__:  ```onlyhexchars()``` renamed to ```ishex()```,
+* __upd__:  ```getlinekey()``` has new ```strict``` argument (read DOC for more),
+
+
+* __fix__:  ```getlinekey()``` is more strict and accurate,
+
+
+* __new__:  ```__vertuple__``` variable,
+* __new__:  ```guess_hex_re``` regular expression,
+* __new__:  ```guess_oct_re``` regular expression,
+* __new__:  ```isoct()``` method,
+* __new__:  new ```_getidentifier()``` method for compiling regular expression patterns of identifiers in 
+    methods dealing with multiple properties at once (the ```-s()``` methods),
+* __new__:  ```_iscommentline()``` method,
+* __new__:  global ```strict``` variable (read DOC for ```getlinekey()``` or [this manual](manual/keys_and_values.mdown) for more information),
+
+
+----
+
+
 #### Version 0.1.9 (2012.12.9):
 
 * __upd__:  ```_typeguess()``` renamed to ```typeguess()```,
