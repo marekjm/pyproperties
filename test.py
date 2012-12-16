@@ -587,7 +587,7 @@ class JoinTest(unittest.TestCase):
 
 
 class ReloadTest(unittest.TestCase):
-    def test_reload(self):
+    def testReload(self):
         foo0 = pyproperties.Properties(foo_path)
         foo1 = foo0.copy()
         self.assertEqual(foo0.properties, foo1.properties)
@@ -598,6 +598,9 @@ class ReloadTest(unittest.TestCase):
         self.assertEqual(foo0.origin_hidden, foo1.origin_hidden)
         foo1.set("some.key", "value")
         foo1.removes("customer.0.*")
+        foo1.hides("customer.1.*")
+        foo1.unhide("customer.1.name")
+        foo1.unhide("customer.1.address")
         foo1.save()
         self.assertNotEqual(foo0.properties, foo1.properties)
         self.assertNotEqual(foo0.propsorigin, foo1.propsorigin)

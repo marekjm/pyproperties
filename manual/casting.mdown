@@ -1,4 +1,5 @@
 #### Typecasting in ```pyroperties```
+###### _version: ```0.2.0```_
 
 ###### [Index](index.mdown)
 ----

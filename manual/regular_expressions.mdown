@@ -1,22 +1,33 @@
-#### Regular expressions used in ```pyproperties```
+#### Regular expressions used in ```pyproperties``` 
+###### _version: ```0.2.0```_
 
 ###### [Index](index.mdown)
 ----
 
 
 Regular expressions are used in pyproperties in 
-methods working with groups of properties:
+methods working with multiple properties:
 
 *   ```gets()```
 *   ```sets()```
 *   ```removes()```
 *   ```pops()```
+*   ```_getidentifier()```
+
+with groups of properties:
+
 *   ```getgroups()```
 *   ```getsingles()```
 
-and with type guessing:
+with type guessing:
 
 *   ```typeguess()```
+
+with type conversion:
+
+*   ```_convert()```,
+*   ```ishex()```,
+*   ```isoct()```,
 
 
 ----
@@ -33,17 +44,19 @@ transformed in such way:
 Every ```*``` character in identifier is replaced by ```wildcart_re``` string and every ```.``` in identifier 
 is escaped.
 
-        *   ->  [a-z0-9_\.]*
+        *   ->  [a-z0-9_.-]*
         .   ->  \.
 
 
 ----
 
 
-There are three regular expressions used in ```pyproperties```:
+There are five regular expressions used in ```pyproperties```:
 
         wildcart_re = "[a-z0-9_.-]*"
         guess_int_re = "^[-]?[0-9]+$"
+        guess_hex_re = "^-?(0x)?[0-9a-fA-F]+$"
+        guess_oct_re = "^-?(0o)?[0-7]+$"
         guess_float_re = "^[-]?[0-9]*\.[0-9]+$"
 
 

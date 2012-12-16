@@ -125,6 +125,15 @@ class Properties():
         return result
 
 
+    def _iscommentline(self, line):
+        """
+        Checks if the line contains a comment string. 
+        Valid string is non-empty string and its first character is '#' or '!'.
+        """
+        result = line != "" and line[0] in ["#", "!"]
+        return result
+
+
     def _islinehiddenprop(self, line):
         """
         Defines if commented line is commented property.
@@ -211,7 +220,7 @@ class Properties():
 
     def _extracthidden(self):
         """
-        Uncomments commented properties so they can be read by ```_extractprops()``` and 
+        Show hidden properties so they can be read by ```_extractprops()``` and 
         saves them to ```commented``` and ```origin_hidden``` dictionaries.
         """
         for i, line in enumerate(self.source):
@@ -246,30 +255,27 @@ class Properties():
         Extracts comments loaded source to self.propcomments
         It parses self.source line by line. 
         
-        When it finds valid line it goes up the file and appends 
+        When it finds valid property line it goes up the file and appends 
         every line which begins with '#' or '!' and stops on 
         line which is only whitespace or a valid line.
         """
         propcomments = {}
         i = 0
         while i < len(self.source):
-            if self._isvalidline(self.source[i]):
-                try:
-                    if self.source[i-1][0] in ["#", "!"]:
-                        n = i-1
-                        comment = []
-                        while n >= 0:
-                            try:
-                                if self.source[n][0] not in ["#", "!"]: break
-                                comment.append(self.source[n][1:].strip())
-                                n -= 1
-                            except IndexError: break
-                            finally: pass
-                        comment.reverse()
-                        if comment: propcomments[self.getlinekey(self.source[i])] = comment
-                        self.source = self.source[:n+1] + self.source[i:]
-                except IndexError: pass
-                finally: pass
+            if self._isvalidline(self.source[i]) and i > 0:
+                if self.source[i-1] != "" and self.source[i-1][0] in ["#", "!"]:
+                    n = i-1
+                    comment = []
+                    while n >= 0:
+                        try:
+                            if self.source[n][0] not in ["#", "!"]: break
+                            comment.append(self.source[n][1:].strip())
+                            n -= 1
+                        except IndexError: break
+                        finally: pass
+                    comment.reverse()
+                    if comment: propcomments[self.getlinekey(self.source[i])] = comment
+                    self.source = self.source[:n+1] + self.source[i:]
             i += 1
         self.propcomments.update(propcomments)
 
@@ -344,6 +350,13 @@ class Properties():
             i += 1
 
 
+    def _getidentifier(self, identifier):
+        """
+        Applies needed changes to identifier and compiles regular expression pattern. 
+        Returns compiled pattern.
+        """
+        return re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        
     def blank(self, path=""):
         """
         Creates blank properties object. 
@@ -390,11 +403,7 @@ class Properties():
         """
         Reloads properties from `self.path`.
         """
-        new = Properties(self.path)
-        self.source = new.source
-        self.properties = new.properties
-        self.propcomments = new.propcomments
-        self.hidden = new.hidden
+        self.read(self.path)
         self.unsaved = True
 
 
@@ -541,44 +550,40 @@ class Properties():
 
     def save(self):
         """
-        Saves changes made in properties, source and comments.
+        Saves changes made in object's variables.
         """
         saved = {}
         for key, value in self.properties.items(): saved[key] = value
         self.propsorigin = saved
         
-        saved = [ line for line in self.source ]
-        self.srcorigin = saved
-        
-        saved = [ key for key in self.hidden ]
-        self.origin_hidden = saved
-
         saved = {}
         for key, value in self.propcomments.items(): saved[key] = value
         self.origin_propcomments = saved
         
+        self.srcorigin = [ line for line in self.source ]
+        
+        self.origin_hidden = [ key for key in self.hidden ]
+
         self.unsaved = False
 
 
     def revert(self):
         """
-        Drops changes made in properties, source and comments by reverting them 
+        Drops changes made in properties object by reverting it's variables
         to the state in which they were during last save().
         """
         reverted = {}
         for key, value in self.propsorigin.items(): reverted[key] = value
         self.properties = reverted
         
-        reverted = [ line for line in self.srcorigin ]
-        self.source = reverted
-        
-        reverted = [ key for key in self.origin_hidden ]
-        self.hidden = reverted
-
         reverted = {}
         for key, value in self.origin_propcomments.items(): reverted[key] = value
         self.propcomments = reverted
         
+        self.source = [ line for line in self.srcorigin ]
+        
+        self.hidden = [ key for key in self.origin_hidden ]
+
         self.unsaved = False
 
 
@@ -699,7 +704,7 @@ class Properties():
         if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
 
         matched = {}
-        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        identifier = self._getidentifier(identifier)
         for key, value in self.properties.items():
             if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
             elif re.match(identifier, key) and not parse: matched[key] = value
@@ -757,7 +762,7 @@ class Properties():
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
 
-        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        identifier = self._getidentifier(identifier)
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append(key)
         keys.sort()
@@ -809,7 +814,7 @@ class Properties():
         This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
         """
         popped = {}
-        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        identifier = self._getidentifier(identifier)
         for key, value in self.properties.items():
             if re.match(identifier, key): popped[key] = value
         for key in popped.keys(): self.properties.pop(key)
@@ -846,9 +851,8 @@ class Properties():
 
     def getgroups(self):
         """
-        Returns list of non-commented properties-groups in the internal dictionary. 
-        Group is understood by two or more properties which can 
-        be obtained with the same gets() identifier.
+        Returns list of non-hidden properties groups in the internal dictionary. 
+        Group is two or more properties which can be obtained with the same `gets()` identifier.
 
         For example:
             language.0=Python 2.x
@@ -863,10 +867,10 @@ class Properties():
         But:
             person.name=John
             person.surname=Average
-        will not form a group although gets('person.*') will return 
+        will not form a group although `gets('person.*')` will return 
         list of length greater than two.
 
-        This is because only digits (decimal and hex) are considered as 'groupers'.
+        This is because only digits are considered 'groupers'.
         """
         skeys = [ key.split(".") for key in self.getnames() ]
         groups = []
@@ -970,7 +974,7 @@ class Properties():
         """
         Hides every property which key will match given identifier. 
         """
-        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        identifier = self._getidentifier(identifier)
         for key in self.getnames():
             if re.match(identifier, key): self.hide(key)
 
@@ -986,7 +990,7 @@ class Properties():
         """
         Unhides every property which key will match given identifier.
         """
-        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        identifier = self._getidentifier(identifier)
         to_unhide = []
         for i in range(len(self.hidden)):
             if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])

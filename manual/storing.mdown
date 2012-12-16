@@ -1,86 +1,45 @@
-#### Storing properties to file
+#### Saving properties
+###### _version: ```0.2.0```_
 
 ###### [Index](index.mdown)
 ----
 
 
-There is a special method for storing loaded properites: ```store()``` 
-When you want to write yor properites to a file you should call ```store()``` with path to the file you want your properties to be saved in. 
+When you initialize new properites object you get two dictionaries representing loaded file:
 
-__WARNING!__ Before any ```store()``` call you should call ```save()``` method to save changes made to origins of your properties.
+*   one which you are really working,
+*   and secured one,
 
-        foo.set("some.property", "foo")
-        foo.save()
-        foo.store("./foo.properties")
+When you add, remove, change values of properties etc. only the _working copy_ is affected. To move you changes to the so-called 
+_origins_ you have to call ```save()``` method.
 
-Because if you will just call ```store()```:
+----
 
-        foo.set("some.property", "foo")
-        foo.store( "./foo.properties" )
-        pyproperties.UnsavedChangesError: trying to store with unsaved changes
+##### Saving changes
 
-with any unsaved changes ```pyproperties``` will raise ```pyproperties.UnsavedChangesError```.
+Method named ```save()``` does very simple thing. It makes every ```origin``` looks exactly like the working copy related to it.
+
+----
+
+##### Reverting changes
+
+To revert (or undo) changes made to properties but not yet saved you can call ```revert()``` and get back to the state in which your properties were 
+when you have previously called ```save()```.
+
+
+**Remember** - ```save()``` and ```revert()``` are the only methods that should change values of origins. 
+Although you can directly access origins of your properties it is not recomended.
 
 
 ----
 
+##### When should I call ```save()```?
 
-You can store properties with unsaved changes by passing optional ```force``` argument as ```True```.
-This will prevent ```UnsavedChangesError``` from being raised and store properties as of the state of last saving.
-
-        >>> foo = pyproperties.Properties("./foo.properties")
-        >>> foo.set("some.property", "some value")
-        >>> foo.addcomment("some.property", "some comment\ndivided into\nseveral lines")
-        >>> foo.store()
-        Traceback (most recent call last):
-          File "<stdin>", line 1, in <module>
-          File "./modules/pyproperties.py", line ???, in store
-            if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
-        pyproperties.UnsavedChangesError: trying to store with unsaved changes
-        >>>
-        >>> foo.store(force=True)
-
-and pyproperties would happily store your props.
-
-----
-
-#### Storing process
-
-Process of storing (```store()``` method) is divided into smaller submethods.
-
-*   ```_storeprop()``` (introduced in ```0.1.6```) is responsible for generating single property and figuring out if it has a comment, is commented or 
-should not be stored because already is;
-*   ```_storecomment()``` (introduced in ```0.1.5```), generates lines for comment of a property,
-*   ```_storesrc()``` (introduced in ```0.1.4```) generates lines basing on ```self.srcorigin```,
-*   ```_storegroups()``` (introduced in ```0.1.4```) generates lines for grouped properties (uses ```getgroups()``` method),
-*   ```_storesingles()``` (introduced in ```0.1.4```) generates lines with single properties in alphabetical order,
-*   ```_dump()``` (introduced in ```0.1.4```) writes to file,
+You have to call ```save()``` after any changes made to properties. This mean after commenting, hiding, setting or removing some properties, 
+joining or merging files etc.
 
 
 ----
-
-
-##### Optional arguments of ```store()```
-
-By passing ```no_dump``` argument as ```True``` you can tell ```store()``` to only generate lines and not write them to file.
-
-By passing ```drop_source``` argument as ```True``` you can tell ```store()``` to not to follow original source but generate completely 
-new source (and file). New source will not be messy - ```pyproperties``` will try to group properties and will separate each group with one blank line. 
-Comments will not be lost.
-
-By passing ```force``` argument as ```True``` you can tell ```store()``` discard unsaved changes when storing.
-
-
-----
-
-
-Prior to version ```0.1.2``` if ```store()``` was used on properties with no source they were stored as an ugly mess. 
-From ```0.1.2``` and above properties created from blank are stored in groups (thanks to the capability of grouping) and 
-properties which do not belong to any group are appended at the end. A blank line is inserted between each group.
-
-
-----
-
 
 SEE ALSO:  
-[saving](saving.mdown)  
+[storing](storing.mdown)
