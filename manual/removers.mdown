@@ -8,7 +8,7 @@
 pyproperties has two types of removers: ```remove()``` and ```pop()```. Both of them come with single- and multi- version.
 
 *   ```remove()``` for removing single properties,
-*   ```removes()``` for removing groups of properties,
+*   ```removes()``` for removing groups of properties by identifier (eg. ```'foo.*.bar```),
 *   ```pop()``` - removes property and returns it's value,
 *   ```pops()``` removes groups of properties and returns a ```dict``` containing removed properties,
 
@@ -18,4 +18,5 @@ After removing any property you need to call ```save()``` to apply your changes 
 SEE ALSO:  
 [regular expressions](regular_expressions.mdown)  
 [setters](setters.mdown)  
-[getters](getters.mdown)
+[getters](getters.mdown)  
+[grouping](grouping.mdown)

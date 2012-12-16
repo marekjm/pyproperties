@@ -1,0 +1,40 @@
+#### Grouping properties
+###### _version: ```0.2.0```_
+
+###### [Index](index.mdown)
+----
+
+
+##### Definition of ```group``` 
+
+>   A ```group``` in ```pyproperties``` is a set of properties with a length greater than two and 
+>   who can be obtained with the same identifier eg. ```'foo.*.bar'``` in which 
+>   period character stands for octal, decimal or hexadecimal integer 
+>   (```'foo.0x45.bar'``` or ```'foo.17.bar'``` or ```'foo.0o13.bar'```).
+
+
+----
+
+##### Formatting output ```.properties``` file
+
+Grouping is used when storing to file. It is more easy for humans to read properties divided into 
+groups than to read a big set of messed key/value pairs.  
+
+To prevent this ```pyproperties``` has mechanism which is always checking for patterns emerging in 
+given set of properties to group them in nice subsets.  
+
+
+----
+
+##### Methods
+
+There are methods connected with grouping - ```getgroups()``` and ```getsingles()```. 
+Former returns a list of groups (ready for use in ```gets()```, ```sets()``` or ```removes()```) and the latter returns list of properties which 
+do not belong to any group. 
+
+
+----
+
+SEE ALSO:  
+[saving](saving.mdown)  
+[storing](storing.mdown)

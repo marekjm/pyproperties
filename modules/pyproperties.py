@@ -6,7 +6,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.1.9"
+__version__ = "0.2.0"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-z0-9_.-]*"
@@ -121,7 +121,7 @@ class Properties():
         Checks if the line contains valid property string. 
         Valid string is non-empty string and its first character is not '#' or '!'.
         """
-        result = line != "" and line[0] not in ["#", "!"] and ("=" in line or ":" in line or line[-1] == "\\")
+        result = line != "" and line[0] not in ["#", "!"] and ("=" in line or ":" in line) and self.getlinekey(line) != None
         return result
 
 
@@ -130,6 +130,7 @@ class Properties():
         Checks if the line contains a comment string. 
         Valid string is non-empty string and its first character is '#' or '!'.
         """
+        line = line.strip()
         result = line != "" and line[0] in ["#", "!"]
         return result
 
@@ -191,15 +192,29 @@ class Properties():
         return ptype
 
 
-    def getlinekey(self, line):
+    def getlinekey(self, line, strict=None):
         """
         Extracts key from given line and returns it. 
-        If the line is comment or is blank returns None.
+        If the line is comment or is blank returns None. 
+        
+        If in strict mode (default) and find a whitespace in key it will 
+        complain with a warning and return None. 
+        If in non-strict mode (strict passed as `False`) it will only complain and 
+        do nothing else.
         """
         if line == "": key = None
         elif line[0] in ["#", "!"] or line.isspace(): key = None
+        elif "=" not in line and ":" not in line: key = None
         elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
         else: key = line.split("=", 1)[0].strip()
+
+        if strict == None: strict = self.strict
+        if key != None and " " in key:
+            if strict: 
+                warnings.warn("[strict mode] key set to 'None': space found in key: '{0}'".format(key))
+                key = None
+            else: 
+                warnings.warn("[non-strict mode] space found in key: '{0}'".format(key))
         return key
 
 
@@ -213,6 +228,7 @@ class Properties():
         if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
         if line == "": value = None
         elif line[0] in ["#", "!"] or line.isspace(): value = None
+        elif "=" not in line and ":" not in line: key = None
         elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
         else: value = line.split("=", 1)[1].lstrip()
         return value
@@ -263,16 +279,13 @@ class Properties():
         i = 0
         while i < len(self.source):
             if self._isvalidline(self.source[i]) and i > 0:
-                if self.source[i-1] != "" and self.source[i-1][0] in ["#", "!"]:
+                if self._iscommentline(self.source[i-1]):
                     n = i-1
                     comment = []
                     while n >= 0:
-                        try:
-                            if self.source[n][0] not in ["#", "!"]: break
-                            comment.append(self.source[n][1:].strip())
-                            n -= 1
-                        except IndexError: break
-                        finally: pass
+                        if not self._iscommentline(self.source[n]): break
+                        comment.append(self.source[n][1:].strip())
+                        n -= 1
                     comment.reverse()
                     if comment: propcomments[self.getlinekey(self.source[i])] = comment
                     self.source = self.source[:n+1] + self.source[i:]
@@ -364,6 +377,7 @@ class Properties():
         """
         self.path = os.path.expanduser(path.strip())
         self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
+        self.strict = True
         self.srcorigin = []
         self.source = []
         self.properties = {}
@@ -461,7 +475,7 @@ class Properties():
         """
         Loads external properties and completes base. 
         You can pass ```prefix``` as empty string to add properties without prefix. 
-        Prefix defaluts to joined modules name. 
+        Prefix defaluts to the name of joined file. 
         Source of joined properties is appended to base source.
         """
         props = Properties(path)

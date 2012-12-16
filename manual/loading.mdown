@@ -32,19 +32,7 @@ Either way will result with ```pyproperties.Properties``` object with exactly th
 
 ----
 
-
-##### Whitespace
-
-Whitespace preceding and trailing the key is stripped.  
-Whitespace preceding value is stripped but the trailing is preserved.
-
-        'key = value'       'key' / 'value'
-        'key= value '       'key' / 'value '
-        'key = value  '     'key' / 'value  '
-        'key : value '      'key' / 'value'
-
-----
-
 SEE ALSO:  
-[saving](saving.txt)  
-[storing](storing.txt)
+[saving](saving.mdown)  
+[storing](storing.mdown)  
+[keys and values](keys_and_values.mdown)

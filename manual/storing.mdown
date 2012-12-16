@@ -1,45 +1,46 @@
-#### Saving properties
+#### Storing properties
 ###### _version: ```0.2.0```_
 
 ###### [Index](index.mdown)
 ----
 
 
-When you initialize new properites object you get two dictionaries representing loaded file:
+Method ```store()``` is responsible for storing your properties to a properly formatted file. 
+Although it has its own mechanisms for formatting contents of file (grouping, commenting etc.) its primary source 
+of information about the structure is the original source of loaded properties. 
 
-*   one which you are really working,
-*   and secured one,
-
-When you add, remove, change values of properties etc. only the _working copy_ is affected. To move you changes to the so-called 
-_origins_ you have to call ```save()``` method.
-
-----
-
-##### Saving changes
-
-Method named ```save()``` does very simple thing. It makes every ```origin``` looks exactly like the working copy related to it.
-
-----
-
-##### Reverting changes
-
-To revert (or undo) changes made to properties but not yet saved you can call ```revert()``` and get back to the state in which your properties were 
-when you have previously called ```save()```.
-
-
-**Remember** - ```save()``` and ```revert()``` are the only methods that should change values of origins. 
-Although you can directly access origins of your properties it is not recomended.
+If a file had been loaded and stored with no changes, structure of new file will be mostly the same as of the original file. 
+Blank lines and comments will be preserved but any indentation will be discarded.
 
 
 ----
 
-##### When should I call ```save()```?
+##### ```UnsavedChangesError```
 
-You have to call ```save()``` after any changes made to properties. This mean after commenting, hiding, setting or removing some properties, 
-joining or merging files etc.
+If you will try to store properties with ```unsaved``` status ```True``` ```pyproperties``` will complain with ```UnsavedChangesError```. 
+It indicates that some changes were made but has been not yet saved.  
+To prevent this you can pass ```force``` argument as ```True``` to the 
+```store()``` method and it will silense the error. You need to remeber that in this case any unsaved changes will not get stored.
+
+
+----
+
+##### Path
+
+By default ```pyproperties``` will store new properties to the file it read from. But you can pass a ```path``` argument to ```store()``` to 
+override this.  
+
+
+----
+
+##### Source
+
+If you want ```pyproperties``` to format the file exlusively by itself and not look on the originaly source you can pass 
+```drop_source``` argument as ```True```.
 
 
 ----
 
 SEE ALSO:  
-[storing](storing.mdown)
+[saving](saving.mdown)  
+[grouping](grouping.mdown)

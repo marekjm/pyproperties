@@ -1,0 +1,60 @@
+#### Manual for ```pyproperties```
+###### _version: ```0.2.0```_
+
+
+----
+
+
+#### Basics
+
+##### Working with files
+
+0.  [Loading](loading.mdown)
+1.  [Storing](storing.mdown)
+
+----
+
+##### Working with properties
+
+0.  [Getters](getters.mdown)
+1.  [Setters](setters.mdown)
+2.  [Removers](removers.mdown)
+3.  [Saving](saving.mdown)
+
+
+&nbsp;
+
+----
+
+&nbsp;
+
+
+#### Advanced
+
+##### Working with files
+
+0.  [Joining](joining.mdown)
+1.  [Using ```__include__```](include.mdown)
+
+----
+
+##### Working with properties
+
+1.  [Merging](merging.mdown)
+2.  [Commenting](commenting.mdown)
+3.  [Hiding](hiding.mdown)
+3.  [Grouping](grouping.mdown)
+
+----
+
+##### Internals/Implementation details
+
+0.  [Typecasting](casting.mdown)
+1.  [Regular expressions in ```pyproperties```](regular_expressions.mdown)
+2.  [Keys and values](keys_and_values.mdown)
+
+&nbsp;
+
+----
+
+###### _Manual written by Marek Marecki_

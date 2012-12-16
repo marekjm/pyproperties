@@ -1,0 +1,31 @@
+#### Keys and values
+###### _version: ```0.2.0```_
+
+###### [Index](index.mdown)
+----
+
+
+##### Whitespace
+
+Whitespace preceding and trailing the key is stripped.  
+Whitespace preceding value is stripped but the trailing is preserved.
+
+        'key = value'       'key' / 'value'
+        'key= value '       'key' / 'value '
+        'key = value  '     'key' / 'value  '
+        'key : value '      'key' / 'value'
+
+
+----
+
+##### Whitespace in keys
+
+```pyproperties``` is very strict about whitespace in keys. If it will find one it will issue a warning and return the key as ```None```. 
+It is possible to change the mode to _non-strict_ by passing the ```strict``` argument as or setting global variable ```strict``` to ```False```. 
+
+
+----
+
+SEE ALSO:  
+[saving](saving.mdown)  
+[storing](storing.mdown)  

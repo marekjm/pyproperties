@@ -7,6 +7,83 @@ from modules import pyproperties
 
 foo_path = "./data/properties/foo.properties"
 
+class ValidatorsTest(unittest.TestCase):
+    def testCommentlineValidator(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some comment", True),
+                ("#  text", True),
+                ("#   string", True),
+                ("#", True),
+                ("# ", True),
+                ("  # ", True),
+                ("#maybe=property", True),
+                ("not a comment", False),
+                ("", False),
+                ("  indent", False),
+                ("  indented=property", False),
+                ("  some#string", False),
+                ]
+        for line, result in lines: self.assertEqual(foo._iscommentline(line), result)
+    
+    def testPropertyLineValidator(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some comment", False),
+                ("#maybe=property", False),
+                ("not a property", False),
+                ("", False),
+                ("  indent", False),
+                ("    ", False),
+                ("some thing = not valid", False),
+
+                ("  indented=property", True),
+                ("valid  = property", True),
+                ("valid:property", True),
+                ("valid      : property", True),
+                ("   valid  : property", True),
+                ]
+        for line, result in lines: self.assertEqual(foo._isvalidline(line), result)
+
+
+    def testGetlinekeyNonStrict(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some comment", None),
+                ("#maybe=property", None),
+                ("not a property", None),
+                ("", None),
+                ("  indent", None),
+                ("    ", None),
+                ("some thing = not valid", "some thing"),
+                ("  indented=property", "indented"),
+                ("valid  = property", "valid"),
+                ("valid:property", "valid"),
+                ("valid      : property", "valid"),
+                ("   valid  : property", "valid"),
+                ]
+        for line, result in lines: self.assertEqual(foo.getlinekey(line, strict=False), result)
+
+
+    def testGetlinekeyStrict(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some comment", None),
+                ("#maybe=property", None),
+                ("not a property", None),
+                ("", None),
+                ("  indent", None),
+                ("    ", None),
+                ("some thing = not valid", None),
+                ("  indented=property", "indented"),
+                ("valid  = property", "valid"),
+                ("valid:property", "valid"),
+                ("valid      : property", "valid"),
+                ("   valid  : property", "valid"),
+                ]
+        for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
+
+
 class ParselineTest(unittest.TestCase):
     def testParselineInteger(self):
         foo = pyproperties.Properties()

@@ -3,8 +3,9 @@
 ###### [Index](index.mdown)
 ----
 
+##### Usage
 
-```foo.merge(bar)``` method does one thing: it tries to makes ```foo``` as similar 
+When called, ```foo.merge(bar)``` does one thing: it tries to makes ```foo``` as similar 
 to ```bar``` as possible. It does following things:
 
 *   runs ```foo.complete(bar)``` to ensure every property of ```bar``` can be found in ```foo```,
@@ -18,4 +19,4 @@ SEE ALSO:
 [completing](completing.mdown)  
 [joining](joining.mdown)  
 [saving](saving.mdown)  
-[include instruction](include.mdown)
+[include instruction](include.mdown)   

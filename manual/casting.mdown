@@ -16,6 +16,8 @@ Typecasting is provided by three internal methods and one method available publi
 
 ----
 
+##### ```typeguess()```
+
 
 First method is responsible for guessing type of given property (```typeguess()``` accepts ```key``` as it's argument) 
 basing on regular expressions. 
@@ -25,42 +27,63 @@ basing on regular expressions.
 *   ```int``` type can be guessed when string has form of ```0```,
 *   ```str``` is assumed in every other situation,
 
+Although it is possible to distinguish more types it would not be useful 
+(eg. with ```bool``` type - string ```'False'``` would be converted to boolean ```True``` if conversion has been done directly by Python). 
+
+If you want to convert a value use ```get('property.key', cast=True)``` to get the type converted by 
+more capable mechanism of ```_convert()``` method.
+
 
 ----
+
+##### ```_convert()```
+
+
+```_convert()``` takes value as an argument and is able to convert it from ```str``` to: 
+
+*   ```bool``` (both ```True``` and ```False```), 
+*   positive and negative ```float``` (only decimal), 
+*   positive and negative ```int``` (decimal, octal and hexadecimal), 
+*   ```None```-type.
+
+basing on contents of a string value.  
+String containing ```'False'``` will be converted to boolean ```False``` and not ```True``` as usual in Python.  
+
+An optional argument ```from_key``` can be passed to ```_convert()```. If done so, the method will treat given string as a key of a property and 
+try to get value from this key. This can lead to situation when ```_convert()``` will raise ```KeyError``` - because the key might not be found.
+
+
+----
+
+##### ```_tcast()``` and ```_tcasts()```
 
 
 ```_tcast()``` and ```_tcasts()``` methods are casting type of property of given ```key``` inside the main dictionary causing properties status to go ```unsaved```.
 
 
-This functionality is intended to be used only internaly.
+This functionality is intended to be used only internaly but it is worth remembering that  ```get()``` and ```gets()``` both 
+have functionality providing typecasting. 
 
-
-It is worth remembering that  ```get()``` and ```gets()``` both have functionality providing typecasting if you want to get typecasted 
-properties fomr non pre-typecasted set of properties (```pyproperties.Properties``` object). 
-
-You can just call them with ```cast``` argument set to ```True```.  
+You can tell them to convert a value before returning it by providing ```cast``` argument as ```True```.  
 
 
         foo = pyproperties.Properties()
-        foo.set("pi", "3.14")
+        foo.set('pi', '3.14')
+        foo.set('false', 'False')
 
-        foo.get("pi")
+        foo.get('pi')
         '3.14'
+        foo.get('false')
+        'False'
 
-        foo.get("pi", cast=True)
+        foo.get('pi', cast=True)
         3.14
+        foo.get('false', cast=True)
+        False
 
 
 ----
 
-```_convert()``` takes value as an argument and is able to convert it from ```str``` to: 
-
-*   ```bool``` (both ```True``` and ```False```), 
-*   positive and negative ```float``` or ```int```,
-*   ```None```-type.
-
-basing on contents of a string.  
-String containing "False" will be converted to boolean ```False``` and not ```True``` as usual in Python.  
-
-An optional argument ```from_key``` can be passed to ```_convert()```. If done so, the method will treat given as a key of a property and 
-try to get value from this key. This can lead to situation when ```_convert()``` will raise ```KeyError``` - because the key might not be found.
+SEE ALSO:  
+[getters](getters.txt)  
+[setters](setters.txt)

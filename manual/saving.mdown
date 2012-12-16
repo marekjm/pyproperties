@@ -5,12 +5,12 @@
 ----
 
 
-When you initialize new properites object you get two dictionaries representing loaded file:
+When you initialize new properites object you get sets of variables representing loaded file:
 
 *   one which you are really working,
 *   and secured one,
 
-When you add, remove, change values of properties etc. only the _working copy_ is affected. To move you changes to the so-called 
+When you add, remove, change values of properties etc. and only the _working copy_ is affected. To move you changes to the so-called 
 _origins_ you have to call ```save()``` method.
 
 ----
@@ -23,7 +23,7 @@ Method named ```save()``` does very simple thing. It makes every ```origin``` lo
 
 ##### Reverting changes
 
-To revert (or undo) changes made to properties but not yet saved you can call ```revert()``` and get back to the state in which your properties were 
+To revert (aka undo) changes made to properties but not yet saved you can call ```revert()``` and get back to the state in which your properties were 
 when you have previously called ```save()```.
 
 
@@ -35,8 +35,8 @@ Although you can directly access origins of your properties it is not recomended
 
 ##### When should I call ```save()```?
 
-You have to call ```save()``` after any changes made to properties. This mean after commenting, hiding, setting or removing some properties, 
-joining or merging files etc.
+You have to call ```save()``` after any changes made to properties to take effect. This mean after setting or removing some properties, 
+joining files etc.
 
 
 ----
