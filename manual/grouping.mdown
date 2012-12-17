@@ -9,7 +9,7 @@
 
 >   A ```group``` in ```pyproperties``` is a set of properties with a length greater than two and 
 >   who can be obtained with the same identifier eg. ```'foo.*.bar'``` in which 
->   period character stands for octal, decimal or hexadecimal integer 
+>   wildcart character stands for octal, decimal or hexadecimal integer 
 >   (```'foo.0x45.bar'``` or ```'foo.17.bar'``` or ```'foo.0o13.bar'```).
 
 

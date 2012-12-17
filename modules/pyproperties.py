@@ -6,7 +6,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-z0-9_.-]*"
@@ -116,34 +116,6 @@ class Properties():
         else: message = "'{0}' is not available in {1}".format(key, self)
         raise KeyError(message)
 
-    def _isvalidline(self, line):
-        """
-        Checks if the line contains valid property string. 
-        Valid string is non-empty string and its first character is not '#' or '!'.
-        """
-        result = line != "" and line[0] not in ["#", "!"] and ("=" in line or ":" in line) and self.getlinekey(line) != None
-        return result
-
-
-    def _iscommentline(self, line):
-        """
-        Checks if the line contains a comment string. 
-        Valid string is non-empty string and its first character is '#' or '!'.
-        """
-        line = line.strip()
-        result = line != "" and line[0] in ["#", "!"]
-        return result
-
-
-    def _islinehiddenprop(self, line):
-        """
-        Defines if commented line is commented property.
-        Used to distinguish comments from commented properties during
-        load.
-        """
-        return self._isvalidline(line.strip()[1:]) and not self._isvalidline(line.strip())
-
-
     def _tcast(self, key):
         """
         Converts property of the given key from str (default) to int, float, bool or None if needed.
@@ -192,6 +164,34 @@ class Properties():
         return ptype
 
 
+    def _isvalidline(self, line, strict=None):
+        """
+        Checks if the line contains valid property string. 
+        Valid string is non-empty string and its first character is not '#' or '!'.
+        """
+        result = line != "" and line[0] not in ["#", "!"] and ("=" in line or ":" in line) and self.getlinekey(line, strict) != None
+        return result
+
+
+    def _iscommentline(self, line):
+        """
+        Checks if the line contains a comment string. 
+        Valid string is non-empty string and its first character is '#' or '!'.
+        """
+        line = line.strip()
+        result = line != "" and line[0] in ["#", "!"]
+        return result
+
+
+    def _islinehiddenprop(self, line, strict=None):
+        """
+        Defines if commented line is commented property.
+        Used to distinguish comments from commented properties during
+        load.
+        """
+        return self._isvalidline(line.strip()[1:], strict) and not self._isvalidline(line.strip(), strict)
+
+
     def getlinekey(self, line, strict=None):
         """
         Extracts key from given line and returns it. 
@@ -218,19 +218,19 @@ class Properties():
         return key
 
 
-    def getlinevalue(self, line):
+    def getlinevalue(self, line, strict=None):
         """
         Extracts value from given line and returns it. 
         If the line is comment or is blank returns None. 
         It is done this way to distinguish properties with empty value 
         from lines which do not carry a property.
         """
-        if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
-        if line == "": value = None
-        elif line[0] in ["#", "!"] or line.isspace(): value = None
-        elif "=" not in line and ":" not in line: key = None
+        if not self._isvalidline(line, strict): value = None
         elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
         else: value = line.split("=", 1)[1].lstrip()
+
+        if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
+        
         return value
 
 
@@ -433,31 +433,6 @@ class Properties():
         self.unsaved = True
 
 
-    def _parseline(self, value):
-        """
-        This method searches for every $(reference) string in given line and 
-        replaces it with value of corresponding property. 
-        """
-        if type(value) == str:
-            while "$(" in value and ")" in value:
-                a = value.find("$(")
-                b = value[a:].find(")")
-                name = value[a+2: a+b]
-                if a == -1 or b == -1: break
-                value = value.replace("$({0})".format(name), str(self.properties[name]))
-        return value
-
-    def parse(self, cast=False):
-        """
-        This method parses and returns parsed self.properties
-        """
-        parsed = Properties()
-        parsed.merge(self)
-        for key in parsed.getnames(): parsed.set(key, parsed.get(key, parse=True))
-        parsed.save()
-        if cast: parsed._tcasts("*")
-        return parsed
-
     def copy(self):
         """
         Returns exact copy of a pyproperties.Properties() object.
@@ -482,19 +457,6 @@ class Properties():
         if prefix == " ": prefix = props.name
         self.complete(props, prefix)
         self._appendsrc(props, prefix)
-        self.unsaved = True
-
-
-    def merge(self, properties):
-        """
-        Completes and merges properties with the base. 
-        Source of merged properties is appended to base. 
-        
-        It's not possible to add prefix when merging.
-        """
-        self.complete(properties)
-        self.update(properties)
-        self._appendsrc(properties)
         self.unsaved = True
 
 
@@ -561,6 +523,44 @@ class Properties():
             if key in updated: self.hide(key)
         self.unsaved = True
 
+
+    def merge(self, properties):
+        """
+        Completes and merges properties with the base. 
+        Source of merged properties is appended to base. 
+        
+        It's not possible to add prefix when merging.
+        """
+        self.complete(properties)
+        self.update(properties)
+        self._appendsrc(properties)
+        self.unsaved = True
+
+
+    def _parseline(self, value):
+        """
+        This method searches for every $(reference) string in given line and 
+        replaces it with value of corresponding property. 
+        """
+        if type(value) == str:
+            while "$(" in value and ")" in value:
+                a = value.find("$(")
+                b = value[a:].find(")")
+                name = value[a+2: a+b]
+                if a == -1 or b == -1: break
+                value = value.replace("$({0})".format(name), str(self.properties[name]))
+        return value
+
+    def parse(self, cast=False):
+        """
+        This method parses and returns parsed properties.
+        """
+        parsed = Properties()
+        parsed.merge(self)
+        for key in parsed.getnames(): parsed.set(key, parsed.get(key, parse=True))
+        parsed.save()
+        if cast: parsed._tcasts("*")
+        return parsed
 
     def save(self):
         """
