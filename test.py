@@ -26,7 +26,26 @@ class ValidatorsTest(unittest.TestCase):
                 ]
         for line, result in lines: self.assertEqual(foo._iscommentline(line), result)
     
-    def testPropertyLineValidator(self):
+    def testHaskeyNonStrict(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some comment", False),
+                ("#maybe=property", False),
+                ("not a property", False),
+                ("", False),
+                ("  indent", False),
+                ("    ", False),
+                ("some thing = not valid", True),
+                ("  indented=property", True),
+                ("valid  = property", True),
+                ("valid:property", True),
+                ("valid      : property", True),
+                ("   valid  : property", True),
+                ]
+        for line, result in lines: self.assertEqual(foo._linehaskey(line, strict=False), result)
+
+
+    def testHaskeyStrict(self):
         foo = pyproperties.Properties()
         lines = [
                 ("#some comment", False),
@@ -36,15 +55,13 @@ class ValidatorsTest(unittest.TestCase):
                 ("  indent", False),
                 ("    ", False),
                 ("some thing = not valid", False),
-
                 ("  indented=property", True),
                 ("valid  = property", True),
                 ("valid:property", True),
                 ("valid      : property", True),
                 ("   valid  : property", True),
                 ]
-        for line, result in lines: self.assertEqual(foo._isvalidline(line), result)
-
+        for line, result in lines: self.assertEqual(foo._linehaskey(line), result)
 
     def testGetlinekeyNonStrict(self):
         foo = pyproperties.Properties()
@@ -361,17 +378,9 @@ class GetTest(unittest.TestCase):
 
 
 class GetsTest(unittest.TestCase):
-    def testGetsCustomerNames(self):
+    def testGets(self):
         foo = pyproperties.Properties(foo_path)
         self.assertEqual({"customer.0.name":"John the Average.", "customer.1.name":"Agent Smith"}, foo.gets("customer.*.name"))
-
-
-    def testGetsCustomerPhoneNumbers(self):
-        foo = pyproperties.Properties(foo_path)
-        self.assertEqual({ "customer.0.phone_number.0":"+48 500666101", 
-                            "customer.0.phone_number.1":"+48 678992005", 
-                            "customer.1.phone_number.0":"-1 000-000-000"}, 
-                            foo.gets("customer.*.phone_number.*"))
 
 
     def testGetsException(self):
@@ -380,7 +389,7 @@ class GetsTest(unittest.TestCase):
 
 
 class GetreTest(unittest.TestCase):
-    def testGetreString(self):
+    def testGetre(self):
         foo = pyproperties.Properties(foo_path)
         props = {   "customer.0.phone_number.0": "+48 500666101",
                     "customer.0.phone_number.1": "+48 678992005",
@@ -389,18 +398,57 @@ class GetreTest(unittest.TestCase):
         self.assertEqual(props, foo.getre("^customer\.[0-9]+\.phone_number\.[0-9]+$"))
 
 
-    def testGetrePattern(self):
-        foo = pyproperties.Properties(foo_path)
-        props = {   "customer.0.phone_number.0": "+48 500666101",
-                    "customer.0.phone_number.1": "+48 678992005",
-                    "customer.1.phone_number.0": "-1 000-000-000",
-                }
-        self.assertEqual(props, foo.getre(re.compile("^customer\.[0-9]+\.phone_number\.[0-9]+$")))
-
-
     def testGetreException(self):
         foo = pyproperties.Properties(foo_path)
         self.assertRaises(TypeError, foo.getre, 0)
+
+
+class SetterTest(unittest.TestCase):
+    def testSet(self):
+        keys =  [
+                "foo.0",
+                "foo.1",
+                "foo.2",
+                "foo.3",
+                ]
+        foo = pyproperties.Properties()
+        for i in range(4): foo.set("foo.{0}".format(i))
+        self.assertEqual(keys, foo.getnames())
+
+
+    def testSets(self):
+        contents =  [
+                    ("foo.0", "0"),
+                    ("foo.1", "1"),
+                    ("foo.2", "2"),
+                    ("foo.3", "3"),
+                    ]
+        foo = pyproperties.Properties()
+        for i in range(4): foo.set("foo.{0}".format(i))
+        foo.sets("foo.*", "0", "1", "2", "3")
+        for key, value in contents:
+            self.assertEqual(value, foo.get(key))
+
+
+class RemoverTest(unittest.TestCase):
+    def testRemove(self):
+        foo = pyproperties.Properties()
+        foo.set("foo.0")
+        foo.set("foo.1")
+        foo.set("foo.2")
+        foo.set("foo.3")
+        foo.remove("foo.0")
+        self.assertEqual(["foo.1", "foo.2", "foo.3"], foo.getnames())
+
+    def testRemoves(self):
+        foo = pyproperties.Properties()
+        foo.set("foo.0")
+        foo.set("foo.1")
+        foo.set("foo.2")
+        foo.set("foo.3")
+        foo.set("bar.0")
+        foo.removes("foo.*")
+        self.assertEqual(["bar.0"], foo.getnames())
 
 
 class GroupingTest(unittest.TestCase):

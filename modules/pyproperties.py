@@ -45,7 +45,7 @@ class Properties():
     This class provides methods for working with properties files. 
     """
 
-    def __init__(self, path="", cast=False, no_read=False, no_includes=False):
+    def __init__(self, path="", cast=False, no_read=False, no_includes=False, strict=True):
         """
         If you give a path as an argument it will be loaded and processed as properties file. 
         If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
@@ -56,8 +56,8 @@ class Properties():
         To create a blank instance with path specified you can run: 
             pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
-        if path != "" and not path.isspace() and not no_read: self.read(path, cast, no_includes)
-        else: self.blank(path)
+        if path != "" and not path.isspace() and not no_read: self.read(path, cast, no_includes, strict)
+        else: self.blank(path, strict)
 
     def _loadf(self, path):
         """
@@ -164,14 +164,34 @@ class Properties():
         return ptype
 
 
+    def _linehaskey(self, line, strict=None):
+        """
+        Checks if the line contains a key. 
+        """
+        result = False
+        if ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
+        elif "=" in line[:line.find(":")]: key = line.split("=", 1)[0].strip()
+        else: key = None
+
+        if strict == None: strict = self.strict
+        if key != None and key[0] not in ["#", "!"]:
+            if strict and " " in key:
+                warnings.warn("space found in key '{0}'".format(key))
+                key = False
+            elif not strict and " " in key:
+                warnings.warn("space found in key: '{0}'".format(key))
+                result = True
+            else: 
+                result = True
+        return result
+
     def _isvalidline(self, line, strict=None):
         """
         Checks if the line contains valid property string. 
         Valid string is non-empty string and its first character is not '#' or '!'.
         """
-        result = line != "" and line[0] not in ["#", "!"] and ("=" in line or ":" in line) and self.getlinekey(line, strict) != None
-        return result
-
+        warnings.warn("_isvalidline() is deprecated (it is proxying _linehaskey() functionality) and will be removed in 0.2.2, use _linehaskey() instead", DeprecationWarning)
+        return self._linehaskey(line, strict)
 
     def _iscommentline(self, line):
         """
@@ -189,43 +209,34 @@ class Properties():
         Used to distinguish comments from commented properties during
         load.
         """
-        return self._isvalidline(line.strip()[1:], strict) and not self._isvalidline(line.strip(), strict)
+        return self._linehaskey(line.strip()[1:], strict) and not self._linehaskey(line.strip(), strict)
 
 
     def getlinekey(self, line, strict=None):
         """
         Extracts key from given line and returns it. 
-        If the line is comment or is blank returns None. 
+        If the line does not contain a key returns None. 
         
         If in strict mode (default) and find a whitespace in key it will 
         complain with a warning and return None. 
         If in non-strict mode (strict passed as `False`) it will only complain and 
         do nothing else.
         """
-        if line == "": key = None
-        elif line[0] in ["#", "!"] or line.isspace(): key = None
-        elif "=" not in line and ":" not in line: key = None
+        if not self._linehaskey(line, strict): key = None
         elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
         else: key = line.split("=", 1)[0].strip()
 
-        if strict == None: strict = self.strict
-        if key != None and " " in key:
-            if strict: 
-                warnings.warn("[strict mode] key set to 'None': space found in key: '{0}'".format(key))
-                key = None
-            else: 
-                warnings.warn("[non-strict mode] space found in key: '{0}'".format(key))
         return key
 
 
     def getlinevalue(self, line, strict=None):
         """
         Extracts value from given line and returns it. 
-        If the line is comment or is blank returns None. 
+        If the line does not have a value returns None (remeber: empty string is returned when line has it as a value). 
         It is done this way to distinguish properties with empty value 
         from lines which do not carry a property.
         """
-        if not self._isvalidline(line, strict): value = None
+        if not self._linehaskey(line, strict): value = None
         elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
         else: value = line.split("=", 1)[1].lstrip()
 
@@ -257,7 +268,7 @@ class Properties():
         extracted = []
         properties = []
         for i in range(len(self.source)):
-            if self._isvalidline(self.source[i]): extracted.append(self.source[i])
+            if self._linehaskey(self.source[i]): extracted.append(self.source[i])
         for i, line in enumerate(extracted):
             while line[-1] == "\\":    #  if line ends with backslash read next line and append it
                 i += 1
@@ -278,7 +289,7 @@ class Properties():
         propcomments = {}
         i = 0
         while i < len(self.source):
-            if self._isvalidline(self.source[i]) and i > 0:
+            if self._linehaskey(self.source[i]) and i > 0:
                 if self._iscommentline(self.source[i-1]):
                     n = i-1
                     comment = []
@@ -317,8 +328,8 @@ class Properties():
         for line in props.srcorigin:
             if line == "": lines.append(line)
             elif line[0] in ["#", "!"] or line.isspace(): lines.append(line)
-            elif self._isvalidline(line) and not prefix: lines.append(line)
-            elif self._isvalidline(line) and prefix: lines.append("{0}.{1}".format(prefix, line))
+            elif self._linehaskey(line) and not prefix: lines.append(line)
+            elif self._linehaskey(line) and prefix: lines.append("{0}.{1}".format(prefix, line))
             else: pass
         if self.source: self.source.append("")
         self.source.extend(lines)
@@ -336,9 +347,9 @@ class Properties():
         file = path.readlines()
         path.close()
         for i, line in enumerate(file):
-            if self._isvalidline(line) and prefix: line = "{0}.{1}".format(prefix, line.lstrip())
+            if self._linehaskey(line) and prefix: line = "{0}.{1}".format(prefix, line.lstrip())
             elif self._islinehiddenprop(line) and prefix: line = "#{0}.{1}".format(prefix, line[1:])
-            if self._isvalidline(line) and hidden: line = "#{0}".format(line.lstrip())
+            if self._linehaskey(line) and hidden: line = "#{0}".format(line.lstrip())
             if line[-1] == "\n": line = line[:-1]
             file[i] = line
 
@@ -363,14 +374,14 @@ class Properties():
             i += 1
 
 
-    def _getidentifier(self, identifier):
+    def _expandidentifier(self, identifier):
         """
         Applies needed changes to identifier and compiles regular expression pattern. 
         Returns compiled pattern.
         """
-        return re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        return "^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re))
         
-    def blank(self, path=""):
+    def blank(self, path="", strict=True):
         """
         Creates blank properties object. 
         Can be used to erase contents of your ```pyproperties``` object.
@@ -386,10 +397,11 @@ class Properties():
         self.origin_propcomments = {}
         self.hidden = []
         self.origin_hidden = []
+        self.strict = strict
         self.unsaved = False
 
 
-    def read(self, path="", cast=False, no_includes=False):
+    def read(self, path="", cast=False, no_includes=False, strict=True):
         """
         Reads properties file and processes it to be available in Python 3 program.
         You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
@@ -398,7 +410,7 @@ class Properties():
         try:
             if self.path != "": path = self.path
         except AttributeError: pass
-        finally: self.blank(path)
+        finally: self.blank(path, strict)
 
         if os.path.isfile(self.path): self._loadf(self.path)
         elif os.path.isdir(self.path): self._loadd(self.path)
@@ -438,10 +450,7 @@ class Properties():
         Returns exact copy of a pyproperties.Properties() object.
         """
         copy = Properties(self.path, no_read=True)
-        copy._appendsrc(self)
-        for key in self.properties: copy.set(key, self.properties[key])
-        for key in self.propcomments: copy.addcomment(key, self.propcomments[key])
-        for key in self.hidden: copy.hide(key)
+        copy.merge(self)
         copy.save()
         return copy
 
@@ -504,7 +513,7 @@ class Properties():
         Source of merged properties is not appended to the base.
         Comment information is appended to the base.
 
-        Properties for merging are taken from `origins` of given props so 
+        Properties for updating are taken from `origins` of given props so 
         before you merge it's better to call `save()`.
         During merging properties are not copied directly to `origins` of the base 
         properties.
@@ -569,15 +578,11 @@ class Properties():
         saved = {}
         for key, value in self.properties.items(): saved[key] = value
         self.propsorigin = saved
-        
         saved = {}
         for key, value in self.propcomments.items(): saved[key] = value
         self.origin_propcomments = saved
-        
         self.srcorigin = [ line for line in self.source ]
-        
         self.origin_hidden = [ key for key in self.hidden ]
-
         self.unsaved = False
 
 
@@ -589,15 +594,11 @@ class Properties():
         reverted = {}
         for key, value in self.propsorigin.items(): reverted[key] = value
         self.properties = reverted
-        
         reverted = {}
         for key, value in self.origin_propcomments.items(): reverted[key] = value
         self.propcomments = reverted
-        
         self.source = [ line for line in self.srcorigin ]
-        
         self.hidden = [ key for key in self.origin_hidden ]
-
         self.unsaved = False
 
 
@@ -715,17 +716,9 @@ class Properties():
         Returns dict of properties which names matched pattern given as identifier.
         If parsed is set to True values will be parsed before returning.
         """
-        if type(identifier) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(identifier))[8:-2]))
-
-        matched = {}
-        identifier = self._getidentifier(identifier)
-        for key, value in self.properties.items():
-            if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
-            elif re.match(identifier, key) and not parse: matched[key] = value
-        if cast:
-            for key, value in matched.items():
-                if type(value) == str: matched[key] = self.typeguess(value)(value)
-        return matched
+        if type(identifier) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
+        identifier = self._expandidentifier(identifier)
+        return self.getre(identifier)
 
 
     def getre(self, identifier, parse=False, cast=False):
@@ -735,9 +728,9 @@ class Properties():
         If cast is passed as True pyproperties will try to cast types of properties.
         """
         matched = {}
-        if type(identifier) == str: identifier= re.compile(identifier)
-        elif str(type(identifier)) == "<class '_sre.SRE_Pattern'>": pass
-        else: raise TypeError("identifer must be either string or compiled regular expression pattern, but '{0}' type was given".format(str(type(identifier))[8:-2]))
+        if type(identifier) == str: identifier = re.compile(identifier)
+        elif str(type(identifier)) == "<class '_sre.SRE_Pattern'>":  warnings.warn("passing compiled regular expressions patterns is deprecated and support for it will be removed in 0.2.2")
+        else: raise TypeError("identifer must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
 
         for key, value in self.properties.items():
             if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
@@ -752,7 +745,7 @@ class Properties():
         Sets key to value. 
         Raises TypeError if key is not if ```str``` type.
         """
-        if type(key) is not str: raise TypeError("identifer must be string but '{0}' was given".format(str(type(key))[8:-2]))
+        if type(key) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(key))[8:-2]))
         self.properties[key] = value
         if key in self.hidden:
             self.unhide(key)
@@ -775,8 +768,8 @@ class Properties():
         _kwargs = {}
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
-
-        identifier = self._getidentifier(identifier)
+        
+        identifier = re.compile(self._expandidentifier(identifier))
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append(key)
         keys.sort()
@@ -784,7 +777,7 @@ class Properties():
         for key in keys:
             try: value = values[i]
             except IndexError: value = values[-1]
-            finally: 
+            finally:
                 if key in kwargs: value = kwargs[key]
                 else: i += 1   # increasing the counter if value wasn't taken from the kwargs
                 self.set(key, value)
@@ -806,19 +799,19 @@ class Properties():
         Removed properties will be not saved using store().
         """
         to_remove = []
-        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        identifier = re.compile(self._expandidentifier(identifier))
         for key in self.properties.keys():
             if re.match(identifier, key): to_remove.append(key)
         for key in to_remove: self.remove(key)
 
-    def pop(self, identifier, cast=False):
+    def pop(self, key, cast=False):
         """
         This method removes specified property from interal dictionary and returns its value. 
         KeyError is raised if key is not found or property is hidden.
         """
         if key not in self.properties or key in self.hidden: self._notavailable(key)
 
-        prop = self.properties.pop(identifier)
+        prop = self.properties.pop(key)
         if cast: prop = self._convert(prop)
         self.unsaved = True
         return prop
@@ -828,7 +821,7 @@ class Properties():
         This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
         """
         popped = {}
-        identifier = self._getidentifier(identifier)
+        identifier = re.compile(self._expandidentifier(identifier))
         for key, value in self.properties.items():
             if re.match(identifier, key): popped[key] = value
         for key in popped.keys(): self.properties.pop(key)
@@ -988,7 +981,7 @@ class Properties():
         """
         Hides every property which key will match given identifier. 
         """
-        identifier = self._getidentifier(identifier)
+        identifier = self._expandidentifier(identifier)
         for key in self.getnames():
             if re.match(identifier, key): self.hide(key)
 
@@ -1004,7 +997,7 @@ class Properties():
         """
         Unhides every property which key will match given identifier.
         """
-        identifier = self._getidentifier(identifier)
+        identifier = self._expandidentifier(identifier)
         to_unhide = []
         for i in range(len(self.hidden)):
             if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])

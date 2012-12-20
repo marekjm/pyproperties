@@ -13,6 +13,9 @@ manual: ./manual/*.mdown
 	pandoc -o ./manual/manual.pdf ./manual/*.mdown
 
 test:
+	python3 ./test.py
+
+vtest:
 	python3 ./test.py -v
 
 changelog: Changelog.mdown README.mdown RELEASE.mdown
