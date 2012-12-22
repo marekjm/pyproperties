@@ -27,7 +27,7 @@ class ValidatorsTest(unittest.TestCase):
         for line, result in lines: self.assertEqual(foo._iscommentline(line), result)
     
     def testHaskeyNonStrict(self):
-        foo = pyproperties.Properties()
+        foo = pyproperties.Properties(strict=False)
         lines = [
                 ("#some comment", False),
                 ("#maybe=property", False),
@@ -42,7 +42,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", True),
                 ("   valid  : property", True),
                 ]
-        for line, result in lines: self.assertEqual(foo._linehaskey(line, strict=False), result)
+        for line, result in lines: self.assertEqual(foo._linehaskey(line), result)
 
 
     def testHaskeyStrict(self):
@@ -64,7 +64,7 @@ class ValidatorsTest(unittest.TestCase):
         for line, result in lines: self.assertEqual(foo._linehaskey(line), result)
 
     def testGetlinekeyNonStrict(self):
-        foo = pyproperties.Properties()
+        foo = pyproperties.Properties(strict=False)
         lines = [
                 ("#some comment", None),
                 ("#maybe=property", None),
@@ -79,7 +79,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "valid"),
                 ("   valid  : property", "valid"),
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinekey(line, strict=False), result)
+        for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
 
 
     def testGetlinekeyStrict(self):
@@ -101,7 +101,7 @@ class ValidatorsTest(unittest.TestCase):
         for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
 
     def testGetlinevalueNonStrict(self):
-        foo = pyproperties.Properties()
+        foo = pyproperties.Properties(strict=False)
         lines = [
                 ("#some comment", None),
                 ("#maybe=property", None),
@@ -116,7 +116,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "property"),
                 ("   valid  : property", "property"),
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinevalue(line, strict=False), result)
+        for line, result in lines: self.assertEqual(foo.getlinevalue(line), result)
 
 
     def testGetlinevalueStrict(self):
@@ -135,7 +135,26 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "property"),
                 ("   valid  : property", "property"),
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinevalue(line, strict=True), result)
+        for line, result in lines: self.assertEqual(foo.getlinevalue(line), result)
+
+    def testHiddenPropertiesDetectionWhenStrict(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some.value=0", True),
+                ("#some value=0", False),
+                ("# some.value=0", False),
+                ]
+        for line, result in lines: self.assertEqual(result, foo._islinehiddenprop(line))
+
+    def testHiddenPropertiesDetectionWhenNonStrict(self):
+        foo = pyproperties.Properties(strict=False)
+        lines = [
+                ("#some.value=0", True),
+                ("#some value=0", True),
+                ("# some.value=0", False),
+                ("# some value=0", False),
+                ]
+        for line, result in lines: self.assertEqual(result, foo._islinehiddenprop(line))
 
 
 class ParselineTest(unittest.TestCase):
@@ -414,6 +433,11 @@ class SetterTest(unittest.TestCase):
         foo = pyproperties.Properties()
         for i in range(4): foo.set("foo.{0}".format(i))
         self.assertEqual(keys, foo.getnames())
+
+
+    def testSetRaisesErrorWhenKeyContainsSpace(self):
+        foo = pyproperties.Properties()
+        self.assertRaises(TypeError, foo.set, "some key")
 
 
     def testSets(self):

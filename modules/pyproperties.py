@@ -53,7 +53,7 @@ class Properties():
         You can pass cast as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly.
 
-        To create a blank instance with path specified you can run: 
+        To create a blank instance with path specified you can run:
             pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
         if path != "" and not path.isspace() and not no_read: self.read(path, cast, no_includes, strict)
@@ -86,7 +86,7 @@ class Properties():
         propnames = []
         propvalues = {}
 
-        warnings.warn("this feature is experimental and might not behave as expected")
+        warnings.warn("this feature is deprecated and can possibly gets removed: you are strongly discouraged from using it", DeprecationWarning)
 
         for root, dirs, files in os.walk(self.path):
             for file in files:
@@ -164,7 +164,7 @@ class Properties():
         return ptype
 
 
-    def _linehaskey(self, line, strict=None):
+    def _linehaskey(self, line):
         """
         Checks if the line contains a key. 
         """
@@ -173,25 +173,24 @@ class Properties():
         elif "=" in line[:line.find(":")]: key = line.split("=", 1)[0].strip()
         else: key = None
 
-        if strict == None: strict = self.strict
         if key != None and key[0] not in ["#", "!"]:
-            if strict and " " in key:
+            if self.strict and " " in key:
                 warnings.warn("space found in key '{0}'".format(key))
-                key = False
-            elif not strict and " " in key:
+                result = False
+            elif not self.strict and " " in key:
                 warnings.warn("space found in key: '{0}'".format(key))
                 result = True
             else: 
                 result = True
         return result
 
-    def _isvalidline(self, line, strict=None):
+    def _isvalidline(self, line):
         """
         Checks if the line contains valid property string. 
         Valid string is non-empty string and its first character is not '#' or '!'.
         """
         warnings.warn("_isvalidline() is deprecated (it is proxying _linehaskey() functionality) and will be removed in 0.2.2, use _linehaskey() instead", DeprecationWarning)
-        return self._linehaskey(line, strict)
+        return self._linehaskey(line)
 
     def _iscommentline(self, line):
         """
@@ -203,16 +202,18 @@ class Properties():
         return result
 
 
-    def _islinehiddenprop(self, line, strict=None):
+    def _islinehiddenprop(self, line):
         """
-        Defines if commented line is commented property.
-        Used to distinguish comments from commented properties during
-        load.
+        Defines if commented line is commented property or casual comment.
+        Used to distinguish comments from commented properties during load.
         """
-        return self._linehaskey(line.strip()[1:], strict) and not self._linehaskey(line.strip(), strict)
+        # a little hack to not generate too many warnings when just checking if a line is hidden property
+        if line != "" and line[0] in ["!", "#"] and line[1] != " ": result = self._linehaskey(line.strip()[1:])
+        else: result = False
+        return result
 
 
-    def getlinekey(self, line, strict=None):
+    def getlinekey(self, line):
         """
         Extracts key from given line and returns it. 
         If the line does not contain a key returns None. 
@@ -222,21 +223,21 @@ class Properties():
         If in non-strict mode (strict passed as `False`) it will only complain and 
         do nothing else.
         """
-        if not self._linehaskey(line, strict): key = None
+        if not self._linehaskey(line): key = None
         elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
         else: key = line.split("=", 1)[0].strip()
 
         return key
 
 
-    def getlinevalue(self, line, strict=None):
+    def getlinevalue(self, line):
         """
         Extracts value from given line and returns it. 
         If the line does not have a value returns None (remeber: empty string is returned when line has it as a value). 
         It is done this way to distinguish properties with empty value 
         from lines which do not carry a property.
         """
-        if not self._linehaskey(line, strict): value = None
+        if not self._linehaskey(line): value = None
         elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
         else: value = line.split("=", 1)[1].lstrip()
 
@@ -248,13 +249,12 @@ class Properties():
     def _extracthidden(self):
         """
         Show hidden properties so they can be read by ```_extractprops()``` and 
-        saves them to ```commented``` and ```origin_hidden``` dictionaries.
+        saves them to ```hidden``` and ```origin_hidden``` dictionaries.
         """
         for i, line in enumerate(self.source):
             if self._islinehiddenprop(line):
                 key = self.getlinekey(line[1:])
                 if key not in self.hidden: self.hidden.append(key)
-                if key not in self.origin_hidden: self.origin_hidden.append(key)
                 self.source[i] = line[1:]
 
 
@@ -290,7 +290,7 @@ class Properties():
         i = 0
         while i < len(self.source):
             if self._linehaskey(self.source[i]) and i > 0:
-                if self._iscommentline(self.source[i-1]):
+                if self._iscommentline(self.source[i-1]) and not self._islinehiddenprop(self.source[i-1]):
                     n = i-1
                     comment = []
                     while n >= 0:
@@ -309,12 +309,10 @@ class Properties():
         This method converts self.properties from list containing extracted lines to a dictionary.
         """
         props = {}
-        origin = {}
-        for i, line in enumerate(self.properties):
+        for line in self.properties:
             key = self.getlinekey(line)
             if key in props: warnings.warn("multiple declarations for property '{0}' in file '{1}'".format(key, self.path))
-            origin[key] = props[key] = self.getlinevalue(line)
-        self.propsorigin = origin
+            props[key] = self.getlinevalue(line)
         self.properties = props
 
 
@@ -381,6 +379,12 @@ class Properties():
         """
         return "^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re))
         
+    def setstrict(self, strict):
+        """
+        Sets parser mode to strict (True) or non-strict (False).
+        """
+        self.strict = strict
+
     def blank(self, path="", strict=True):
         """
         Creates blank properties object. 
@@ -388,7 +392,6 @@ class Properties():
         """
         self.path = os.path.expanduser(path.strip())
         self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
-        self.strict = True
         self.srcorigin = []
         self.source = []
         self.properties = {}
@@ -427,9 +430,9 @@ class Properties():
 
     def reload(self):
         """
-        Reloads properties from `self.path`.
+        Reloads properties from `self.path`. Parser mode for reloading will be taken from `self.strict`.
         """
-        self.read(self.path)
+        self.read(self.path, strict=self.strict)
         self.unsaved = True
 
 
@@ -462,7 +465,7 @@ class Properties():
         Prefix defaluts to the name of joined file. 
         Source of joined properties is appended to base source.
         """
-        props = Properties(path)
+        props = Properties(path, strict=self.strict)
         if prefix == " ": prefix = props.name
         self.complete(props, prefix)
         self._appendsrc(props, prefix)
@@ -617,7 +620,6 @@ class Properties():
             else: self.lines.append("#{0}={1}".format(key, self.propsorigin[key]))
             self.stored.append(key)
 
-
     def _storesrc(self):
         """
         Prepares data which came with source for storing.
@@ -626,7 +628,6 @@ class Properties():
             if self.srcorigin[i] == "" or self.srcorigin[i].isspace(): self.lines.append("{0}".format(self.srcorigin[i]))
             elif self.srcorigin[i][0] == "#": self.lines.append("{0}".format(self.srcorigin[i]))
             elif self.getlinekey(self.srcorigin[i]) != "": self._storeprop(self.getlinekey(self.srcorigin[i]))
-
 
     def _storegroups(self):
         """
@@ -640,20 +641,17 @@ class Properties():
             for key in sorted(keys): self._storeprop(key)
             if len(self.lines) > previous_len: self.lines.append("")
 
-
     def _storesingles(self):
         """
         Generates lines for single properties not found in source.
         """
         for key in sorted(self.propsorigin.keys()): self._storeprop(key)
 
-
     def _storecomment(self, key):
         """
         Appends comment of a property of given key to self.lines
         """
         [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key] ]
-
 
     def _dump(self, path):
         """
@@ -663,9 +661,7 @@ class Properties():
         file = open(path, "w")
         for line in self.lines: file.write("{0}\n".format(line))
         file.close()
-        self.stored = []
-        self.lines = []
-
+        self.lines, self.stored = ([], [])
 
     def store(self, path="", force=False, no_dump=False, drop_source=False):
         """
@@ -676,17 +672,15 @@ class Properties():
         raise UnsavedChangesError.
         You can explicitly silence it by passing force as True.
 
-        If self.path is empty it will be set to given path.
-
         If 'no_dump' is passed as True lines will be generated 
         but not written to file.
         """
         if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
         if path == "": path = self.path    # this line defaults the value
         if path == "" or path.isspace(): raise StoreError("no path specified")
-        if path and not self.path: self.path = path
-        self.lines = []
-        self.stored = []
+        if path and not self.path: self.path = path            
+        self.lines, self.stored = ([], [])
+            
         if not drop_source: self._storesrc()
         self._storegroups()
         self._storesingles()
@@ -695,7 +689,6 @@ class Properties():
         except IndexError: pass
         finally:
             if not no_dump: self._dump(path)
-
 
     def get(self, key, parse=False, cast=False):
         """
@@ -746,6 +739,7 @@ class Properties():
         Raises TypeError if key is not if ```str``` type.
         """
         if type(key) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(key))[8:-2]))
+        if " " in key: raise TypeError("key must not contain space")
         self.properties[key] = value
         if key in self.hidden:
             self.unhide(key)

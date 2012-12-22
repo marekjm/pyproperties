@@ -30,6 +30,17 @@ _third way_
 Either way will result with ```pyproperties.Properties``` object with exactly the same values.
 
 
+#### Parser mode
+
+```pyproperties``` parser operates in two modes: strict and non-strict. 
+This is indicated by a state of ```strict``` variable (it is ```bool``` so ```True``` means ```strict``` mode and ```False``` the oposite). 
+Parser defaults to _strict_ mode. If you want to read properties in _non-strict_ mode you have to use:
+
+        foo = pyproperties.Properties("/path/to/your/file.properties", strict=False)
+        
+If you want to change mode after loading file you can use ```setstrict()``` method.
+
+
 ----
 
 SEE ALSO:  
