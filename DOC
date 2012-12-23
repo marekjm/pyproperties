@@ -99,14 +99,14 @@ CLASSES
      |  
      |  Methods defined here:
      |  
-     |  __init__(self, path='', cast=False, no_read=False, no_includes=False)
+     |  __init__(self, path='', cast=False, no_read=False, no_includes=False, strict=True)
      |      If you give a path as an argument it will be loaded and processed as properties file. 
      |      If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
      |      foo.read(path) to load some properties or you can use the blank properties to create completly new set of properties.
      |      You can pass cast as True to tell pyproperties that it should guess the type of the property 
      |      and convert it accordingly.
      |      
-     |      To create a blank instance with path specified you can run: 
+     |      To create a blank instance with path specified you can run:
      |          pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
      |  
      |  addcomment(self, key, comment)
@@ -130,7 +130,7 @@ CLASSES
      |              comments('foo.*.bar', 'first comment', 'second
      |      comment', ['third', 'comment'])
      |  
-     |  blank(self, path='')
+     |  blank(self, path='', strict=True)
      |      Creates blank properties object. 
      |      Can be used to erase contents of your ```pyproperties``` object.
      |  
@@ -194,9 +194,9 @@ CLASSES
      |      If ```no_hidden``` was passed as ```False``` includes also 
      |      commented properties.
      |  
-     |  getlinekey(self, line, strict=None)
+     |  getlinekey(self, line)
      |      Extracts key from given line and returns it. 
-     |      If the line is comment or is blank returns None. 
+     |      If the line does not contain a key returns None. 
      |      
      |      If in strict mode (default) and find a whitespace in key it will 
      |      complain with a warning and return None. 
@@ -205,7 +205,7 @@ CLASSES
      |  
      |  getlinevalue(self, line)
      |      Extracts value from given line and returns it. 
-     |      If the line is comment or is blank returns None. 
+     |      If the line does not have a value returns None (remeber: empty string is returned when line has it as a value). 
      |      It is done this way to distinguish properties with empty value 
      |      from lines which do not carry a property.
      |  
@@ -246,16 +246,16 @@ CLASSES
      |      It's not possible to add prefix when merging.
      |  
      |  parse(self, cast=False)
-     |      This method parses and returns parsed self.properties
+     |      This method parses and returns parsed properties.
      |  
-     |  pop(self, identifier, cast=False)
+     |  pop(self, key, cast=False)
      |      This method removes specified property from interal dictionary and returns its value. 
      |      KeyError is raised if key is not found or property is hidden.
      |  
      |  pops(self, identifier, cast=False)
      |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them.
      |  
-     |  read(self, path='', cast=False, no_includes=False)
+     |  read(self, path='', cast=False, no_includes=False, strict=True)
      |      Reads properties file and processes it to be available in Python 3 program.
      |      You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
      |      and convert it accordingly (the _tcasts method will be called).
@@ -266,7 +266,7 @@ CLASSES
      |      Values which are not found in file are not deleted.
      |  
      |  reload(self)
-     |      Reloads properties from `self.path`.
+     |      Reloads properties from `self.path`. Parser mode for reloading will be taken from `self.strict`.
      |  
      |  remove(self, key)
      |      This method removes specified property from interal dictionary. 
@@ -301,6 +301,9 @@ CLASSES
      |      If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
      |      as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
      |  
+     |  setstrict(self, strict)
+     |      Sets parser mode to strict (True) or non-strict (False).
+     |  
      |  store(self, path='', force=False, no_dump=False, drop_source=False)
      |      Writes properties to given 'path'.
      |      'path' defaults to self.path
@@ -309,14 +312,12 @@ CLASSES
      |      raise UnsavedChangesError.
      |      You can explicitly silence it by passing force as True.
      |      
-     |      If self.path is empty it will be set to given path.
-     |      
      |      If 'no_dump' is passed as True lines will be generated 
      |      but not written to file.
      |  
      |  typeguess(self, prop)
-     |      Tries to guess the type of property (initially all properties are stored as strings) and 
-     |      convert it accordingly. It can guess three types: int, float and str. 
+     |      Tries to guess the type of property (initially all properties are stored as strings). 
+     |      It can guess three types: int, float and str. 
      |      It returns guessed ```type``` of property.
      |  
      |  unhide(self, key)
@@ -337,7 +338,7 @@ CLASSES
      |      Source of merged properties is not appended to the base.
      |      Comment information is appended to the base.
      |      
-     |      Properties for merging are taken from `origins` of given props so 
+     |      Properties for updating are taken from `origins` of given props so 
      |      before you merge it's better to call `save()`.
      |      During merging properties are not copied directly to `origins` of the base 
      |      properties.
@@ -507,15 +508,15 @@ FUNCTIONS
         Returns True if given string conatins only octal numbers.
 
 DATA
-    __vertuple__ = (0, 2, 0)
+    __vertuple__ = (0, 2, 1)
     guess_float_re = r'^-?[0-9]*\.[0-9]+$'
-    guess_hex_re = '^-?(0x)?[0-9a-fA-F]+$'
+    guess_hex_re = '^-?0x[0-9a-fA-F]+$'
     guess_int_re = '^-?[0-9]+$'
-    guess_oct_re = '^-?(0o)?[0-7]+$'
+    guess_oct_re = '^-?0o[0-7]+$'
     wildcart_re = '[a-z0-9_.-]*'
 
 VERSION
-    0.2.0
+    0.2.1
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py

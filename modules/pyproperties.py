@@ -11,8 +11,8 @@ __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-z0-9_.-]*"
 guess_int_re = "^-?[0-9]+$"
-guess_hex_re = "^-?(0x)?[0-9a-fA-F]+$"
-guess_oct_re = "^-?(0o)?[0-7]+$"
+guess_hex_re = "^-?0x[0-9a-fA-F]+$"
+guess_oct_re = "^-?0o[0-7]+$"
 guess_float_re = "^-?[0-9]*\.[0-9]+$"
 
 class LoadError(IOError): pass
@@ -106,7 +106,6 @@ class Properties():
         self.source = source
         self.srcorigin = srcorigin
 
-
     def _notavailable(self, key):
         """
         Raises KeyError which will tell user that the property is not available eg. 
@@ -121,7 +120,6 @@ class Properties():
         Converts property of the given key from str (default) to int, float, bool or None if needed.
         """
         self.set(key, self._convert(self.get(key)))
-
 
     def _tcasts(self, identifier):
         """
@@ -140,21 +138,23 @@ class Properties():
         Be aware that this can cause a KeyError to be raised.
         """
         if from_key: value = self.get(value)
-        
+        value = str(value)
         if value == "True": value = True
         elif value == "False": value = False
         elif value == "None": value = None
         elif ishex(value): value = int(value, 16)
         elif isoct(value): value = int(value, 8)
-        else: value = self.typeguess(value)(value)
+        elif re.match(re.compile(guess_int_re), value): value = int(value)
+        elif re.match(re.compile(guess_float_re), value): value = float(value)
         return value
 
     def typeguess(self, prop):
         """
-        Tries to guess the type of property (initially all properties are stored as strings) and 
-        convert it accordingly. It can guess three types: int, float and str. 
+        Tries to guess the type of property (initially all properties are stored as strings). 
+        It can guess three types: int, float and str. 
         It returns guessed ```type``` of property.
         """
+        warnings.warn("typeguess() is deprecated and will be removed in 0.2.2, use _convert() instead as it provides more functionality for conversion", DeprecationWarning)
         re_int = re.compile(guess_int_re)
         re_float = re.compile(guess_float_re)
 
@@ -162,7 +162,6 @@ class Properties():
         elif re.match(re_float, prop): ptype = float
         else: ptype = str
         return ptype
-
 
     def _linehaskey(self, line):
         """
@@ -201,7 +200,6 @@ class Properties():
         result = line != "" and line[0] in ["#", "!"]
         return result
 
-
     def _islinehiddenprop(self, line):
         """
         Defines if commented line is commented property or casual comment.
@@ -211,7 +209,6 @@ class Properties():
         if line != "" and line[0] in ["!", "#"] and line[1] != " ": result = self._linehaskey(line.strip()[1:])
         else: result = False
         return result
-
 
     def getlinekey(self, line):
         """
@@ -226,9 +223,7 @@ class Properties():
         if not self._linehaskey(line): key = None
         elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
         else: key = line.split("=", 1)[0].strip()
-
         return key
-
 
     def getlinevalue(self, line):
         """
@@ -242,9 +237,7 @@ class Properties():
         else: value = line.split("=", 1)[1].lstrip()
 
         if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
-        
         return value
-
 
     def _extracthidden(self):
         """
@@ -256,7 +249,6 @@ class Properties():
                 key = self.getlinekey(line[1:])
                 if key not in self.hidden: self.hidden.append(key)
                 self.source[i] = line[1:]
-
 
     def _extractprops(self):
         """
@@ -275,7 +267,6 @@ class Properties():
                 line = "".join(line[:-1], extracted[i]).lstrip()
             properties.append(line.lstrip())
         self.properties = properties
-
 
     def _extractcomments(self):
         """
@@ -303,7 +294,6 @@ class Properties():
             i += 1
         self.propcomments.update(propcomments)
 
-
     def _split(self):
         """
         This method converts self.properties from list containing extracted lines to a dictionary.
@@ -314,7 +304,6 @@ class Properties():
             if key in props: warnings.warn("multiple declarations for property '{0}' in file '{1}'".format(key, self.path))
             props[key] = self.getlinevalue(line)
         self.properties = props
-
 
     def _appendsrc(self, props, prefix=""):
         """
@@ -331,7 +320,6 @@ class Properties():
             else: pass
         if self.source: self.source.append("")
         self.source.extend(lines)
-
 
     def _include(self, line_number, path, prefix="", hidden=False):
         """
@@ -353,7 +341,6 @@ class Properties():
 
         new_source = [ line for line in file ]
         self.source = self.source[:line_number] + new_source + self.source[line_number+1:]
-        
 
     def _makeincludes(self):
         """
@@ -370,7 +357,6 @@ class Properties():
             elif key != None and key[:15] == "__include__.as.": self._include(i, value, prefix=key[15:])
             elif key != None and key[:22] == "__include__.hidden.as.": self._include(i, value, prefix=key[22:], hidden=True)
             i += 1
-
 
     def _expandidentifier(self, identifier):
         """
@@ -403,7 +389,6 @@ class Properties():
         self.strict = strict
         self.unsaved = False
 
-
     def read(self, path="", cast=False, no_includes=False, strict=True):
         """
         Reads properties file and processes it to be available in Python 3 program.
@@ -427,14 +412,12 @@ class Properties():
         self._extractcomments()
         self.save()
 
-
     def reload(self):
         """
         Reloads properties from `self.path`. Parser mode for reloading will be taken from `self.strict`.
         """
         self.read(self.path, strict=self.strict)
         self.unsaved = True
-
 
     def refresh(self, overwrite=True):
         """
@@ -447,7 +430,6 @@ class Properties():
         if overwrite: self.update(new)
         self.unsaved = True
 
-
     def copy(self):
         """
         Returns exact copy of a pyproperties.Properties() object.
@@ -456,7 +438,6 @@ class Properties():
         copy.merge(self)
         copy.save()
         return copy
-
 
     def join(self, path, prefix=" "):
         """
@@ -470,7 +451,6 @@ class Properties():
         self.complete(props, prefix)
         self._appendsrc(props, prefix)
         self.unsaved = True
-
 
     def complete(self, props, prefix=""):
         """
@@ -535,7 +515,6 @@ class Properties():
             if key in updated: self.hide(key)
         self.unsaved = True
 
-
     def merge(self, properties):
         """
         Completes and merges properties with the base. 
@@ -588,7 +567,6 @@ class Properties():
         self.origin_hidden = [ key for key in self.hidden ]
         self.unsaved = False
 
-
     def revert(self):
         """
         Drops changes made in properties object by reverting it's variables
@@ -603,7 +581,6 @@ class Properties():
         self.source = [ line for line in self.srcorigin ]
         self.hidden = [ key for key in self.origin_hidden ]
         self.unsaved = False
-
 
     def _storeprop(self, key):
         """
@@ -703,7 +680,6 @@ class Properties():
         if cast and type(value) == str: value = self._convert(value)
         return value
 
-
     def gets(self, identifier, parse=False, cast=False):
         """
         Returns dict of properties which names matched pattern given as identifier.
@@ -712,7 +688,6 @@ class Properties():
         if type(identifier) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
         identifier = self._expandidentifier(identifier)
         return self.getre(identifier)
-
 
     def getre(self, identifier, parse=False, cast=False):
         """
@@ -732,7 +707,6 @@ class Properties():
             for key, value in matched.items(): matched[key] = self.typeguess(value)(value)
         return matched
 
-
     def set(self, key, value=""):
         """
         Sets key to value. 
@@ -745,7 +719,6 @@ class Properties():
             self.unhide(key)
             self.rmcomment(key)
         self.unsaved = True
-
 
     def sets(self, identifier, *values, **kwargs):
         """
@@ -849,7 +822,6 @@ class Properties():
             elif value == propvalue and propkey in self.hidden and not no_hidden: keys.append(propkey)
         return keys
 
-
     def getgroups(self):
         """
         Returns list of non-hidden properties groups in the internal dictionary. 
@@ -873,13 +845,13 @@ class Properties():
 
         This is because only digits are considered 'groupers'.
         """
-        skeys = [ key.split(".") for key in self.getnames() ]
+        names = [ key.split(".") for key in self.getnames() ]
         groups = []
-        for skey in skeys:
+        for key in names:
             identifier = ""
-            for key in skey:
-                if ishex(key): key = "*"
-                identifier = "{}.{}".format(identifier, key)
+            for word in key:
+                if ishex(word) or isoct(word) or re.match(re.compile(guess_int_re), word): word = "*"
+                identifier = "{}.{}".format(identifier, word)
             identifier = identifier[1:]
             if identifier not in groups and len(self.gets(identifier)) > 1: groups.append(identifier)
         return groups

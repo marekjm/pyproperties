@@ -1,40 +1,55 @@
-#### Release 0.2.0
+#### Release 0.2.1
 
 
->   This is the first ```beta``` release. It introduces more strict rules about how properties are parsed, better manual and more unit tests. 
->   For me it is end of a semester so no big things or improvements (I have plenty of school-related stuff). 
->   
->   Also, ```pyproperties``` reached the 1000 lines (1012 to be exact with 513 of them actual code).
+>   This release brings deprecation of ```_isvalidline()``` in favour of ```_linehaskey()```. 
+>   _Being a valid line_ was too broad term and the method functionality really had been to check if a line contained a valid key. 
+>   The new ```_linehaskey()``` method has more functionality: it will not only check if a line contains a key but also will issue a warning if the key 
+>   is not valid (this depend on parser mode).
+>
+>   What is more, ```typeguess()``` is also deprecated in favour of internal method ```_convert()```. It is not only more powerful but is actualy 
+>   being used. I realised that ```typeguess()``` was a piece of _dead code_. It is shame to say that but even it's docstring was not accurate... 
+>   And so the method became deprecated and will be removed in version ```0.2.2```.
+>
+>   ```strict``` argument was also removed from bunch of methods in order to simplify them. Now, the only methods able to accept ```strict``` as an argument are 
+>   ```blank()``` and ```read()``` (and ```__init__()``` but this is not used explicitly).
 
 
 ----
 
 
 ##### This release brings you:
-*   4 update(s),
-*   1 fix(es),
-*   7 new feature(s).
+*   9 update(s),
+*   3 fix(es),
+*   4 new feature(s),
+*   1 removal(s),
 
 
-#### Version 0.2.0 (2012.12.16):
+#### Version 0.2.1 (2012.12.14):
 
-* __upd__:  ```_convert()``` can convert positive and negative hexadecimal and octal integers,
-* __upd__:  slight change in regular expression patterns; ```[-]?``` changed to ```-?```,
-* __upd__:  ```onlyhexchars()``` renamed to ```ishex()```,
-* __upd__:  ```getlinekey()``` has new ```strict``` argument (read DOC for more),
+* __upd__:  mode ```strict``` defaults to ```True```,
+* __upd__:  checking line validity is now performed by ```_linehaskey()``` inside ```pyproperties``` and ```_isvalidline()``` becomes deprecated,
+* __upd__:  ```copy()``` uses ```merge()``` as a backend instead of copying everything by itself,
+* __upd__:  ```_getidentifier()``` renamed to ```_expandidentifier()``` and does not return compiled pattern,
+* __upd__:  ```identifier``` in ```pop()``` renamed to ```key```,
+* __upd__:  ```strict``` argument removed from ```getlinekey()```,
+* __upd__:  change in ```guess_hex_re``` and ```guess_oct_re``` - ```0x``` and ```0o``` prefixes are now mandatory,
+* __upd__:  octal numbers are considered groupers by ```getgroups()```,
+* __upd__:  deprecation of ```_isvalidline()``` and ```typeguess()```,
 
 
-* __fix__:  ```getlinekey()``` is more strict and accurate,
+* __fix__:  changed mistake in [grouping manual](manual/grouping.mdown),
+* __fix__:  ```removes()``` uses ```_expandidentifier()``` to get pattern for regular expression,
+* __fix__:  improved accuracy of ```_islinehiddenprop()``` by checking if the comment character is not followed by whitespace (``` ```),
 
 
-* __new__:  ```__vertuple__``` variable,
-* __new__:  ```guess_hex_re``` regular expression,
-* __new__:  ```guess_oct_re``` regular expression,
-* __new__:  ```isoct()``` method,
-* __new__:  new ```_getidentifier()``` method for compiling regular expression patterns of identifiers in 
-    methods dealing with multiple properties at once (the ```-s()``` methods),
-* __new__:  ```_iscommentline()``` method,
-* __new__:  global ```strict``` variable (read DOC for ```getlinekey()``` or [this manual](manual/keys_and_values.mdown) for more information),
+* __new__:  ```_linehaskey()``` method used for checking if line contains a key,
+* __new__:  ```_isvalidline()``` is deprecated and will issue warnings about that - you should use ```_linehaskey()``` as it provides better accuracy,
+* __new__:  unit tests for ```_islinehiddenprop()```,
+* __new__:  method ```setstrict()``` for setting parser mode,
+
+
+* __rem__:  unit tests for ```_isvalidline()``` removed (due to its deprecation - it is now only a proxy for ```_linehaskey()```)
+
 
 &nbsp;
 

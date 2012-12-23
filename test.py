@@ -196,6 +196,62 @@ class ParselineTest(unittest.TestCase):
         self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parse=True, cast=False))
 
 
+class ParseTest(unittest.TestCase):
+    def testParse(self):
+        bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
+        parsed =    {
+                    "message.0":"Apple Jack  .",
+                    "message.1":"Arr... Welcome, John the Average!",
+                    "name.0":"John the Average",
+                    "name.1":"Jack  ",
+                    "name.2":"\\  William  ",
+                    "alert":"Fire!",
+                    }
+        pbar = bar.parse()
+        self.assertEqual(parsed, pbar.gets("*"))
+        self.assertEqual(pyproperties.Properties, type(pbar))
+
+
+class ConvertTest(unittest.TestCase):
+    def testHexadecimalConversion(self):
+        examples = [("0x0", 0),
+                    ("-0x1", -1),
+                    ("0x16", 22),
+                    ("-0xa2", -162),
+                    ("0x45", 69),
+                    ("0x29a", 666),
+                    ("-0x7cb", -1995),
+                    ("0x7dc", 2012),
+                    ("0x22b8", 8888),
+                    ("0x582", 1410),
+                    ("-0x582", -1410),
+                    ("0x75bcd15", 123456789),
+                    ("-0xf44e", -62542),
+                    ]
+        foo = pyproperties.Properties()
+        for hex, dec in examples:
+            self.assertEqual(foo._convert(hex), dec)
+
+    def testOctalConversion(self):
+        examples = [("0o0", 0),
+                    ("-0o1", -1),
+                    ("0o26", 22),
+                    ("-0o242", -162),
+                    ("0o105", 69),
+                    ("0o1232", 666),
+                    ("-0o3713", -1995),
+                    ("0o3734", 2012),
+                    ("0o21270", 8888),
+                    ("0o2602", 1410),
+                    ("-0o2602", -1410),
+                    ("0o726746425", 123456789),
+                    ("-0o172116", -62542),
+                    ]
+        foo = pyproperties.Properties()
+        for oct, dec in examples:
+            self.assertEqual(foo._convert(oct), dec)
+
+
 class LoadTest(unittest.TestCase):
     def testLoad(self):
         props = {
@@ -515,22 +571,6 @@ class GroupingTest(unittest.TestCase):
                     "person.surname",
                     ]
         self.assertListEqual(sorted(singles), sorted(foo.getsingles()))
-
-
-class ParseTest(unittest.TestCase):
-    def testParse(self):
-        bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
-        parsed =    {
-                    "message.0":"Apple Jack  .",
-                    "message.1":"Arr... Welcome, John the Average!",
-                    "name.0":"John the Average",
-                    "name.1":"Jack  ",
-                    "name.2":"\\  William  ",
-                    "alert":"Fire!",
-                    }
-        pbar = bar.parse()
-        self.assertEqual(parsed, pbar.gets("*"))
-        self.assertEqual(pyproperties.Properties, type(pbar))
 
 
 class CopyTest(unittest.TestCase):
@@ -1093,46 +1133,6 @@ class HideTest(unittest.TestCase):
         self.assertRaises(KeyError, foo.get, "foo.1")
         foo.unhides("foo.*")
         self.assertEqual([], foo.hidden)
-
-
-class TypecastingTest(unittest.TestCase):
-    def testHexadecimalConversion(self):
-        examples = [("0x0", 0),
-                    ("-0x1", -1),
-                    ("0x16", 22),
-                    ("-0xa2", -162),
-                    ("0x45", 69),
-                    ("29a", 666),
-                    ("-0x7cb", -1995),
-                    ("7dc", 2012),
-                    ("0x22b8", 8888),
-                    ("0x582", 1410),
-                    ("-0x582", -1410),
-                    ("0x75bcd15", 123456789),
-                    ("-f44e", -62542),
-                    ]
-        foo = pyproperties.Properties()
-        for hex, dec in examples:
-            self.assertEqual(foo._convert(hex), dec)
-
-    def testOctalConversion(self):
-        examples = [("0o0", 0),
-                    ("-0o1", -1),
-                    ("0o26", 22),
-                    ("-0o242", -162),
-                    ("0o105", 69),
-                    ("0o1232", 666),
-                    ("-0o3713", -1995),
-                    ("0o3734", 2012),
-                    ("0o21270", 8888),
-                    ("0o2602", 1410),
-                    ("-0o2602", -1410),
-                    ("0o726746425", 123456789),
-                    ("-0o172116", -62542),
-                    ]
-        foo = pyproperties.Properties()
-        for oct, dec in examples: 
-            self.assertEqual(foo._convert(oct), dec)
 
 
 if __name__ == "__main__" : unittest.main()

@@ -1,52 +1,9 @@
-#### Commenting properties
+#### Hidden properties
 ###### _version: ```0.2.1```_
 
 ###### [Index](index.mdown)
 ----
 
-
-When reading from file both ```!``` and ```#``` characters are considered _comments_, but 
-when using ```store()``` method all _!-comments_ will be converted to _#-comments_.
-
-This is done so because of the thirteenth line of The Zen of Python:  
-
-    There should be one-- and preferably only one --obvious way to do it.
-
-
-With ```pyproperties``` it is possible to manipulate (add/remove/change) comments of properties.
-
-
-----
-
-#### Adding and removing comments attached to properties
-
-This is done by ```comment()``` and ```uncomment()``` methods.
-
-        Python 3.3.0 (default, Oct 24 2012, 19:57:05) 
-        [GCC 4.7.2 20120921 (Red Hat 4.7.2-2)] on linux
-        Type "help", "copyright", "credits" or "license" for more information.
-        >>> from modules import pyproperties
-        >>> p = pyproperties.Properties()
-        >>> p.set("foo")
-        >>> p.get("foo")
-        ''
-        >>> p.addcomment("foo", "this is a comment")
-        >>> p.getcomment("foo")
-        'this is a comment'
-        >>> p.rmcomment("foo")
-        >>> p.getcomment("foo")
-        ''
-        >>> p.addcomment("foo", "this is a comment")
-        >>> p.addcomment("foo", "this is a newer comment")
-        >>> p.getcomment("foo")
-        'this is a newer comment'
-        >>>
-
-----
-
-&nbsp;
-
-#### Hiding and _un_-hiding properties
 
 ```pyproperties``` parser recongnizes few kinds of lines:
 
