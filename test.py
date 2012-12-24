@@ -140,19 +140,19 @@ class ValidatorsTest(unittest.TestCase):
     def testHiddenPropertiesDetectionWhenStrict(self):
         foo = pyproperties.Properties()
         lines = [
-                ("#some.value=0", True),
-                ("#some value=0", False),
-                ("# some.value=0", False),
+                ("#some.key=0", True),
+                ("#some key=0", False),
+                ("# some.key=0", False),
                 ]
         for line, result in lines: self.assertEqual(result, foo._islinehiddenprop(line))
 
     def testHiddenPropertiesDetectionWhenNonStrict(self):
         foo = pyproperties.Properties(strict=False)
         lines = [
-                ("#some.value=0", True),
-                ("#some value=0", True),
-                ("# some.value=0", False),
-                ("# some value=0", False),
+                ("#some.key=0", True),
+                ("#some key=0", True),
+                ("# some.key=0", False),
+                ("# some key=0", False),
                 ]
         for line, result in lines: self.assertEqual(result, foo._islinehiddenprop(line))
 

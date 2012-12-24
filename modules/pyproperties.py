@@ -6,7 +6,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-z0-9_.-]*"
@@ -148,21 +148,6 @@ class Properties():
         elif re.match(re.compile(guess_float_re), value): value = float(value)
         return value
 
-    def typeguess(self, prop):
-        """
-        Tries to guess the type of property (initially all properties are stored as strings). 
-        It can guess three types: int, float and str. 
-        It returns guessed ```type``` of property.
-        """
-        warnings.warn("typeguess() is deprecated and will be removed in 0.2.2, use _convert() instead as it provides more functionality for conversion", DeprecationWarning)
-        re_int = re.compile(guess_int_re)
-        re_float = re.compile(guess_float_re)
-
-        if re.match(re_int, prop): ptype = int
-        elif re.match(re_float, prop): ptype = float
-        else: ptype = str
-        return ptype
-
     def _linehaskey(self, line):
         """
         Checks if the line contains a key. 
@@ -182,14 +167,6 @@ class Properties():
             else: 
                 result = True
         return result
-
-    def _isvalidline(self, line):
-        """
-        Checks if the line contains valid property string. 
-        Valid string is non-empty string and its first character is not '#' or '!'.
-        """
-        warnings.warn("_isvalidline() is deprecated (it is proxying _linehaskey() functionality) and will be removed in 0.2.2, use _linehaskey() instead", DeprecationWarning)
-        return self._linehaskey(line)
 
     def _iscommentline(self, line):
         """
