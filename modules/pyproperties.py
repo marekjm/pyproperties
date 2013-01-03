@@ -81,7 +81,7 @@ class Properties():
         This method loads properties file from given path to a ```self.source```. 
         It also strips it of newline characters at the end and preceding whitespace and but leaves it unprocessed in any different way. 
         """
-        srcorigin = []
+        origin_source = []
         source = []
         src = open(path, "rt")
         source = src.readlines()
@@ -89,15 +89,15 @@ class Properties():
         for i in range(len(source)):
             source[i] = source[i].lstrip()
             if source[i][-1:] == "\n": source[i] = source[i][:-1]
-            srcorigin.append(source[i])
+            origin_source.append(source[i])
         self.source = source
-        self.srcorigin = srcorigin
+        self.origin_source = origin_source
 
     def _loadd(self, path):
         """
         This method reads directory tree as if it was properties file.
         """
-        srcorigin = []
+        origin_source = []
         source = []
         proppaths = []
         propnames = []
@@ -121,7 +121,7 @@ class Properties():
             source.append("{0}={1}".format(key, value))
 
         self.source = source
-        self.srcorigin = srcorigin
+        self.origin_source = origin_source
 
     def _notavailable(self, key):
         """
@@ -306,7 +306,7 @@ class Properties():
         source to avoid making comments accidentaly joined.
         """
         lines = []
-        for line in props.srcorigin:
+        for line in props.origin_source:
             if line == "": lines.append(line)
             elif line[0] in ["#", "!"] or line.isspace(): lines.append(line)
             elif self._linehaskey(line) and not prefix: lines.append(line)
@@ -381,8 +381,8 @@ class Properties():
         self.path = os.path.expanduser(path.strip())
         self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
         self.strict = strict
-        self.source, self.srcorigin = ([], [])
-        self.properties, self.propsorigin = ({}, {})
+        self.source, self.origin_source = ([], [])
+        self.properties, self.origin_properties = ({}, {})
         self.propcomments, self.origin_propcomments = ({}, {})
         self.hidden, self.origin_hidden = ([], [])
         self.includes, self.origin_includes = ([], [])
@@ -469,7 +469,7 @@ class Properties():
         properties.
         """
         completed = []
-        for key, value in props.propsorigin.items():
+        for key, value in props.origin_properties.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
             if key not in self.properties:
                 self.set(key, value)
@@ -501,7 +501,7 @@ class Properties():
         properties.
         """
         updated = []
-        for key, value in props.propsorigin.items():
+        for key, value in props.origin_properties.items():
             if prefix: key = "{0}.{1}".format(prefix, key)
             if key in self.properties: 
                 self.set(key, value)
@@ -558,11 +558,11 @@ class Properties():
         """
         saved = {}
         for key, value in self.properties.items(): saved[key] = value
-        self.propsorigin = saved
+        self.origin_properties = saved
         saved = {}
         for key, value in self.propcomments.items(): saved[key] = value
         self.origin_propcomments = saved
-        self.srcorigin = [ line for line in self.source ]
+        self.origin_source = [ line for line in self.source ]
         self.origin_hidden = [ key for key in self.hidden ]
         self.origin_includes = [ key for key in self.includes ]
         self.unsaved = False
@@ -573,12 +573,12 @@ class Properties():
         to the state in which they were during last save().
         """
         reverted = {}
-        for key, value in self.propsorigin.items(): reverted[key] = value
+        for key, value in self.origin_properties.items(): reverted[key] = value
         self.properties = reverted
         reverted = {}
         for key, value in self.origin_propcomments.items(): reverted[key] = value
         self.propcomments = reverted
-        self.source = [ line for line in self.srcorigin ]
+        self.source = [ line for line in self.origin_source ]
         self.hidden = [ key for key in self.origin_hidden ]
         self.includes = [ key for key in self.origin_includes ]
         self.unsaved = False
@@ -589,13 +589,13 @@ class Properties():
         possibly commenting the property itself. 
         This method looks at the ```stored``` list and checks if the given key has already 
         been stored to prevent storing it two times.
-        It will also check if the key is in ```propsorigin``` dict to ensure that unsaved properties 
+        It will also check if the key is in ```origin_properties``` dict to ensure that unsaved properties 
         would not be stored.
         """
-        if key not in self.stored and key in self.propsorigin:
+        if key not in self.stored and key in self.origin_properties:
             if key in self.origin_propcomments: self._storecomment(key)
-            if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.propsorigin[key]))
-            else: self.lines.append("#{0}={1}".format(key, self.propsorigin[key]))
+            if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.origin_properties[key]))
+            else: self.lines.append("#{0}={1}".format(key, self.origin_properties[key]))
             self.stored.append(key)
 
     def _storeincludes(self):
@@ -610,10 +610,10 @@ class Properties():
         """
         Prepares data which came with source for storing.
         """
-        for i in range(len(self.srcorigin)):
-            if self.srcorigin[i] == "" or self.srcorigin[i].isspace(): self.lines.append("{0}".format(self.srcorigin[i]))
-            elif self.srcorigin[i][0] == "#": self.lines.append("{0}".format(self.srcorigin[i]))
-            elif self.getlinekey(self.srcorigin[i]) != "": self._storeprop(self.getlinekey(self.srcorigin[i]))
+        for i in range(len(self.origin_source)):
+            if self.origin_source[i] == "" or self.origin_source[i].isspace(): self.lines.append("{0}".format(self.origin_source[i]))
+            elif self.origin_source[i][0] == "#": self.lines.append("{0}".format(self.origin_source[i]))
+            elif self.getlinekey(self.origin_source[i]) != "": self._storeprop(self.getlinekey(self.origin_source[i]))
 
     def _storegroups(self):
         """
@@ -631,7 +631,7 @@ class Properties():
         """
         Generates lines for single properties not found in source.
         """
-        for key in sorted(self.propsorigin.keys()): self._storeprop(key)
+        for key in sorted(self.origin_properties.keys()): self._storeprop(key)
 
     def _storecomment(self, key):
         """
@@ -1003,5 +1003,7 @@ class Properties():
         for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
             if path == ipath and prefix == iprefix and hidden == ihidden:
                 self.includes.remove( self.includes[i] )
-                for key in Properties(ipath).getnames(): self.remove(key)
+                for key in Properties(ipath).getnames():
+                    if prefix: key = "{0}.{1}".format(prefix, key)
+                    self.remove(key)
                 break

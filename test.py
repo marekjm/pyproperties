@@ -307,9 +307,9 @@ class LoadTest(unittest.TestCase):
     def testNoRead(self):
         loaded = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
         self.assertEqual("./data/properties/bar.properties", loaded.path)
-        self.assertEqual([], loaded.srcorigin)
+        self.assertEqual([], loaded.origin_source)
         self.assertEqual([], loaded.source)
-        self.assertEqual({}, loaded.propsorigin)
+        self.assertEqual({}, loaded.origin_properties)
         self.assertEqual({}, loaded.properties)
         self.assertEqual({}, loaded.propcomments)
 
@@ -319,9 +319,9 @@ class LoadTest(unittest.TestCase):
         barb = pyproperties.Properties()
         bara.read()
         barb.read("./data/properties/bar.properties")
-        self.assertEqual(bara.srcorigin, barb.srcorigin)
+        self.assertEqual(bara.origin_source, barb.origin_source)
         self.assertEqual(bara.source, barb.source)
-        self.assertEqual(bara.propsorigin, barb.propsorigin)
+        self.assertEqual(bara.origin_properties, barb.origin_properties)
         self.assertEqual(bara.properties, barb.properties)
         self.assertEqual(bara.propcomments, barb.propcomments)
         self.assertEqual(bara.hidden, barb.hidden)
@@ -434,16 +434,44 @@ class IncludeTest(unittest.TestCase):
         self.assertEqual(p.includes, includes)
 
     def testPurgeIncludeSimple(self):
-        p = pyproperties.Properties()
+        test = pyproperties.Properties("./data/properties/include_test/test.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
+        test.purgeinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties")
+        
+        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False)])
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.hidden, combined.hidden)
 
     def testPurgeIncludePrefixed(self):
-        p = pyproperties.Properties()
+        test = pyproperties.Properties("./data/properties/include_test/test_purge.prefixed.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
+        test.purgeinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", prefix="bar")
+        
+        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False)])
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.hidden, combined.hidden)
 
     def testPurgeIncludeHidden(self):
-        p = pyproperties.Properties()
+        test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
+        test.purgeinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", hidden=True)
+        
+        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False)])
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.hidden, combined.hidden)
 
     def testPurgeIncludePrefixedAndHidden(self):
-        p = pyproperties.Properties()
+        test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.prefixed.properties")
+        combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
+        test.purgeinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", prefix="bar", hidden=True)
+        
+        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False)])
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.hidden, combined.hidden)
 
 
 class KeyGetterTest(unittest.TestCase):
@@ -658,9 +686,9 @@ class CopyTest(unittest.TestCase):
     def testEquality(self):
         foo = pyproperties.Properties(foo_path)
         foo2 = foo.copy()
-        self.assertEqual(foo.srcorigin, foo2.srcorigin)
+        self.assertEqual(foo.origin_source, foo2.origin_source)
         self.assertEqual(foo.source, foo2.source)
-        self.assertEqual(foo.propsorigin, foo2.propsorigin)
+        self.assertEqual(foo.origin_properties, foo2.origin_properties)
         self.assertEqual(foo.properties, foo2.properties)
         self.assertEqual(foo.propcomments, foo2.propcomments)
 
@@ -693,9 +721,9 @@ class CompleteTest(unittest.TestCase):
         bar.save()
         foo.complete(bar)
         self.assertEqual(foo_completed, foo.properties)
-        self.assertNotEqual(foo_completed, foo.propsorigin)
+        self.assertNotEqual(foo_completed, foo.origin_properties)
         foo.save()
-        self.assertEqual(foo_completed, foo.propsorigin)
+        self.assertEqual(foo_completed, foo.origin_properties)
 
 
     def testCompleteWithComments(self):
@@ -716,10 +744,10 @@ class CompleteTest(unittest.TestCase):
         foo.complete(bar)
         self.assertEqual(foo_completed, foo.properties)
         self.assertEqual({"prop.2":["this is a comment"]}, foo.propcomments)
-        self.assertNotEqual(foo_completed, foo.propsorigin)
+        self.assertNotEqual(foo_completed, foo.origin_properties)
         self.assertNotEqual({"prop.2":["this is a comment"]}, foo.origin_propcomments)
         foo.save()
-        self.assertEqual(foo_completed, foo.propsorigin)
+        self.assertEqual(foo_completed, foo.origin_properties)
     
     
     def testCompleteWithCommentedNotAppend(self):
@@ -782,9 +810,9 @@ class UpdateTest(unittest.TestCase):
         bar.save()
         foo.update(bar)
         self.assertEqual(supposed, foo.properties)
-        self.assertNotEqual(supposed, foo.propsorigin)
+        self.assertNotEqual(supposed, foo.origin_properties)
         foo.save()
-        self.assertEqual(supposed, foo.propsorigin)
+        self.assertEqual(supposed, foo.origin_properties)
 
 
     def testUpdateWithComments(self):
@@ -812,10 +840,10 @@ class UpdateTest(unittest.TestCase):
         self.assertEqual(props, foo.properties)
         self.assertEqual(comments_au, foo.propcomments)
         self.assertEqual(comments_bu, foo.origin_propcomments)
-        self.assertNotEqual(props, foo.propsorigin)
+        self.assertNotEqual(props, foo.origin_properties)
         self.assertNotEqual(comments_au, foo.origin_propcomments)
         foo.save()
-        self.assertEqual(props, foo.propsorigin)
+        self.assertEqual(props, foo.origin_properties)
         self.assertEqual(comments_au, foo.origin_propcomments)
 
 
@@ -839,10 +867,10 @@ class UpdateTest(unittest.TestCase):
         self.assertEqual(props, foo.properties)
         self.assertEqual(hidden_au, foo.hidden)
         self.assertEqual(hidden_bu, foo.origin_hidden)
-        self.assertNotEqual(props, foo.propsorigin)
+        self.assertNotEqual(props, foo.origin_properties)
         self.assertNotEqual(hidden_au, foo.origin_hidden)
         foo.save()
-        self.assertEqual(props, foo.propsorigin)
+        self.assertEqual(props, foo.origin_properties)
         self.assertEqual(hidden_au, foo.origin_hidden)
 
 
@@ -898,7 +926,7 @@ class ReloadTest(unittest.TestCase):
         foo0 = pyproperties.Properties(foo_path)
         foo1 = foo0.copy()
         self.assertEqual(foo0.properties, foo1.properties)
-        self.assertEqual(foo0.propsorigin, foo1.propsorigin)
+        self.assertEqual(foo0.origin_properties, foo1.origin_properties)
         self.assertEqual(foo0.propcomments, foo1.propcomments)
         self.assertEqual(foo0.origin_propcomments, foo1.origin_propcomments)
         self.assertEqual(foo0.hidden, foo1.hidden)
@@ -910,7 +938,7 @@ class ReloadTest(unittest.TestCase):
         foo1.unhide("customer.1.address")
         foo1.save()
         self.assertNotEqual(foo0.properties, foo1.properties)
-        self.assertNotEqual(foo0.propsorigin, foo1.propsorigin)
+        self.assertNotEqual(foo0.origin_properties, foo1.origin_properties)
         self.assertNotEqual(foo0.propcomments, foo1.propcomments)
         self.assertNotEqual(foo0.origin_propcomments, foo1.origin_propcomments)
         self.assertNotEqual(foo0.hidden, foo1.hidden)
@@ -918,7 +946,7 @@ class ReloadTest(unittest.TestCase):
         foo1.reload()
         foo1.save()
         self.assertEqual(foo0.properties, foo1.properties)
-        self.assertEqual(foo0.propsorigin, foo1.propsorigin)
+        self.assertEqual(foo0.origin_properties, foo1.origin_properties)
         self.assertEqual(foo0.propcomments, foo1.propcomments)
         self.assertEqual(foo0.origin_propcomments, foo1.origin_propcomments)
         self.assertEqual(foo0.hidden, foo1.hidden)
@@ -932,9 +960,9 @@ class SaveTest(unittest.TestCase):
         foo.set("prop.0", "0")
         foo.set("prop.1", "1")
         self.assertEqual(foo_saved, foo.properties)
-        self.assertNotEqual(foo_saved, foo.propsorigin)
+        self.assertNotEqual(foo_saved, foo.origin_properties)
         foo.save()
-        self.assertEqual(foo_saved, foo.propsorigin)
+        self.assertEqual(foo_saved, foo.origin_properties)
 
     def testSaveComments(self):
         comments = {"foo":["comment"]}
