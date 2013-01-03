@@ -1,5 +1,5 @@
 #### Including properties
-###### _version: ```0.2.1```_
+###### _version: ```0.2.2```_
 
 ###### [Index](index.mdown)
 ----
@@ -25,7 +25,7 @@ In ```pyproperties``` you can pass some arguments to ```__include__```.
 
     __include__=/home/some/file.properties
     
-    avogardo=6.02+e23
+    avogardo=6.02e+23
     pi=3.14
 
 
@@ -34,7 +34,7 @@ In ```pyproperties``` you can pass some arguments to ```__include__```.
 
     __include__.as.number=/home/some/file.properties
     
-    number.avogardo=6.02+e23
+    number.avogardo=6.02e+23
     number.pi=3.14
 
 
@@ -43,17 +43,17 @@ In ```pyproperties``` you can pass some arguments to ```__include__```.
 
     __include__.hidden=/home/some/file.properties
     
-    #avogardo=6.02+e23
+    #avogardo=6.02e+23
     #pi=3.14
 
 
 ----
 
 
-    __include__.commente.as.number=/home/some/file.properties
+    __include__.hidden.as.number=/home/some/file.properties
     
-    number.avogardo=6.02+e23
-    number.pi=3.14
+    #number.avogardo=6.02e+23
+    #number.pi=3.14
 
 
 ----
@@ -62,8 +62,46 @@ In ```pyproperties``` you can pass some arguments to ```__include__```.
 ##### Paths
 
 ```_include()``` can deal with absolute and relative paths.  
-__Important implementation detail:__ relative path is relatve to ___file___ _in which it will be included_ and __not__ working directory.
+__Important detail:__ relative ___path is relative to file___ _in which it will be included_ and __not__ working directory.
 
+
+----
+
+##### Methods
+
+For easier manipulation of ```__include__```'s version ```0.2.2``` introduced three methods: 
+```setinclude()```, ```rminclude()``` and ```purgeinclude()```.  
+
+
+&nbsp;
+
+##### _Methods: ```setinclude()```_
+
+```setinclude()``` is used to add ```__include__``` directives to properties. They are stored in ```includes``` instance variable. 
+Each entry is a three-element tuple containing _path_, _prefix_ and _status_ (hidden/not-hidden).  
+
+Examples:
+
+    ('/home/user/foo.properties', 'foo', False)
+    ('/home/user/foo.properties', '', True)
+
+
+&nbsp;
+
+##### _Methods: ```rminclude()```_
+
+```rminclude()``` is used to remove ```__include__``` directives from ```includes``` instance variable. 
+This method is of no use after saving the properties and reading them because then all directives are processed and 
+replaced with contents of files they are pointing to.
+
+
+
+&nbsp;
+
+##### _Methods: ```purgeinclude()```_
+
+```purgeinclude()``` is used to remove ```__include__``` directives from ```includes``` instance variable **AND** 
+all corresponding properties. 
 
 ----
 

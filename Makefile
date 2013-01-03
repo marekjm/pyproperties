@@ -13,10 +13,7 @@ manual: ./manual/*.mdown
 	pandoc -o ./manual/manual.pdf ./manual/*.mdown
 
 test:
-	python3 ./test.py
-
-vtest:
-	python3 ./test.py -v
+	python3 -m unittest --catch --failfast --verbose test.py
 
 changelog: Changelog.mdown README.mdown RELEASE.mdown
 	cp Changelog.mdown Changelog.md
