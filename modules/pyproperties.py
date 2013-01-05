@@ -2,10 +2,10 @@
 
 """Working with *.properties files."""
 
-#   TODO:
+#   TODO
 #
-#   1.      unit tests for purgeinclude(),
-#   1.1     special *.properties files for these tests needed?
+#   *1.     invent a good name for makeincldirective() (it is neither short nor handy),
+#   2.      move store functionality to Storer() class,
 
 import os
 import re
@@ -48,13 +48,117 @@ def isoct(s):
     return result
 
 
-class Storer():
+class Writer():
     """
     This class utilizes methods for storing properties.
     It is mostly a TODO now.
     """
     def __init__(self, properties):
         self.properties = properties
+        self.stored = []
+        self.includes_stored = []
+        self.lines = []
+
+    def _storeprop(self, key):
+        """
+        This method stores single property and takes responsibility of storing it's comment and 
+        possibly commenting the property itself. 
+        This method looks at the ```stored``` list and checks if the given key has already 
+        been stored to prevent storing it two times.
+        It will also check if the key is in ```origin_properties``` dict to ensure that unsaved properties 
+        would not be stored.
+        """
+        if key not in self.stored and key in self.properties.origin_properties:
+            if key in self.properties.origin_propcomments: self._storecomment(key)
+            if key not in self.properties.origin_hidden: self.lines.append("{0}={1}".format(key, self.properties.origin_properties[key]))
+            else: self.lines.append("#{0}={1}".format(key, self.properties.origin_properties[key]))
+            self.stored.append(key)
+
+    def _storeincludes(self):
+        """
+        This method stores __include__ directives added via the library. 
+        Each directive is separated by a blank line.
+        """
+        if self.lines != [] and self.lines[-1] != "": self.lines.append("")
+        for path, prefix, hidden in self.properties.origin_includes:
+            if (path, prefix, hidden) not in self.includes_stored:
+                if prefix and hidden: line = "__include__.hidden.as.{0}={1}".format(prefix, path)
+                elif prefix and not hidden: line = "__include__.as.{0}={1}".format(prefix, path)
+                elif not prefix and hidden: line = "__include__.hidden={0}".format(path)
+                else: line = "__include__={0}".format(path)
+                self.lines.append(line)
+                self.lines.append("")
+                self.includes_stored.append( (path, prefix, hidden) )
+
+    def _storesrc(self):
+        """
+        Prepares data which came with source for storing.
+        """
+        for i in range(len(self.properties.origin_source)):
+            if self.properties.origin_source[i] == "" or self.properties.origin_source[i].isspace(): self.lines.append("{0}".format(self.properties.origin_source[i]))
+            elif self.properties.origin_source[i][0] == "#": self.lines.append("{0}".format(self.properties.origin_source[i]))
+            elif self.properties.getlinekey(self.properties.origin_source[i]) != "": self._storeprop(self.properties.getlinekey(self.properties.origin_source[i]))
+
+    def _storegroups(self):
+        """
+        Generates lines for groups not found in source.
+        """
+        if self.lines != [] and self.lines[-1] != "": self.lines.append("")
+        for identifier in self.properties.getgroups():
+            previous_len = len(self.lines)
+            keys = []
+            [keys.append(key) for key in self.properties.gets(identifier)]
+            for key in sorted(keys): self._storeprop(key)
+            if len(self.lines) > previous_len: self.lines.append("")
+
+    def _storesingles(self):
+        """
+        Generates lines for single properties not found in source.
+        """
+        for key in sorted(self.properties.origin_properties.keys()): self._storeprop(key)
+
+    def _storecomment(self, key):
+        """
+        Appends comment of a property of given key to self.lines
+        """
+        [ self.lines.append("#   {0}".format(line)) for line in self.properties.origin_propcomments[key] ]
+
+    def _dump(self, path):
+        """
+        Dumps generated lines to file given in path and clears 
+        variables defined by store() and its subemthods.
+        """
+        file = open(path, "w")
+        for line in self.lines: file.write("{0}\n".format(line))
+        file.close()
+        self.lines, self.stored = ([], [])
+
+    def store(self, path="", force=False, no_dump=False, drop_source=False):
+        """
+        Writes properties to given 'path'.
+        'path' defaults to self.path
+
+        If store will encounter some unsaved changes it will
+        raise UnsavedChangesError.
+        You can explicitly silence it by passing force as True.
+
+        If 'no_dump' is passed as True lines will be generated 
+        but not written to file.
+        """
+        if self.properties.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
+        if path == "": path = self.properties.path    # this line defaults the value
+        if path == "" or path.isspace(): raise StoreError("no path specified")
+        if path and not self.properties.path: self.properties.path = path
+            
+        if not drop_source: self._storesrc()
+        self._storegroups()
+        self._storesingles()
+        self._storeincludes()
+        try:
+            while self.lines[-1] == "": self.lines = self.lines[:-1]
+        except IndexError: pass
+        finally:
+            if not no_dump: self._dump(path)
 
 
 class Properties():
@@ -323,11 +427,12 @@ class Properties():
         if os.path.isabs(path): pass
         else: path = os.path.join(os.path.split(self.path)[0], path)
         
-        self.setinclude(path=path, prefix=prefix, hidden=hidden)
-        
-        path = open(path)
-        file = path.readlines()
-        path.close()
+        fpath = open(path)
+        file = fpath.readlines()
+        fpath.close()
+
+        self.addinclude(path=path, prefix=prefix, hidden=hidden)
+        self.includes_stored.append( (path, prefix, hidden) )
         
         for i, line in enumerate(file):
             if self._linehaskey(line) and prefix: line = "{0}.{1}".format(prefix, line.lstrip())
@@ -386,6 +491,7 @@ class Properties():
         self.propcomments, self.origin_propcomments = ({}, {})
         self.hidden, self.origin_hidden = ([], [])
         self.includes, self.origin_includes = ([], [])
+        self.includes_stored = ([])
         self.unsaved = False
 
     def read(self, path="", cast=False, no_includes=False, strict=True):
@@ -583,72 +689,6 @@ class Properties():
         self.includes = [ key for key in self.origin_includes ]
         self.unsaved = False
 
-    def _storeprop(self, key):
-        """
-        This method stores single property and takes responsibility of storing it's comment and 
-        possibly commenting the property itself. 
-        This method looks at the ```stored``` list and checks if the given key has already 
-        been stored to prevent storing it two times.
-        It will also check if the key is in ```origin_properties``` dict to ensure that unsaved properties 
-        would not be stored.
-        """
-        if key not in self.stored and key in self.origin_properties:
-            if key in self.origin_propcomments: self._storecomment(key)
-            if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.origin_properties[key]))
-            else: self.lines.append("#{0}={1}".format(key, self.origin_properties[key]))
-            self.stored.append(key)
-
-    def _storeincludes(self):
-        """
-        This method stores __include__ directives added via the library.
-        """
-        for path, prefix, hidden in self.origin_includes:
-            if 1: pass
-            #   self.stored.append(key)
-
-    def _storesrc(self):
-        """
-        Prepares data which came with source for storing.
-        """
-        for i in range(len(self.origin_source)):
-            if self.origin_source[i] == "" or self.origin_source[i].isspace(): self.lines.append("{0}".format(self.origin_source[i]))
-            elif self.origin_source[i][0] == "#": self.lines.append("{0}".format(self.origin_source[i]))
-            elif self.getlinekey(self.origin_source[i]) != "": self._storeprop(self.getlinekey(self.origin_source[i]))
-
-    def _storegroups(self):
-        """
-        Generates lines for groups not found in source.
-        """
-        if self.lines != [] and self.lines[-1] != "": self.lines.append("")
-        for identifier in self.getgroups():
-            previous_len = len(self.lines)
-            keys = []
-            [keys.append(key) for key in self.gets(identifier)]
-            for key in sorted(keys): self._storeprop(key)
-            if len(self.lines) > previous_len: self.lines.append("")
-
-    def _storesingles(self):
-        """
-        Generates lines for single properties not found in source.
-        """
-        for key in sorted(self.origin_properties.keys()): self._storeprop(key)
-
-    def _storecomment(self, key):
-        """
-        Appends comment of a property of given key to self.lines
-        """
-        [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key] ]
-
-    def _dump(self, path):
-        """
-        Dumps generated lines to file given in path and clears 
-        variables defined by store() and its subemthods.
-        """
-        file = open(path, "w")
-        for line in self.lines: file.write("{0}\n".format(line))
-        file.close()
-        self.lines, self.stored = ([], [])
-
     def store(self, path="", force=False, no_dump=False, drop_source=False):
         """
         Writes properties to given 'path'.
@@ -661,22 +701,10 @@ class Properties():
         If 'no_dump' is passed as True lines will be generated 
         but not written to file.
         """
-        if self.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
-        if path == "": path = self.path    # this line defaults the value
-        if path == "" or path.isspace(): raise StoreError("no path specified")
-        if path and not self.path: self.path = path
-        self.lines, self.stored = ([], [])
-            
-        if not drop_source: self._storesrc()
-        self._storegroups()
-        self._storesingles()
-        self._storeincludes()
-        try:
-            while self.lines[-1] == "": self.lines = self.lines[:-1]
-        except IndexError: pass
-        finally:
-            if not no_dump: self._dump(path)
-
+        writer = Writer(self)
+        writer.store(path, force, no_dump, drop_source)
+        self.lines, self.stored, self.includes_stored = (writer.lines, writer.stored, writer.includes_stored)
+        
     def get(self, key, parse=False, cast=False):
         """
         Returns value of given key. 
@@ -977,33 +1005,44 @@ class Properties():
             if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
         for key in to_unhide: self.unhide(key)
     
-    def setinclude(self, path, prefix="", hidden=False):
+    def addinclude(self, path, prefix="", hidden=False):
         """
         This method places __include__ directive in the properties.
         """
         if not os.path.isfile(path): warnings.warn("file for __include__ not found: '{0}'".format(path), IncludeWarning)
-        if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty file".format(path))
+        if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path".format(path))
+        
         if (path, prefix, hidden) not in self.includes: self.includes.append( (path, prefix, hidden) )
 
     def rminclude(self, path, prefix="", hidden=False):
         """
-        Removes include directive from a list of directives added via library and not yet stored. 
-        Does not work with already read properties because they do not have any __include__ but simply properties.
+        Removes include directive from a list of directives. 
         """
         for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
             if path == ipath and prefix == iprefix and hidden == ihidden: 
+                if self.includes[i] in self.includes_stored: self.includes_stored.remove( self.includes[i] )
                 self.includes.remove( self.includes[i] )
                 break
 
     def purgeinclude(self, path, prefix="", hidden=False):
         """
-        Removes include directive from a list of directives added via library and all properties corresponding to it.
+        Removes include directive from a list of directives and all properties corresponding to it.
         """
-        warnings.warn("it is experimental feature")
+        purged = False
         for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
             if path == ipath and prefix == iprefix and hidden == ihidden:
-                self.includes.remove( self.includes[i] )
+                self.rminclude( path, prefix, hidden )
                 for key in Properties(ipath).getnames():
                     if prefix: key = "{0}.{1}".format(prefix, key)
                     self.remove(key)
+                purged = True
                 break
+        if not purged: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden))
+
+    def stripinclude(self, path, prefix="", hidden=False):
+        """
+        This method removes all properties included from file of given path but 
+        leaves include tuple (it will be stored).
+        """
+        self.purgeinclude(path, prefix, hidden)
+        self.addinclude(path, prefix, hidden)

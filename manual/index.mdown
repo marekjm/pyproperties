@@ -1,5 +1,5 @@
 #### Manual for ```pyproperties```
-###### _version: ```0.2.1```_
+###### _version: ```0.2.2```_
 
 
 ----
