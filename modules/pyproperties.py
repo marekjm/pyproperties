@@ -13,7 +13,7 @@ wildcart_re = "[a-z0-9_.-]*"
 guess_int_re = "^-?[0-9]+$"
 guess_hex_re = "^-?0x[0-9a-fA-F]+$"
 guess_oct_re = "^-?0o[0-7]+$"
-guess_float_re = "^-?[0-9]*\.[0-9]+$"
+guess_float_re = "^-?[0-9]*\.[0-9]+(e\+)?[0-9]*$"
 
 class LoadError(IOError): pass
 class StoreError(IOError): pass
@@ -26,7 +26,6 @@ def ishex(s):
     """
     Helper function.
     Returns True if given string conatins only hexadecimal numbers.
-    It detects hex of form 'beef01' and '0xbEEf01'
     """
     result = False
     if re.match(re.compile(guess_hex_re), s): result = True
@@ -713,14 +712,21 @@ class Properties():
         if cast and type(value) == str: value = self._convert(value)
         return value
 
-    def gets(self, identifier, parse=False, cast=False):
+    def gets(self, identifier, parse=False, cast=False, no_expand=False):
         """
         Returns dict of properties which names matched pattern given as identifier.
         If parsed is set to True values will be parsed before returning.
         """
         if type(identifier) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
-        identifier = self._expandidentifier(identifier)
-        return self.getre(identifier)
+        if not no_expand: identifier = self._expandidentifier(identifier)
+        
+        matched = {}
+        for key, value in self.properties.items():
+            if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
+            elif re.match(identifier, key) and not parse: matched[key] = value
+        if cast:
+            for key, value in matched.items(): matched[key] = self._convert(value)
+        return matched
 
     def getre(self, identifier, parse=False, cast=False):
         """
@@ -730,14 +736,13 @@ class Properties():
         """
         matched = {}
         if type(identifier) == str: identifier = re.compile(identifier)
-        elif str(type(identifier)) == "<class '_sre.SRE_Pattern'>":  warnings.warn("passing compiled regular expressions patterns is deprecated and support for it will be removed in 0.2.2")
         else: raise TypeError("identifer must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
 
         for key, value in self.properties.items():
             if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
             elif re.match(identifier, key) and not parse: matched[key] = value
         if cast:
-            for key, value in matched.items(): matched[key] = self.typeguess(value)(value)
+            for key, value in matched.items(): matched[key] = self._convert(value)
         return matched
 
     def set(self, key, value=""):
@@ -826,7 +831,7 @@ class Properties():
             if re.match(identifier, key): popped[key] = value
         for key in popped.keys(): self.properties.pop(key)
         if cast:
-            for key, value in popped.items(): popped[key] = self.typeguess(value)(value)
+            for key, value in popped.items(): popped[key] = self._convert(value)
         self.unsaved = True
         return popped
 

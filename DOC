@@ -429,7 +429,7 @@ CLASSES
      |      If parsed is set to True values will be parsed before returning. 
      |      If cast is passed as True pyproperties will try to cast types of properties.
      |  
-     |  gets(self, identifier, parse=False, cast=False)
+     |  gets(self, identifier, parse=False, cast=False, no_expand=False)
      |      Returns dict of properties which names matched pattern given as identifier.
      |      If parsed is set to True values will be parsed before returning.
      |  
@@ -772,7 +772,6 @@ FUNCTIONS
     ishex(s)
         Helper function.
         Returns True if given string conatins only hexadecimal numbers.
-        It detects hex of form 'beef01' and '0xbEEf01'
     
     isoct(s)
         Helper function.
@@ -780,7 +779,7 @@ FUNCTIONS
 
 DATA
     __vertuple__ = (0, 2, 2)
-    guess_float_re = r'^-?[0-9]*\.[0-9]+$'
+    guess_float_re = r'^-?[0-9]*\.[0-9]+(e\+)?[0-9]*$'
     guess_hex_re = '^-?0x[0-9a-fA-F]+$'
     guess_int_re = '^-?[0-9]+$'
     guess_oct_re = '^-?0o[0-7]+$'

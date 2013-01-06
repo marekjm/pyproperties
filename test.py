@@ -216,6 +216,15 @@ class ParseTest(unittest.TestCase):
 
 
 class ConvertTest(unittest.TestCase):
+    def testFloatConversion(self):
+        examples = [("3.14", 3.14),
+                    ("-1.43", -1.43),
+                    ("6.023e+23", 6.023e+23),
+                    ]
+        foo = pyproperties.Properties()
+        for s, n in examples:
+            self.assertEqual(foo._convert(s), n)
+
     def testHexadecimalConversion(self):
         examples = [("0x0", 0),
                     ("-0x1", -1),
@@ -606,6 +615,21 @@ class GetsTest(unittest.TestCase):
         foo = pyproperties.Properties(foo_path)
         self.assertEqual({"customer.0.name":"John the Average.", "customer.1.name":"Agent Smith"}, foo.gets("customer.*.name"))
 
+    def testGetsParsed(self):
+        foo = pyproperties.Properties()
+        foo.set("hello", "Hello")
+        foo.set("world", "World")
+        foo.set("greeting.0", "$(hello) $(world)!")
+        foo.set("greeting.1", "$(hello) cruel $(world)!")
+        self.assertEqual({"greeting.0":"Hello World!", "greeting.1":"Hello cruel World!"}, foo.gets("greeting.*", parse=True))
+
+    def testGetsCasted(self):
+        foo = pyproperties.Properties()
+        foo.set("stuff.0", "6.02e+23")
+        foo.set("stuff.1", "5")
+        foo.set("stuff.2", "None")
+        foo.set("stuff.3", "True")
+        self.assertEqual({"stuff.0":6.02e+23, "stuff.1":5, "stuff.2":None, "stuff.3":True}, foo.gets("stuff.*", cast=True))
 
     def testGetsException(self):
         foo = pyproperties.Properties(foo_path)
@@ -619,7 +643,7 @@ class GetreTest(unittest.TestCase):
                     "customer.0.phone_number.1": "+48 678992005",
                     "customer.1.phone_number.0": "-1 000-000-000",
                 }
-        self.assertEqual(props, foo.getre("^customer\.[0-9]+\.phone_number\.[0-9]+$"))
+        self.assertEqual(props, foo.gets("^customer\.[0-9]+\.phone_number\.[0-9]+$", no_expand=True))
 
 
     def testGetreException(self):
@@ -677,6 +701,49 @@ class RemoverTest(unittest.TestCase):
         foo.set("foo.3")
         foo.set("bar.0")
         foo.removes("foo.*")
+        self.assertEqual(["bar.0"], foo.getnames())
+
+
+class PopperTest(unittest.TestCase):
+    def testPop(self):
+        foo = pyproperties.Properties()
+        foo.set("foo.0")
+        foo.set("foo.1")
+        foo.set("foo.2")
+        foo.set("foo.3")
+        self.assertEqual("", foo.pop("foo.0"))
+        self.assertEqual(["foo.1", "foo.2", "foo.3"], foo.getnames())
+
+    def testPops(self):
+        foo = pyproperties.Properties()
+        foo.set("foo.0")
+        foo.set("foo.1")
+        foo.set("foo.2")
+        foo.set("foo.3")
+        foo.set("bar.0")
+        d = {
+            "foo.0":"",
+            "foo.1":"",
+            "foo.2":"",
+            "foo.3":"",
+            }
+        self.assertEqual(d, foo.pops("foo.*"))
+        self.assertEqual(["bar.0"], foo.getnames())
+
+    def testPopsCasted(self):
+        foo = pyproperties.Properties()
+        foo.set("foo.0", "0")
+        foo.set("foo.1", "3.14")
+        foo.set("foo.2", "None")
+        foo.set("foo.3", "True")
+        foo.set("bar.0")
+        d = {
+            "foo.0":0,
+            "foo.1":3.14,
+            "foo.2":None,
+            "foo.3":True,
+            }
+        self.assertEqual(d, foo.pops("foo.*", cast=True))
         self.assertEqual(["bar.0"], foo.getnames())
 
 

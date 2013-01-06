@@ -1,6 +1,7 @@
 #### Manual for `pyproperties`
 ###### _version: `0.2.2`_
 
+###### [Release file](./../RELEASE.mdown), [Changelog](./../Changelog.mdown)
 
 ----
 
