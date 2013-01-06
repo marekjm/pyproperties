@@ -6,10 +6,11 @@
 
 #### Version 0.2.3 ():
 
-* __upd__:  
+* __upd__:  `pops()` owns no code by itslef - it uses `gets()` and `removes()` as a backend,
+* __upd__:  `pops()` and `gets()` no longer return dictionaries - they return list of tuples,
 
 
-* __fix__:  
+* __fix__:  `guess_float_re` now matches also floats of form `6.02e-23` and `6.02e23`
 
 
 * __new__:  

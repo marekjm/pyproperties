@@ -13,7 +13,7 @@ wildcart_re = "[a-z0-9_.-]*"
 guess_int_re = "^-?[0-9]+$"
 guess_hex_re = "^-?0x[0-9a-fA-F]+$"
 guess_oct_re = "^-?0o[0-7]+$"
-guess_float_re = "^-?[0-9]*\.[0-9]+(e\+)?[0-9]*$"
+guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$"
 
 class LoadError(IOError): pass
 class StoreError(IOError): pass

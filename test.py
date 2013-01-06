@@ -247,6 +247,8 @@ class ConvertTest(unittest.TestCase):
         examples = [("3.14", 3.14),
                     ("-1.43", -1.43),
                     ("6.023e+23", 6.023e+23),
+                    ("6.023e-23", 6.023e-23),
+                    ("6.023e23", 6.023e+23),
                     ]
         foo = pyproperties.Properties()
         for s, n in examples:
@@ -743,13 +745,13 @@ class PopperTest(unittest.TestCase):
         foo.set("foo.2")
         foo.set("foo.3")
         foo.set("bar.0")
-        d = {
-            "foo.0":"",
-            "foo.1":"",
-            "foo.2":"",
-            "foo.3":"",
-            }
-        self.assertEqual(d, foo.pops("foo.*"))
+        props = [
+                ("foo.0", ""),
+                ("foo.1", ""),
+                ("foo.2", ""),
+                ("foo.3", ""),
+                ]
+        self.assertEqual(props, sorted(foo.pops("foo.*")))
         self.assertEqual(["bar.0"], foo.getnames())
 
     def testPopsCasted(self):
@@ -759,13 +761,13 @@ class PopperTest(unittest.TestCase):
         foo.set("foo.2", "None")
         foo.set("foo.3", "True")
         foo.set("bar.0")
-        d = {
-            "foo.0":0,
-            "foo.1":3.14,
-            "foo.2":None,
-            "foo.3":True,
-            }
-        self.assertEqual(d, foo.pops("foo.*", cast=True))
+        props = [
+                ("foo.0", 0),
+                ("foo.1", 3.14),
+                ("foo.2", None),
+                ("foo.3", True),
+                ]
+        self.assertEqual(props, sorted(foo.pops("foo.*", cast=True)))
         self.assertEqual(["bar.0"], foo.getnames())
 
 
