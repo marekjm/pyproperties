@@ -6,11 +6,153 @@ NAME
 CLASSES
     builtins.BaseException(builtins.object)
         UnsavedChangesError
+    builtins.Exception(builtins.BaseException)
+        IncludeError
     builtins.OSError(builtins.Exception)
         LoadError
         StoreError
+    builtins.UserWarning(builtins.Warning)
+        IncludeWarning
+        MultipleDeclarationWarning
     builtins.object
         Properties
+        Writer
+    
+    class IncludeError(builtins.Exception)
+     |  Method resolution order:
+     |      IncludeError
+     |      builtins.Exception
+     |      builtins.BaseException
+     |      builtins.object
+     |  
+     |  Data descriptors defined here:
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from builtins.Exception:
+     |  
+     |  __init__(...)
+     |      x.__init__(...) initializes x; see help(type(x)) for signature
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from builtins.Exception:
+     |  
+     |  __new__ = <built-in method __new__ of type object>
+     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from builtins.BaseException:
+     |  
+     |  __delattr__(...)
+     |      x.__delattr__('name') <==> del x.name
+     |  
+     |  __getattribute__(...)
+     |      x.__getattribute__('name') <==> x.name
+     |  
+     |  __reduce__(...)
+     |  
+     |  __repr__(...)
+     |      x.__repr__() <==> repr(x)
+     |  
+     |  __setattr__(...)
+     |      x.__setattr__('name', value) <==> x.name = value
+     |  
+     |  __setstate__(...)
+     |  
+     |  __str__(...)
+     |      x.__str__() <==> str(x)
+     |  
+     |  with_traceback(...)
+     |      Exception.with_traceback(tb) --
+     |      set self.__traceback__ to tb and return self.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from builtins.BaseException:
+     |  
+     |  __cause__
+     |      exception cause
+     |  
+     |  __context__
+     |      exception context
+     |  
+     |  __dict__
+     |  
+     |  __suppress_context__
+     |  
+     |  __traceback__
+     |  
+     |  args
+    
+    class IncludeWarning(builtins.UserWarning)
+     |  Method resolution order:
+     |      IncludeWarning
+     |      builtins.UserWarning
+     |      builtins.Warning
+     |      builtins.Exception
+     |      builtins.BaseException
+     |      builtins.object
+     |  
+     |  Data descriptors defined here:
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from builtins.UserWarning:
+     |  
+     |  __init__(...)
+     |      x.__init__(...) initializes x; see help(type(x)) for signature
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from builtins.UserWarning:
+     |  
+     |  __new__ = <built-in method __new__ of type object>
+     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from builtins.BaseException:
+     |  
+     |  __delattr__(...)
+     |      x.__delattr__('name') <==> del x.name
+     |  
+     |  __getattribute__(...)
+     |      x.__getattribute__('name') <==> x.name
+     |  
+     |  __reduce__(...)
+     |  
+     |  __repr__(...)
+     |      x.__repr__() <==> repr(x)
+     |  
+     |  __setattr__(...)
+     |      x.__setattr__('name', value) <==> x.name = value
+     |  
+     |  __setstate__(...)
+     |  
+     |  __str__(...)
+     |      x.__str__() <==> str(x)
+     |  
+     |  with_traceback(...)
+     |      Exception.with_traceback(tb) --
+     |      set self.__traceback__ to tb and return self.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from builtins.BaseException:
+     |  
+     |  __cause__
+     |      exception cause
+     |  
+     |  __context__
+     |      exception context
+     |  
+     |  __dict__
+     |  
+     |  __suppress_context__
+     |  
+     |  __traceback__
+     |  
+     |  args
     
     class LoadError(builtins.OSError)
      |  Method resolution order:
@@ -94,6 +236,75 @@ CLASSES
      |  
      |  args
     
+    class MultipleDeclarationWarning(builtins.UserWarning)
+     |  Method resolution order:
+     |      MultipleDeclarationWarning
+     |      builtins.UserWarning
+     |      builtins.Warning
+     |      builtins.Exception
+     |      builtins.BaseException
+     |      builtins.object
+     |  
+     |  Data descriptors defined here:
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from builtins.UserWarning:
+     |  
+     |  __init__(...)
+     |      x.__init__(...) initializes x; see help(type(x)) for signature
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from builtins.UserWarning:
+     |  
+     |  __new__ = <built-in method __new__ of type object>
+     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from builtins.BaseException:
+     |  
+     |  __delattr__(...)
+     |      x.__delattr__('name') <==> del x.name
+     |  
+     |  __getattribute__(...)
+     |      x.__getattribute__('name') <==> x.name
+     |  
+     |  __reduce__(...)
+     |  
+     |  __repr__(...)
+     |      x.__repr__() <==> repr(x)
+     |  
+     |  __setattr__(...)
+     |      x.__setattr__('name', value) <==> x.name = value
+     |  
+     |  __setstate__(...)
+     |  
+     |  __str__(...)
+     |      x.__str__() <==> str(x)
+     |  
+     |  with_traceback(...)
+     |      Exception.with_traceback(tb) --
+     |      set self.__traceback__ to tb and return self.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from builtins.BaseException:
+     |  
+     |  __cause__
+     |      exception cause
+     |  
+     |  __context__
+     |      exception context
+     |  
+     |  __dict__
+     |  
+     |  __suppress_context__
+     |  
+     |  __traceback__
+     |  
+     |  args
+    
     class Properties(builtins.object)
      |  This class provides methods for working with properties files.
      |  
@@ -109,35 +320,34 @@ CLASSES
      |      To create a blank instance with path specified you can run:
      |          pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
      |  
-     |  addcomment(self, key, comment)
-     |      Attaches comment to property. 
-     |      Comment can be passed as a string or list of strings.
-     |      
-     |          foo.addcomment("foo", ["first", "part"])
-     |          foo.addcomment("foo", "first\npart")
-     |      
-     |      Multiline comments are supported - either by passing a list of lines or
-     |      by passing a string containing newline characters '\n'.
-     |      
-     |      KeyError is raised if key is not available (not found or is hidden).
-     |  
-     |  addcomments(self, identifier, *comments)
-     |              Attaches comment to properties which will match the identifier. 
-     |              Comment can be passed as a string or a list. 
-     |              Multiline comments are supported - either by passing a list of lines or
-     |              by passing a string containing newline characters '\n'.
-     |      
-     |              comments('foo.*.bar', 'first comment', 'second
-     |      comment', ['third', 'comment'])
+     |  addinclude(self, path, prefix='', hidden=False)
+     |      This method places __include__ directive in the properties.
      |  
      |  blank(self, path='', strict=True)
      |      Creates blank properties object. 
-     |      Can be used to erase contents of your ```pyproperties``` object.
+     |      Can be used to erase contents of your `pyproperties` object.
+     |  
+     |  comment(self, key, comment)
+     |      Attaches comment to property. 
+     |      Comment can be passed as a string.
+     |      
+     |          foo.comment("foo", "first\npart")
+     |      
+     |      Multiline comments are supported by passing a string containing newline characters '\n'.
+     |      
+     |      KeyError is raised if key is not available (not found or is hidden).
+     |  
+     |  comments(self, identifier, *comments)
+     |      Attaches comment to properties which will match the identifier. 
+     |      Comment can be passed as a string. 
+     |      Multiline comments are supported by passing a string containing newline characters '\n'.
+     |      
+     |      comments('foo.*.bar', 'first comment', 'multi\nline')
      |  
      |  complete(self, props, prefix='')
      |      This method completes base dictionary with properties of the given one. 
      |      If a property does not exist in base it will be added. 
-     |      If a property exist in base it's value, comments and status (un/commented) 
+     |      If a property exist in base it's value, comments and status (hidden/not-hidden) 
      |      will not be overwritten. 
      |      
      |      If a prefix is specified - it will be added before each key.
@@ -163,7 +373,7 @@ CLASSES
      |      
      |      Returns comment of given key. 
      |      Returns empty string if the property has no comment. 
-     |      Returns empty list if the property has no comment and ```lines``` was passed as True. 
+     |      Returns empty list if the property has no comment and `lines` was passed as True. 
      |      KeyError is raised if key is not available (not found or is hidden).
      |  
      |  getgroups(self)
@@ -191,7 +401,7 @@ CLASSES
      |  getkeysof(self, value, no_hidden=True)
      |      Returns list of keys containing given value. 
      |      Returns empty list if no key was matched. 
-     |      If ```no_hidden``` was passed as ```False``` includes also 
+     |      If `no_hidden` was passed as `False` includes also 
      |      commented properties.
      |  
      |  getlinekey(self, line)
@@ -211,7 +421,7 @@ CLASSES
      |  
      |  getnames(self, hidden=False)
      |      Returns sorted list of the non-commented properties names. 
-     |      If ```commented``` arg was passed as ```True``` returns sorted list 
+     |      If `commented` arg was passed as `True` returns sorted list 
      |      of commented properties names.
      |  
      |  getre(self, identifier, parse=False, cast=False)
@@ -235,7 +445,7 @@ CLASSES
      |  
      |  join(self, path, prefix=' ')
      |      Loads external properties and completes base. 
-     |      You can pass ```prefix``` as empty string to add properties without prefix. 
+     |      You can pass `prefix` as empty string to add properties without prefix. 
      |      Prefix defaluts to the name of joined file. 
      |      Source of joined properties is appended to base source.
      |  
@@ -255,6 +465,9 @@ CLASSES
      |  pops(self, identifier, cast=False)
      |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them.
      |  
+     |  purgeinclude(self, path, prefix='', hidden=False)
+     |      Removes include directive from a list of directives and all properties corresponding to it.
+     |  
      |  read(self, path='', cast=False, no_includes=False, strict=True)
      |      Reads properties file and processes it to be available in Python 3 program.
      |      You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
@@ -262,7 +475,7 @@ CLASSES
      |  
      |  refresh(self, overwrite=True)
      |      Refreshes from file. Missing values are added.
-     |      If ```overwrite``` is set to True existing values are overwritten - ```update()``` is used.
+     |      If `overwrite` is set to True existing values are overwritten - `update()` is used.
      |      Values which are not found in file are not deleted.
      |  
      |  reload(self)
@@ -284,12 +497,15 @@ CLASSES
      |      Removes comment of property of given key. 
      |      Does not raise KeyError when property is not found.
      |  
+     |  rminclude(self, path, prefix='', hidden=False)
+     |      Removes include directive from a list of directives.
+     |  
      |  save(self)
      |      Saves changes made in object's variables.
      |  
      |  set(self, key, value='')
      |      Sets key to value. 
-     |      Raises TypeError if key is not if ```str``` type.
+     |      Raises TypeError if key is not if `str` type.
      |  
      |  sets(self, identifier, *values, **kwargs)
      |      Sets every property which name matched pattern given as identifier to value. 
@@ -315,13 +531,12 @@ CLASSES
      |      If 'no_dump' is passed as True lines will be generated 
      |      but not written to file.
      |  
-     |  typeguess(self, prop)
-     |      Tries to guess the type of property (initially all properties are stored as strings). 
-     |      It can guess three types: int, float and str. 
-     |      It returns guessed ```type``` of property.
+     |  stripinclude(self, path, prefix='', hidden=False)
+     |      This method removes all properties included from file of given path but 
+     |      leaves include tuple (it will be stored).
      |  
      |  unhide(self, key)
-     |      Remove property from ```hidden``` list to make it available for modifing. 
+     |      Remove property from `hidden` list to make it available for modifing. 
      |      Does not raise any errors when key is not found.
      |  
      |  unhides(self, identifier)
@@ -496,6 +711,62 @@ CLASSES
      |  
      |  __new__ = <built-in method __new__ of type object>
      |      T.__new__(S, ...) -> a new object with type S, a subtype of T
+    
+    class Writer(builtins.object)
+     |  This class utilizes methods for storing properties. 
+     |  When creating new instance of Writer() pass a Properties() object to it.
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, properties)
+     |  
+     |  dump(self, path)
+     |      Dumps generated lines to file given in path and clears 
+     |      variables defined by store() and its subemthods.
+     |  
+     |  store(self, path='', force=False, no_dump=False, drop_source=False)
+     |      Writes properties to given 'path'.
+     |      'path' defaults to path set if given properties.
+     |      
+     |      If store will encounter some unsaved changes it will
+     |      raise UnsavedChangesError.
+     |      You can explicitly silence it by passing force as True.
+     |      
+     |      If 'no_dump' is passed as True lines will be generated 
+     |      but not written to file.
+     |  
+     |  storecomment(self, key)
+     |      Appends comment of a property of given key to self.lines
+     |  
+     |  storegroups(self)
+     |      Generates lines for groups not found in source.
+     |  
+     |  storeincludes(self)
+     |      This method stores __include__ directives added via the library. 
+     |      Each directive is separated by a blank line.
+     |  
+     |  storeprop(self, key)
+     |      This method stores single property and takes responsibility of storing it's comment and 
+     |      possibly hiding the property itself. 
+     |      This method looks at the `stored` list and checks if the given key has already 
+     |      been stored to prevent storing it two times.
+     |      It will also check if the key is in `origin_properties` dict to ensure that unsaved properties 
+     |      would not get stored.
+     |  
+     |  storesingles(self)
+     |      Generates lines for single properties not found in source.
+     |  
+     |  storesrc(self)
+     |      Prepares data which came with source for storing.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
 
 FUNCTIONS
     ishex(s)
@@ -508,7 +779,7 @@ FUNCTIONS
         Returns True if given string conatins only octal numbers.
 
 DATA
-    __vertuple__ = (0, 2, 1)
+    __vertuple__ = (0, 2, 2)
     guess_float_re = r'^-?[0-9]*\.[0-9]+$'
     guess_hex_re = '^-?0x[0-9a-fA-F]+$'
     guess_int_re = '^-?[0-9]+$'
@@ -516,7 +787,7 @@ DATA
     wildcart_re = '[a-z0-9_.-]*'
 
 VERSION
-    0.2.1
+    0.2.2
 
 FILE
     /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py

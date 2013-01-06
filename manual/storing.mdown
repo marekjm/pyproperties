@@ -1,43 +1,88 @@
 #### Storing properties
-###### _version: ```0.2.1```_
+###### _version: `0.2.2`_
 
 ###### [Index](index.mdown)
 ----
 
 
-Method ```store()``` is responsible for storing your properties to a properly formatted file. 
+Method `store()` is responsible for storing your properties to a properly formatted file. 
 Although it has its own mechanisms for formatting contents of file (grouping, commenting etc.) its primary source 
-of information about the structure is the original source of loaded properties. 
+of information about the structure of the file being created is the original source of loaded properties. 
 
 If a file had been loaded and stored with no changes, structure of new file will be mostly the same as of the original file. 
-Blank lines and comments will be preserved but any indentation will be discarded.
+Blank lines and comments will be preserved but:
+
+*   indentation will be discarded,
+*   comments will be written in a standardised way.
+
+
+Sometimes you may run into errors -- the file loaded, stored and then loaded once again can differ in their properties. 
+This is caused by the way `pyproperties` handles hidden properties (or even by such a concept). 
+
+Either comments or hidden properties are preceded by a _hash_ sign (`#`) **but** hidden properties go instantly after it 
+(without any whitespace) and comments require at least one whitespace to be treated properly. 
 
 
 ----
 
-##### ```UnsavedChangesError```
+#### Store methods
 
-If you will try to store properties with ```unsaved``` status ```True``` ```pyproperties``` will complain with ```UnsavedChangesError```. 
+_Version `0.2.2` introduced `Writer()` class. Now there are two ways of storing properties._  
+
+First is explicit - it requires you to create an instance of `Writer()` and then calling its `store()` method. 
+`Writer()` class takes only one thing during creation - a properties for which we create a writer.
+
+        foo = pyproperties.Properties('/home/user/foo.properties')
+        # do some stuff...
+        
+        writer = pyproperties.Writer(foo)
+        writer.store(drop_source=True)
+
+_This method is used in unit tests for `pyproperties`._
+
+&nbsp;
+
+Second method is implicit as it will create an instance of `Writer()` and call `store()` of it under the hood. 
+Every argument you will have passed to `store()` method of your properties will get silently passed to the `store()` method of the 
+`Writer()` instance.
+
+        foo = pyproperties.Properties('/home/user/foo.properties')
+        # do some stuff...
+        
+        foo.store(drop_source=True)
+
+&nbsp;
+
+Both ways will result in exactly the same file so it is up to programmer which way to choose.  
+
+
+----
+
+##### _`UnsavedChangesError`_
+
+If you will try to store properties with `unsaved` status `True` `pyproperties` will complain with `UnsavedChangesError`. 
 It indicates that some changes were made but has been not yet saved.  
-To prevent this you can pass ```force``` argument as ```True``` to the 
-```store()``` method and it will silense the error. You need to remeber that in this case any unsaved changes will not get stored.
+To prevent this you can pass `force` argument as `True` to the 
+`store()` method and it will silense the error. You need to remeber that in this case any unsaved changes will not get stored.
 
 
 ----
 
-##### Path
+##### _Path_
 
-By default ```pyproperties``` will store new properties to the file it read from. But you can pass a ```path``` argument to ```store()``` to 
+By default `pyproperties` will store new properties to the file it read from but you can pass a `path` argument to `store()` to 
 override this.  
 
 
 ----
 
-##### Source
+##### _Source_
 
-If you want ```pyproperties``` to format the file exlusively by itself and not look on the originaly source you can pass 
-```drop_source``` argument as ```True```.
+If you want `pyproperties` to format the file exlusively by itself and not look on the original source you can pass 
+`drop_source` argument as `True`.
 
+Second argument related to source is `no_dump` (also of `bool` type). If you want to examine the lines genrated by `Writer()` you will have to pass 
+`no_dump` as `True` - it will tell the writer to not write the file and leave the lines untouched (they are getting cleared after the file has been written).
 
 ----
 

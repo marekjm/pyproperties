@@ -1,5 +1,5 @@
-#### Regular expressions used in ```pyproperties``` 
-###### _version: ```0.2.1```_
+#### Regular expressions used in `pyproperties` 
+###### _version: `0.2.2`_
 
 ###### [Index](index.mdown)
 ----
@@ -8,32 +8,32 @@
 Regular expressions are used in pyproperties in 
 methods working with multiple properties:
 
-*   ```gets()```
-*   ```sets()```
-*   ```removes()```
-*   ```pops()```
-*   ```_getidentifier()```
+*   `gets()`
+*   `sets()`
+*   `removes()`
+*   `pops()`
+*   `_getidentifier()`
 
 with groups of properties:
 
-*   ```getgroups()```
-*   ```getsingles()```
+*   `getgroups()`
+*   `getsingles()`
 
 with type guessing:
 
-*   ```typeguess()```
+*   `typeguess()`
 
 with type conversion:
 
-*   ```_convert()```,
-*   ```ishex()```,
-*   ```isoct()```,
+*   `_convert()`,
+*   `ishex()`,
+*   `isoct()`,
 
 
 ----
 
 
-The first four (```gets()```, ```sets()```, ```removes()``` and ```pops()```) are based on the same 
+The first four (`gets()`, `sets()`, `removes()` and `pops()`) are based on the same 
 pattern. When you pass identifier of the property as a string it's being 
 transformed in such way:
 
@@ -41,7 +41,7 @@ transformed in such way:
         'customer.*.name'   ->  '^customer\.[a-z0-9_.]*\.name$'
 
 
-Every ```*``` character in identifier is replaced by ```wildcart_re``` string and every ```.``` in identifier 
+Every `*` character in identifier is replaced by `wildcart_re` string and every `.` in identifier 
 is escaped.
 
         *   ->  [a-z0-9_.-]*
@@ -51,7 +51,7 @@ is escaped.
 ----
 
 
-There are five regular expressions used in ```pyproperties```:
+There are five regular expressions used in `pyproperties`:
 
         wildcart_re = "[a-z0-9_.-]*"
         guess_int_re = "^[-]?[0-9]+$"

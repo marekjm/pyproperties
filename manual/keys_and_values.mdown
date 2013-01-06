@@ -1,5 +1,5 @@
 #### Keys and values
-###### _version: ```0.2.1```_
+###### _version: `0.2.2`_
 
 ###### [Index](index.mdown)
 ----
@@ -20,8 +20,8 @@ Whitespace preceding value is stripped but the trailing is preserved.
 
 ##### Whitespace in keys
 
-```pyproperties``` is very strict about whitespace in keys. If it will find one it will issue a warning and return ```None``` instead of the key with space. 
-It is possible to change the mode to _non-strict_ by setting global ```strict``` variable to ```False``` using ```setstrict(False)```. 
+`pyproperties` is very strict about whitespace in keys. If it will find one it will issue a warning and return `None` instead of the key with space. 
+It is possible to change the mode to _non-strict_ by setting global `strict` variable to `False` using `setstrict(False)`. 
 
 
 ----

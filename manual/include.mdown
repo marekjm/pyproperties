@@ -1,21 +1,21 @@
 #### Including properties
-###### _version: ```0.2.2```_
+###### _version: `0.2.2`_
 
 ###### [Index](index.mdown)
 ----
 
-```__include__``` directive works similar way to the ```#include``` found in C/C++. 
+`__include__` directive works similar way to the `#include` found in C/C++. 
 
 The idea to implement it came from [this](http://commons.apache.org/configuration/howto_properties.html) site on [apache.org](http://apache.org) but 
-it's functionality is expanded a little bit and the name of _special key_ is changed from ```include``` to ```__include__```.
+it's functionality is expanded a little bit and the name of _special key_ is changed from `include` to `__include__`.
 
 
-In ```pyproperties``` you can pass some arguments to ```__include__```.  
+In `pyproperties` you can pass some arguments to `__include__`.  
 
 
-1.  ```as``` which will add prefix to all included properties,
-2.  ```hidden``` which will comment all included properties,
-3.  ```hidden.as``` which will comment all included properties _and_ add prefix to them,
+1.  `as` which will add prefix to all included properties,
+2.  `hidden` which will comment all included properties,
+3.  `hidden.as` which will comment all included properties _and_ add prefix to them,
 
 
 ----
@@ -61,7 +61,7 @@ In ```pyproperties``` you can pass some arguments to ```__include__```.
 
 ##### Paths
 
-```_include()``` can deal with absolute and relative paths.  
+`_include()` can deal with absolute and relative paths.  
 __Important detail:__ relative ___path is relative to file___ _in which it will be included_ and __not__ working directory.
 
 
@@ -69,15 +69,15 @@ __Important detail:__ relative ___path is relative to file___ _in which it will 
 
 ##### Methods
 
-For easier manipulation of ```__include__```'s version ```0.2.2``` introduced three methods: 
-```addinclude()```, ```rminclude()``` and ```purgeinclude()```.  
+For easier manipulation of `__include__`'s version `0.2.2` introduced three methods: 
+`addinclude()`, `rminclude()` and `purgeinclude()`.  
 
 
 &nbsp;
 
-##### _Methods: ```addinclude()```_
+##### _Methods: `addinclude()`_
 
-```addinclude()``` is used to add ```__include__``` directives to properties. They are stored in ```includes``` instance variable. 
+`addinclude()` is used to add `__include__` directives to properties. They are stored in `includes` instance variable. 
 Each entry is a three-element tuple containing _path_, _prefix_ and _status_ (hidden/not-hidden).  
 
 Examples:
@@ -88,9 +88,9 @@ Examples:
 
 &nbsp;
 
-##### _Methods: ```rminclude()```_
+##### _Methods: `rminclude()`_
 
-```rminclude()``` is used to remove ```__include__``` directives from ```includes``` instance variable. 
+`rminclude()` is used to remove `__include__` directives from `includes` instance variable. 
 This method is of no use after saving the properties and reading them because then all directives are processed and 
 replaced with contents of files they are pointing to.
 
@@ -98,20 +98,20 @@ replaced with contents of files they are pointing to.
 
 &nbsp;
 
-##### _Methods: ```purgeinclude()```_
+##### _Methods: `purgeinclude()`_
 
-```purgeinclude()``` is used to remove ```__include__``` directives from ```includes``` instance variable **AND** 
+`purgeinclude()` is used to remove `__include__` directives from `includes` instance variable **AND** 
 all corresponding properties.  
 
 
 ----
 
-##### Storing ```__include__```, how ```__include__```s are being stored
+##### Storing `__include__`, how `__include__`s are being stored
 
-Only ```__include__```s added via library are being stored in a form of directive.  
-When a file that contained ```__include__``` directive is stored the directive itself is not stored - only properties added by it are stored.  
+Only `__include__`s added via library are being stored in a form of directive.  
+When a file that contained `__include__` directive is stored the directive itself is not stored - only properties added by it are stored.  
 
-To store read ```__include__``` as a directive use ```makeincldirective()``` with include tuple as an argument - it will firstly purge it from the object and 
+To store read `__include__` as a directive use `makeincldirective()` with include tuple as an argument - it will firstly purge it from the object and 
 then add it simply as a directive.
 
 ----

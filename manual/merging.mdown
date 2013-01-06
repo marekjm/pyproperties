@@ -5,13 +5,13 @@
 
 ##### Usage
 
-When called, ```foo.merge(bar)``` does one thing: it tries to makes ```foo``` as similar 
-to ```bar``` as possible. It does following things:
+When called, `foo.merge(bar)` does one thing: it tries to makes `foo` as similar 
+to `bar` as possible. It does following things:
 
-*   runs ```foo.complete(bar)``` to ensure every property of ```bar``` can be found in ```foo```,
-*   runs ```foo.update(bar)``` to update values of ```foo``` properties,
+*   runs `foo.complete(bar)` to ensure every property of `bar` can be found in `foo`,
+*   runs `foo.update(bar)` to update values of `foo` properties,
 *   updates information about comments and hidden properties,
-*   appends source of ```bar``` to source of ```foo```,
+*   appends source of `bar` to source of `foo`,
 
 ----
 

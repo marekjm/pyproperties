@@ -1,18 +1,18 @@
 #### Removing properties
-###### _version: ```0.2.1```_
+###### _version: `0.2.2`_
 
 ###### [Index](index.mdown)
 ----
 
 
-pyproperties has two types of removers: ```remove()``` and ```pop()```. Both of them come with single- and multi- version.
+pyproperties has two types of removers: `remove()` and `pop()`. Both of them come with single- and multi- version.
 
-*   ```remove()``` for removing single properties,
-*   ```removes()``` for removing groups of properties by identifier (eg. ```'foo.*.bar```),
-*   ```pop()``` - removes property and returns it's value,
-*   ```pops()``` removes groups of properties and returns a ```dict``` containing removed properties,
+*   `remove()` for removing single properties,
+*   `removes()` for removing groups of properties by identifier (eg. `'foo.*.bar`),
+*   `pop()` - removes property and returns it's value,
+*   `pops()` removes groups of properties and returns a `dict` containing removed properties,
 
-After removing any property you need to call ```save()``` to apply your changes to origins.
+After removing any property you need to call `save()` to apply your changes to origins.
 
 ----
 SEE ALSO:  

@@ -1,5 +1,5 @@
 #### Loading properties files
-###### _version: ```0.2.1```_
+###### _version: `0.2.2`_
 
 ###### [Index](index.mdown)
 ----
@@ -13,7 +13,7 @@ _stadard way_
 
 &nbsp;
 
-_intruduced in ```0.1.5```_
+_intruduced in `0.1.5`_
 
         foo = pyproperties.Properties("/path/to/foo.properties", no_read=True)
         # some stuff being done
@@ -27,18 +27,18 @@ _third way_
         foo.read("/path/to/foo.properties")
 
 
-Either way will result with ```pyproperties.Properties``` object with exactly the same values.
+Either way will result with `pyproperties.Properties` object with exactly the same values.
 
 
 #### Parser mode
 
-```pyproperties``` parser operates in two modes: strict and non-strict. 
-This is indicated by a state of ```strict``` variable (it is ```bool``` so ```True``` means ```strict``` mode and ```False``` the oposite). 
+`pyproperties` parser operates in two modes: strict and non-strict. 
+This is indicated by a state of `strict` variable (it is `bool` so `True` means `strict` mode and `False` the oposite). 
 Parser defaults to _strict_ mode. If you want to read properties in _non-strict_ mode you have to use:
 
         foo = pyproperties.Properties("/path/to/your/file.properties", strict=False)
         
-If you want to change mode after loading file you can use ```setstrict()``` method.
+If you want to change mode after loading file you can use `setstrict()` method.
 
 
 ----

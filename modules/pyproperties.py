@@ -2,11 +2,6 @@
 
 """Working with *.properties files."""
 
-#   TODO
-#
-#   *1.     invent a good name for makeincldirective() (it is neither short nor handy),
-#   2.      move store functionality to Storer() class,
-
 import os
 import re
 import warnings
@@ -50,37 +45,39 @@ def isoct(s):
 
 class Writer():
     """
-    This class utilizes methods for storing properties.
-    It is mostly a TODO now.
+    This class utilizes methods for storing properties. 
+    When creating new instance of Writer() pass a Properties() object to it.
     """
+    
     def __init__(self, properties):
         self.properties = properties
-        self.stored = []
-        self.includes_stored = []
-        self.lines = []
+        self.stored, self.includes_stored, self.lines = ([], self.properties.includes_stored, [])
+        self.origin_properties, self.origin_includes = (self.properties.origin_properties, self.properties.origin_includes)
+        self.origin_propcomments, self.origin_hidden = (self.properties.origin_propcomments, self.properties.origin_hidden)
+        self.source = self.properties.origin_source
 
-    def _storeprop(self, key):
+    def storeprop(self, key):
         """
         This method stores single property and takes responsibility of storing it's comment and 
-        possibly commenting the property itself. 
-        This method looks at the ```stored``` list and checks if the given key has already 
+        possibly hiding the property itself. 
+        This method looks at the `stored` list and checks if the given key has already 
         been stored to prevent storing it two times.
-        It will also check if the key is in ```origin_properties``` dict to ensure that unsaved properties 
-        would not be stored.
+        It will also check if the key is in `origin_properties` dict to ensure that unsaved properties 
+        would not get stored.
         """
-        if key not in self.stored and key in self.properties.origin_properties:
-            if key in self.properties.origin_propcomments: self._storecomment(key)
-            if key not in self.properties.origin_hidden: self.lines.append("{0}={1}".format(key, self.properties.origin_properties[key]))
-            else: self.lines.append("#{0}={1}".format(key, self.properties.origin_properties[key]))
+        if key not in self.stored and key in self.origin_properties:
+            if key in self.origin_propcomments: self.storecomment(key)
+            if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.origin_properties[key]))
+            else: self.lines.append("#{0}={1}".format(key, self.origin_properties[key]))
             self.stored.append(key)
 
-    def _storeincludes(self):
+    def storeincludes(self):
         """
         This method stores __include__ directives added via the library. 
         Each directive is separated by a blank line.
         """
         if self.lines != [] and self.lines[-1] != "": self.lines.append("")
-        for path, prefix, hidden in self.properties.origin_includes:
+        for path, prefix, hidden in self.origin_includes:
             if (path, prefix, hidden) not in self.includes_stored:
                 if prefix and hidden: line = "__include__.hidden.as.{0}={1}".format(prefix, path)
                 elif prefix and not hidden: line = "__include__.as.{0}={1}".format(prefix, path)
@@ -90,43 +87,42 @@ class Writer():
                 self.lines.append("")
                 self.includes_stored.append( (path, prefix, hidden) )
 
-    def _storesrc(self):
+    def storesrc(self):
         """
         Prepares data which came with source for storing.
         """
-        for i in range(len(self.properties.origin_source)):
-            if self.properties.origin_source[i] == "" or self.properties.origin_source[i].isspace(): self.lines.append("{0}".format(self.properties.origin_source[i]))
-            elif self.properties.origin_source[i][0] == "#": self.lines.append("{0}".format(self.properties.origin_source[i]))
-            elif self.properties.getlinekey(self.properties.origin_source[i]) != "": self._storeprop(self.properties.getlinekey(self.properties.origin_source[i]))
+        for i in range(len(self.source)):
+            if self.source[i] == "" or self.source[i].isspace(): self.lines.append("")
+            elif self.source[i][0] == "#": self.lines.append("{0}".format(self.source[i]))
+            elif self.properties.getlinekey(self.source[i]) != "": self.storeprop(self.properties.getlinekey(self.source[i]))
 
-    def _storegroups(self):
+    def storegroups(self):
         """
         Generates lines for groups not found in source.
         """
         if self.lines != [] and self.lines[-1] != "": self.lines.append("")
         for identifier in self.properties.getgroups():
             previous_len = len(self.lines)
-            keys = []
-            [keys.append(key) for key in self.properties.gets(identifier)]
-            for key in sorted(keys): self._storeprop(key)
+            keys = [ key for key in self.properties.gets(identifier) ]
+            for key in sorted(keys): self.storeprop(key)
             if len(self.lines) > previous_len: self.lines.append("")
 
-    def _storesingles(self):
+    def storesingles(self):
         """
         Generates lines for single properties not found in source.
         """
-        for key in sorted(self.properties.origin_properties.keys()): self._storeprop(key)
+        for key in sorted(self.origin_properties.keys()): self.storeprop(key)
 
-    def _storecomment(self, key):
+    def storecomment(self, key):
         """
         Appends comment of a property of given key to self.lines
         """
-        [ self.lines.append("#   {0}".format(line)) for line in self.properties.origin_propcomments[key] ]
+        [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key] ]
 
-    def _dump(self, path):
+    def dump(self, path):
         """
         Dumps generated lines to file given in path and clears 
-        variables defined by store() and its subemthods.
+        variables defined by store() and its subemthods. 
         """
         file = open(path, "w")
         for line in self.lines: file.write("{0}\n".format(line))
@@ -136,7 +132,7 @@ class Writer():
     def store(self, path="", force=False, no_dump=False, drop_source=False):
         """
         Writes properties to given 'path'.
-        'path' defaults to self.path
+        'path' defaults to path set if given properties.
 
         If store will encounter some unsaved changes it will
         raise UnsavedChangesError.
@@ -150,15 +146,15 @@ class Writer():
         if path == "" or path.isspace(): raise StoreError("no path specified")
         if path and not self.properties.path: self.properties.path = path
             
-        if not drop_source: self._storesrc()
-        self._storegroups()
-        self._storesingles()
-        self._storeincludes()
+        if not drop_source: self.storesrc()
+        self.storegroups()
+        self.storesingles()
+        self.storeincludes()
         try:
             while self.lines[-1] == "": self.lines = self.lines[:-1]
         except IndexError: pass
         finally:
-            if not no_dump: self._dump(path)
+            if not no_dump: self.dump(path)
 
 
 class Properties():
@@ -182,7 +178,7 @@ class Properties():
 
     def _loadf(self, path):
         """
-        This method loads properties file from given path to a ```self.source```. 
+        This method loads properties file from given path to a `self.source`. 
         It also strips it of newline characters at the end and preceding whitespace and but leaves it unprocessed in any different way. 
         """
         origin_source = []
@@ -339,8 +335,8 @@ class Properties():
 
     def _extracthidden(self):
         """
-        Show hidden properties so they can be read by ```_extractprops()``` and 
-        saves them to ```hidden``` and ```origin_hidden``` dictionaries.
+        Show hidden properties so they can be read by `_extractprops()` and 
+        saves them to `hidden` and `origin_hidden` dictionaries.
         """
         for i, line in enumerate(self.source):
             if self._islinehiddenprop(line):
@@ -406,7 +402,7 @@ class Properties():
     def _appendsrc(self, props, prefix=""):
         """
         This methods appends source of given properties to the base. 
-        If ```source``` already contains some lines a blank line is added before actual 
+        If `source` already contains some lines a blank line is added before actual 
         source to avoid making comments accidentaly joined.
         """
         lines = []
@@ -422,7 +418,7 @@ class Properties():
     def _include(self, line_number, path, prefix="", hidden=False):
         """
         This method is only run when a property file is being read. 
-        It will dump another file in place specified by ```__include__``` directive.
+        It will dump another file in place specified by `__include__` directive.
         """
         if os.path.isabs(path): pass
         else: path = os.path.join(os.path.split(self.path)[0], path)
@@ -447,7 +443,7 @@ class Properties():
     def _makeincludes(self):
         """
         This method runs during load and is kind of preprocessor. It will replace 
-        every line which key begins with ```__include__``` with lines of file 
+        every line which key begins with `__include__` with lines of file 
         it will try to read from the path specified in the value of the mentioned line. 
         
         Although it may be temptating - using `for` loop in this method is not good. 
@@ -481,7 +477,7 @@ class Properties():
     def blank(self, path="", strict=True):
         """
         Creates blank properties object. 
-        Can be used to erase contents of your ```pyproperties``` object.
+        Can be used to erase contents of your `pyproperties` object.
         """
         self.path = os.path.expanduser(path.strip())
         self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
@@ -527,7 +523,7 @@ class Properties():
     def refresh(self, overwrite=True):
         """
         Refreshes from file. Missing values are added.
-        If ```overwrite``` is set to True existing values are overwritten - ```update()``` is used.
+        If `overwrite` is set to True existing values are overwritten - `update()` is used.
         Values which are not found in file are not deleted.
         """
         new = Properties(self.path)
@@ -547,7 +543,7 @@ class Properties():
     def join(self, path, prefix=" "):
         """
         Loads external properties and completes base. 
-        You can pass ```prefix``` as empty string to add properties without prefix. 
+        You can pass `prefix` as empty string to add properties without prefix. 
         Prefix defaluts to the name of joined file. 
         Source of joined properties is appended to base source.
         """
@@ -703,7 +699,6 @@ class Properties():
         """
         writer = Writer(self)
         writer.store(path, force, no_dump, drop_source)
-        self.lines, self.stored, self.includes_stored = (writer.lines, writer.stored, writer.includes_stored)
         
     def get(self, key, parse=False, cast=False):
         """
@@ -748,7 +743,7 @@ class Properties():
     def set(self, key, value=""):
         """
         Sets key to value. 
-        Raises TypeError if key is not if ```str``` type.
+        Raises TypeError if key is not if `str` type.
         """
         if type(key) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(key))[8:-2]))
         if " " in key: raise TypeError("key must not contain space")
@@ -838,7 +833,7 @@ class Properties():
     def getnames(self, hidden=False):
         """
         Returns sorted list of the non-commented properties names. 
-        If ```commented``` arg was passed as ```True``` returns sorted list 
+        If `commented` arg was passed as `True` returns sorted list 
         of commented properties names.
         """
         keys = []
@@ -851,7 +846,7 @@ class Properties():
         """
         Returns list of keys containing given value. 
         Returns empty list if no key was matched. 
-        If ```no_hidden``` was passed as ```False``` includes also 
+        If `no_hidden` was passed as `False` includes also 
         commented properties.
         """
         keys = []
@@ -936,7 +931,7 @@ class Properties():
         Comment can be passed as a string. 
         Multiline comments are supported by passing a string containing newline characters '\\n'.
 
-        comments('foo.*.bar', 'first comment', 'multi\nline')
+        comments('foo.*.bar', 'first comment', 'multi\\nline')
         """
         keys = self.gets(identifier)
         i = 0
@@ -959,7 +954,7 @@ class Properties():
         
         Returns comment of given key. 
         Returns empty string if the property has no comment. 
-        Returns empty list if the property has no comment and ```lines``` was passed as True. 
+        Returns empty list if the property has no comment and `lines` was passed as True. 
         KeyError is raised if key is not available (not found or is hidden).
         """
         if key not in self.properties or key in self.hidden: self._notavailable(key)
@@ -989,7 +984,7 @@ class Properties():
 
     def unhide(self, key):
         """
-        Remove property from ```hidden``` list to make it available for modifing. 
+        Remove property from `hidden` list to make it available for modifing. 
         Does not raise any errors when key is not found.
         """
         if key in self.hidden: self.hidden.remove(key)

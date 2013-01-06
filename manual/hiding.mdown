@@ -1,11 +1,11 @@
 #### Hidden properties
-###### _version: ```0.2.1```_
+###### _version: `0.2.2`_
 
 ###### [Index](index.mdown)
 ----
 
 
-```pyproperties``` parser recongnizes few kinds of lines:
+`pyproperties` parser recongnizes few kinds of lines:
 
 
 *   empty,
@@ -17,17 +17,17 @@
 
 
 Problem is encoutered when it comes to decide if a line is comment or hidden property. 
-There is a special method which does this: ```_islinehiddenprop()```.  
+There is a special method which does this: `_islinehiddenprop()`.  
 A line is considered hidden property when:
 
 0.  it's not empty,
-1.  it's first character is not ```#``` or ```!```,
+1.  it's first character is not `#` or `!`,
 1.  it's first character is immediately followed by a valid property line,
 
 Example:
 
-*   ```#some.property=value``` evaluates as hidden property,
-*   ```# some.property=value``` does not evaluate as hidden property (comment char is not immediately followed by a valid line it is separated from it by a space char),
+*   `#some.property=value` evaluates as hidden property,
+*   `# some.property=value` does not evaluate as hidden property (comment char is not immediately followed by a valid line it is separated from it by a space char),
 
 Hidden properties cannot span several lines.
 
@@ -36,7 +36,7 @@ Hidden properties cannot span several lines.
 
 ##### Hiding and _un_-hiding: API
 
-You can use ```hide()``` and ```unhide()``` methods to change status of a property.
+You can use `hide()` and `unhide()` methods to change status of a property.
 
         Python 3.3.0 (default, Oct 24 2012, 19:57:05) 
         [GCC 4.7.2 20120921 (Red Hat 4.7.2-2)] on linux

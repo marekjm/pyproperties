@@ -1,5 +1,5 @@
-#### Manual for ```pyproperties```
-###### _version: ```0.2.2```_
+#### Manual for `pyproperties`
+###### _version: `0.2.2`_
 
 
 ----
@@ -34,7 +34,7 @@
 ##### Working with files
 
 0.  [Joining](joining.mdown)
-1.  [Using ```__include__```](include.mdown)
+1.  [Using `__include__`](include.mdown)
 
 ----
 
@@ -50,7 +50,7 @@
 ##### Internals/Implementation details
 
 0.  [Typecasting](casting.mdown)
-1.  [Regular expressions in ```pyproperties```](regular_expressions.mdown)
+1.  [Regular expressions in `pyproperties`](regular_expressions.mdown)
 2.  [Keys and values](keys_and_values.mdown)
 
 &nbsp;
