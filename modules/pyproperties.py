@@ -6,7 +6,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-z0-9_.-]*"
@@ -714,18 +714,19 @@ class Properties():
 
     def gets(self, identifier, parse=False, cast=False, no_expand=False):
         """
-        Returns dict of properties which names matched pattern given as identifier.
-        If parsed is set to True values will be parsed before returning.
+        Returns list of tuples containig (key, value) of properties which names matched pattern given as identifier.
+        If `parse` is set to True values will be parsed before returning.
+        If `cast` is set to True values will be casted before returning.
         """
         if type(identifier) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
         if not no_expand: identifier = self._expandidentifier(identifier)
         
-        matched = {}
+        matched = []
         for key, value in self.properties.items():
-            if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
-            elif re.match(identifier, key) and not parse: matched[key] = value
+            if re.match(identifier, key) and parse: matched.append( (key, self._parseline(value)) )
+            elif re.match(identifier, key) and not parse: matched.append( (key, value) )
         if cast:
-            for key, value in matched.items(): matched[key] = self._convert(value)
+            matched = [ (key, self._convert(value)) for key, value in matched ]
         return matched
 
     def getre(self, identifier, parse=False, cast=False):
@@ -737,6 +738,8 @@ class Properties():
         matched = {}
         if type(identifier) == str: identifier = re.compile(identifier)
         else: raise TypeError("identifer must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
+
+        warnings.warn("`getre()` will be removed in 0.2.4: use `gets()` with `no_expand` argument set to True")
 
         for key, value in self.properties.items():
             if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
@@ -825,13 +828,8 @@ class Properties():
         """
         This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
         """
-        popped = {}
-        identifier = re.compile(self._expandidentifier(identifier))
-        for key, value in self.properties.items():
-            if re.match(identifier, key): popped[key] = value
-        for key in popped.keys(): self.properties.pop(key)
-        if cast:
-            for key, value in popped.items(): popped[key] = self._convert(value)
+        popped = self.gets(identifier=identifier, cast=cast)
+        self.removes(identifier=identifier)
         self.unsaved = True
         return popped
 

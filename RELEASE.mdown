@@ -1,63 +1,21 @@
-#### Release 0.2.2
+#### Release 0.2.3
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 
-This release introduces several new methods covering some aspects of `__include__`-ing. 
-These methods are `addinclude()`, `rminclude()`, `purgeinclude()` and `stripinclude()`.  
-
-Storing functionality was moved to new `Writer()` class. `store()` method is a proxy for 
-explicit creation of `Writer()` instance and calling `store()` method of it.  
-
-`pyproperties` is now equipped with over hundred unit tests.  
-
-More detailed information can be found in [manual](./manual/index.mdown) or in [`DOC`](./DOC) file.
-
-----
-
-**Warning about future:**
-
-In the upcoming release (`0.2.3`) methods `gets()`, `pops()` and `removes()` will be returning list of tuples instead of a dictionary. 
-Reason for this is simple: tuples are more handy in loops. Converting list of tuples to dictionary is a one-liner-no-brainer: `dict( [("foo", 0), ("bar", 1)] )`
-
-    for friend, number in foo.gets('friend.*.number'):
-        # do your stuff
-
-If you want a dictionary use following snippet:
-
-    bar = dict( foo.gets('friend.*.number') )
 
 ----
 
 
 ##### This release brings you:
-*   4 update(s),
-*   1 fix(es),
-*   8 new feature(s),
-*   1 removal(s),
+*   a update(s),
+*   b fix(es),
+*   c new feature(s),
+*   d removal(s),
 
 
-#### Version 0.2.2 ():
+#### Version 0.2.3 ():
 
-* __upd__:  `addcomment()` and `addcomments()` renamed to `comment()` and `comments()` respectively,
-* __upd__:  `srcorigin` renamed to `origin_source`,
-* __upd__:  `propsorigin` renamed to `origin_properties`,
-* __upd__:  `getre()` will be removed in `0.2.3` - use `gets()` with `no_expand` argument set to `True`,
-
-
-* __fix__:  `guess_float_re` now accepts floats of form `6.02e+23`,
-
-
-* __new__:  `MultipleDeclarationWarning` warning class added,
-* __new__:  `Writer` class added,
-* __new__:  `addinclude()` method - for placing include directives,
-* __new__:  `rminclude()` method - for removing include directives,
-* __new__:  `purgeinclude()` method - for removing include directives and all corresponding properties,
-* __new__:  `stripinclude()` method - it removes all properties included by a directive but not the directive itself (eg. the directive will be stored not properties),
-* __new__:  new unit tests for `save()` and `revert()` added,
-* __new__:  unit tests for `addinclude()`, `rminclude()`, `purgeinclude()` and `stripinclude()` added,
-
-
-* __rem__:  removed deprecated methods `_isvalidline()` and `typeguess()`,
+*
 
 &nbsp;
 

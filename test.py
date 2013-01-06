@@ -202,16 +202,43 @@ class ParselineTest(unittest.TestCase):
 class ParseTest(unittest.TestCase):
     def testParse(self):
         bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
-        parsed =    {
-                    "message.0":"Apple Jack  .",
-                    "message.1":"Arr... Welcome, John the Average!",
-                    "name.0":"John the Average",
-                    "name.1":"Jack  ",
-                    "name.2":"\\  William  ",
-                    "alert":"Fire!",
-                    }
+        parsed =    [
+                    ("alert", "Fire!"),
+                    ("message.0", "Apple Jack  ."),
+                    ("message.1", "Arr... Welcome, John the Average!"),
+                    ("name.0", "John the Average"),
+                    ("name.1", "Jack  "),
+                    ("name.2", "\\  William  "),
+                    ]
         pbar = bar.parse()
-        self.assertEqual(parsed, pbar.gets("*"))
+        self.assertEqual(parsed, sorted(pbar.gets("*")))
+        self.assertEqual(pyproperties.Properties, type(pbar))
+
+    def testParseCasted(self):
+        bar = pyproperties.Properties()
+        bar.set("pi.part.0", "3")
+        bar.set("pi.part.1", "14")
+        bar.set("pi", "$(pi.part.0).$(pi.part.1)")
+        bar.set("true.part.0", "Tr")
+        bar.set("true.part.1", "ue")
+        bar.set("true", "$(true.part.0)$(true.part.1)")
+        bar.set("none.part.0", "No")
+        bar.set("none.part.1", "ne")
+        bar.set("none", "$(none.part.0)$(none.part.1)")
+        bar.save()
+        props = [
+                ("none", None),
+                ("none.part.0", "No"),
+                ("none.part.1", "ne"),
+                ("pi", 3.14),
+                ("pi.part.0", 3),
+                ("pi.part.1", 14),
+                ("true", True),
+                ("true.part.0", "Tr"),
+                ("true.part.1", "ue"),
+                ]
+        pbar = bar.parse(cast=True)
+        self.assertEqual(props, sorted(pbar.gets("*")))
         self.assertEqual(pyproperties.Properties, type(pbar))
 
 
@@ -613,15 +640,7 @@ class GetTest(unittest.TestCase):
 class GetsTest(unittest.TestCase):
     def testGets(self):
         foo = pyproperties.Properties(foo_path)
-        self.assertEqual({"customer.0.name":"John the Average.", "customer.1.name":"Agent Smith"}, foo.gets("customer.*.name"))
-
-    def testGetsParsed(self):
-        foo = pyproperties.Properties()
-        foo.set("hello", "Hello")
-        foo.set("world", "World")
-        foo.set("greeting.0", "$(hello) $(world)!")
-        foo.set("greeting.1", "$(hello) cruel $(world)!")
-        self.assertEqual({"greeting.0":"Hello World!", "greeting.1":"Hello cruel World!"}, foo.gets("greeting.*", parse=True))
+        self.assertEqual([("customer.0.name", "John the Average."), ("customer.1.name", "Agent Smith")], sorted(foo.gets("customer.*.name")))
 
     def testGetsCasted(self):
         foo = pyproperties.Properties()
@@ -629,26 +648,29 @@ class GetsTest(unittest.TestCase):
         foo.set("stuff.1", "5")
         foo.set("stuff.2", "None")
         foo.set("stuff.3", "True")
-        self.assertEqual({"stuff.0":6.02e+23, "stuff.1":5, "stuff.2":None, "stuff.3":True}, foo.gets("stuff.*", cast=True))
+        props = [
+                ("stuff.0", 6.02e+23), 
+                ("stuff.1", 5),
+                ("stuff.2", None),
+                ("stuff.3", True),
+                ]
+        self.assertEqual(props, sorted(foo.gets("stuff.*", cast=True)))
+
+    def testGetsParsed(self):
+        foo = pyproperties.Properties()
+        foo.set("hello", "Hello")
+        foo.set("world", "World")
+        foo.set("greeting.0", "$(hello) $(world)!")
+        foo.set("greeting.1", "$(hello) cruel $(world)!")
+        props = [
+                ("greeting.0", "Hello World!"), 
+                ("greeting.1", "Hello cruel World!"),
+                ]
+        self.assertEqual(props, sorted(foo.gets("greeting.*", parse=True)))
 
     def testGetsException(self):
         foo = pyproperties.Properties(foo_path)
         self.assertRaises(TypeError, foo.gets, 0)
-
-
-class GetreTest(unittest.TestCase):
-    def testGetre(self):
-        foo = pyproperties.Properties(foo_path)
-        props = {   "customer.0.phone_number.0": "+48 500666101",
-                    "customer.0.phone_number.1": "+48 678992005",
-                    "customer.1.phone_number.0": "-1 000-000-000",
-                }
-        self.assertEqual(props, foo.gets("^customer\.[0-9]+\.phone_number\.[0-9]+$", no_expand=True))
-
-
-    def testGetreException(self):
-        foo = pyproperties.Properties(foo_path)
-        self.assertRaises(TypeError, foo.getre, 0)
 
 
 class SetterTest(unittest.TestCase):
