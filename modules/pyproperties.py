@@ -41,6 +41,245 @@ def isoct(s):
     if re.match(re.compile(guess_oct_re), s): result = True
     return result
 
+def linehaskey(line, strict=True):
+    """
+    Helper function.
+    Checks if the line contains a key. 
+    """
+    result = False
+    if ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
+    elif "=" in line[:line.find(":")]: key = line.split("=", 1)[0].strip()
+    else: key = None
+
+    if key != None and key[0] not in ["#", "!"]:
+        if strict and " " in key:
+            warnings.warn("space found in key '{0}'".format(key))
+            result = False
+        elif not strict and " " in key:
+            warnings.warn("space found in key: '{0}'".format(key))
+            result = True
+        else: 
+            result = True
+    return result
+
+
+def iscomment(line):
+    """
+    Helper function.
+    Checks if given line is a comment.
+    """
+    line = line.strip()
+    return line != "" and line[0] in ["#", "!"]
+
+def getlinekey(line, strict=True):
+    """
+    Extracts key from given line and returns it. 
+    If the line does not contain a key returns None. 
+    
+    If in strict mode (default) and find a whitespace in key it will 
+    complain with a warning and return None. 
+    If in non-strict mode (strict passed as `False`) it will only complain and 
+    do nothing else.
+    """
+    if not linehaskey(line, strict): key = None
+    elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
+    else: key = line.split("=", 1)[0].strip()
+    return key
+
+def getlinevalue(line, strict=True):
+    """
+    Extracts value from given line and returns it. 
+    If the line does not have a value returns None (remeber: empty string is returned when line has it as a value). 
+    It is done this way to distinguish properties with empty value 
+    from lines which do not carry a property.
+    """
+    if not linehaskey(line, strict): value = None
+    elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
+    else: value = line.split("=", 1)[1].lstrip()
+
+    if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
+    return value
+
+def convert(value):
+    """
+    Returns value with it's type converted. 
+    Can convert from str to: int, float, True/False and None.
+    """
+    value = str(value)
+    if value == "True": value = True
+    elif value == "False": value = False
+    elif value == "None": value = None
+    elif ishex(value): value = int(value, 16)
+    elif isoct(value): value = int(value, 8)
+    elif re.match(re.compile(guess_int_re), value): value = int(value)
+    elif re.match(re.compile(guess_float_re), value): value = float(value)
+    return value
+
+
+class Reader():
+    """
+    This class utilizes methods for reading properties files.
+    """
+    
+    def __init__(self, path, includes=True, cast=False, strict=True):
+        self._path = os.path.abspath(path)
+        self._includes, self._cast, self._strict = (includes, cast, strict)
+        self._source, self._hidden, self._included, self._comments, self._properties = ([], [], [], {}, [])
+
+    def loadf(self):
+        """
+        Loads file to which `_path` points, and 
+        concatenates properties split into several lines. 
+        Lines are loaded with trailing newlines characters and preceding whitespace stripped. 
+        Comments which end with backslash (`\\`) are left untouched but a warning is raised.
+        """
+        path = open(self._path)
+        file = path.readlines()
+        path.close()
+        source = []
+        i = 0
+        while i < len(file):
+            line = file[i].lstrip()
+            while line != "" and line[-1] == "\n": line = line[:-1]
+            if line != "" and line[-1] == "\\" and line[0] in ["#", "!"]: warnings.warn("comment ending with backslash: {0}:{1}".format(self._path, i+1))
+            while line != "" and line[-1] == "\\" and line[0] not in ["#", "!"]:
+                i += 1
+                line = line[:-1]
+                while file[i] != "" and file[i][-1] == "\n": file[i] = file[i][:-1]
+                line += file[i]
+            i += 1
+            source.append(line)
+        self._source = source
+
+    def _include(self, line_number, path, prefix="", hidden=False):
+        """
+        This method is only run when a property file is being read. 
+        It will dump another file in place specified by `__include__` directive.
+        """
+        #   TODO: reimplement and improve `include` mechanism
+        if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path")
+        if not os.path.isfile(path): raise IncludeError("__include__ file not found: {0}".format(path))
+        
+        if os.path.isabs(path): pass
+        else: path = os.path.join(os.path.split(self._path)[0], path)
+        
+        fpath = open(path)
+        file = fpath.readlines()
+        fpath.close()
+
+        if (path, prefix, hidden) not in self._included: self._included.append( (path, prefix, hidden) )
+        
+        for i, line in enumerate(file):
+            if linehaskey(line, strict=self._strict) and prefix: line = "{0}.{1}".format(prefix, line.lstrip())
+            elif self._islinehiddenprop(line) and prefix: line = "#{0}.{1}".format(prefix, line[1:])
+            if linehaskey(line, strict=self._strict) and hidden: line = "#{0}".format(line.lstrip())
+            if line[-1] == "\n": line = line[:-1]
+            file[i] = line
+
+        new_source = [ line for line in file ]
+        self.source = self._source[:line_number] + new_source + self._source[line_number+1:]
+
+    def makeincludes(self):
+        """
+        This method runs during load and is kind of preprocessor. It will replace 
+        every line which key begins with `__include__` with lines of file 
+        it will try to read from the path specified in the value of the mentioned line. 
+        
+        Although it may be temptating - using `for` loop in this method is not good. 
+        `for` will not "keep track" of changes in file lenghts and you will end up on overwriting previous __include__'s contents. 
+        Indexes generated by `for` will not take into account the fact that source may have been already expanded. 
+        Adding this functionality will result in unnecessary bloat so `while` stays.
+        """
+        i = 0
+        while i < len(self._source):
+            key = getlinekey(self._source[i])
+            value = getlinevalue(self._source[i])
+            if key == "__include__": self._include(i, value)
+            elif key == "__include__.hidden": self._include(i, value, hidden=True)
+            elif key != None and key[:15] == "__include__.as.": self._include(i, value, prefix=key[15:])
+            elif key != None and key[:22] == "__include__.hidden.as.": self._include(i, value, prefix=key[22:], hidden=True)
+            i += 1
+
+    def _islinehiddenprop(self, line):
+        """
+        Defines if commented line is commented property or casual comment.
+        Used to distinguish comments from commented properties during load.
+        """
+        # a little hack to not generate too many warnings when just checking if a line is hidden property
+        if iscomment(line) and line[1] != " ": result = linehaskey(line[1:], strict=self._strict)
+        else: result = False
+        return result
+
+    def uncoverhidden(self):
+        """
+        Unvoers hidden properties -- makes them available for `_extractprops()`.
+        """
+        source = []
+        hidden = []
+        for line in self._source:
+            if self._islinehiddenprop(line):
+                line = line[1:]
+                hidden.append( getlinekey(line) )
+            source.append(line)
+        self._hidden = hidden
+        self._source = source
+    
+    def extractprops(self):
+        """
+        Extracts lines containing valid properties from `_source` to `_properties`.
+        """
+        properties = []
+        for line in self._source:
+            if linehaskey(line=line, strict=self._strict): properties.append(line)
+        self._properties = properties
+
+    def extractcomments(self):
+        """
+        Extracts comments from `_source` and attaches them to properties.
+        """
+        comments = {}
+        i = 0
+        while i < len(self._source):
+            line = self._source[i]
+            if linehaskey(line=line, strict=self._strict):
+                comment, n = ([], i-1)
+                while n >= 0 and iscomment(self._source[n]):
+                    comment.append( self._source[n][1:].strip() )
+                    n -= 1
+                if n != i-1:
+                    comment.reverse()
+                    comments[ getlinekey(line) ] = "\n".join( comment )
+                    self._source = self._source[:n+1] + self._source[i:]
+            i += 1
+        self._comments = comments
+
+    def splitprops(self):
+        """
+        This method converts self.properties from list containing extracted lines to a dictionary.
+        """
+        properties = {}
+        for line in self._properties:
+            key = getlinekey(line)
+            value = getlinevalue(line)
+            properties[key] = value
+        self._properties = properties
+    
+    def castprops(self):
+        """
+        This method tries to cast values of loaded properties.
+        """
+        for key, value in self._properties.items():
+            self._properties[key] = convert(value)
+    
+    def read(self):
+        self.loadf()
+        if self._includes: self.makeincludes()
+        self.uncoverhidden()
+        self.extractcomments()
+        self.extractprops()
+        self.splitprops()
+        if self._cast: self.castprops()
+
 
 class Writer():
     """
@@ -178,7 +417,6 @@ class Properties():
     def _loadf(self, path):
         """
         This method loads properties file from given path to a `self.source`. 
-        It also strips it of newline characters at the end and preceding whitespace and but leaves it unprocessed in any different way. 
         """
         origin_source = []
         source = []
@@ -241,10 +479,9 @@ class Properties():
         """
         Converts properties type from str (default) to int or float if pattern match. 
         """
-        identifier = re.compile("^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re)))
+        identifier = re.compile(self._expandidentifier(identifier))
         for key in self.properties.keys():
             if re.match(identifier, key): self._tcast(key)
-
 
     def _convert(self, value, from_key=False):
         """
@@ -379,6 +616,7 @@ class Properties():
                     comment = []
                     while n >= 0:
                         if not self._iscommentline(self.source[n]): break
+                        if self._islinehiddenprop(self.source[n]): break
                         comment.append(self.source[n][1:].strip())
                         n -= 1
                     comment.reverse()
@@ -491,7 +729,7 @@ class Properties():
 
     def read(self, path="", cast=False, no_includes=False, strict=True):
         """
-        Reads properties file and processes it to be available in Python 3 program.
+        Reads properties file and processes it to be available to a Python 3 program.
         You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly (the _tcasts method will be called).
         """
@@ -506,10 +744,10 @@ class Properties():
 
         if not no_includes: self._makeincludes()
         self._extracthidden()
+        self._extractcomments()
         self._extractprops()
         self._split()
         if cast: self._tcasts("*")
-        self._extractcomments()
         self.save()
 
     def reload(self):
@@ -583,7 +821,6 @@ class Properties():
             if key not in self.hidden and key in completed: self.hide(key)
         self.unsaved = True
 
-
     def update(self, props, prefix=""):
         """
         This method updates base properties with the given one. 
@@ -626,7 +863,6 @@ class Properties():
         self.update(properties)
         self._appendsrc(properties)
         self.unsaved = True
-
 
     def _parseline(self, value):
         """

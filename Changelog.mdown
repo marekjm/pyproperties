@@ -8,12 +8,15 @@
 
 * __upd__:  `pops()` owns no code by itslef - it uses `gets()` and `removes()` as a backend,
 * __upd__:  `pops()` and `gets()` no longer return dictionaries - they return list of tuples,
+* __upd__:  `_linehaskey()` is now *helper-function* with name `linehaskey()`,
+* __upd__:  `_convert()` is now *helper-function* with name `convert()`,
+* __upd__:  `getlinekey()` and `getlinevalue()` are now *helper-functions* and have new `strict` argument,
 
 
 * __fix__:  `guess_float_re` now matches also floats of form `6.02e-23` and `6.02e23`
 
 
-* __new__:  
+* __new__:  `Reader()` class,
 
 
 * __rem__:  

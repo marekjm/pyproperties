@@ -2,383 +2,307 @@
 
 import unittest
 import re
+import os
 
 from modules import pyproperties
 
+__version__ = "0.2.3"
+
 foo_path = "./data/properties/foo.properties"
 
-class ValidatorsTest(unittest.TestCase):
-    def testCommentlineValidator(self):
-        foo = pyproperties.Properties()
-        lines = [
-                ("#some comment", True),
-                ("#  text", True),
-                ("#   string", True),
-                ("#", True),
-                ("# ", True),
-                ("  # ", True),
-                ("#maybe=property", True),
-                ("not a comment", False),
-                ("", False),
-                ("  indent", False),
-                ("  indented=property", False),
-                ("  some#string", False),
-                ]
-        for line, result in lines: self.assertEqual(foo._iscommentline(line), result)
+class ReaderTest(unittest.TestCase):
+    def testReaderInit(self):
+        p = pyproperties.Reader(path="./data/properties/reader_test/foo.properties", cast=True, includes=False, strict=False)
+        self.assertEqual(p._path, os.path.abspath("./data/properties/reader_test/foo.properties"))
+        self.assertEqual(p._includes, False)
+        self.assertEqual(p._cast, True)
+        self.assertEqual(p._strict, False)
+        
+        r = pyproperties.Reader(path="./data/properties/reader_test/foo.properties")
+        self.assertEqual(r._path, os.path.abspath("./data/properties/reader_test/foo.properties"))
+        self.assertEqual(r._includes, True)
+        self.assertEqual(r._cast, False)
+        self.assertEqual(r._strict, True)
+        self.assertEqual(r._source, [])
+        self.assertEqual(r._hidden, [])
+        self.assertEqual(r._comments, {})
+        self.assertEqual(r._properties, [])
     
-    def testHaskeyNonStrict(self):
-        foo = pyproperties.Properties(strict=False)
+    def testLoadSimpleFile(self):
+        """
+        Method tested: `Reader.loadf()`
+        Test if `loadf()` correctly loads simple properties file.
+        """
         lines = [
-                ("#some comment", False),
-                ("#maybe=property", False),
-                ("not a property", False),
-                ("", False),
-                ("  indent", False),
-                ("    ", False),
-                ("some thing = not valid", True),
-                ("  indented=property", True),
-                ("valid  = property", True),
-                ("valid:property", True),
-                ("valid      : property", True),
-                ("   valid  : property", True),
+                "foo=Foo  ",
+                "",
+                "bar=Bar",
                 ]
-        for line, result in lines: self.assertEqual(foo._linehaskey(line), result)
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.simple.properties")
+        reader.loadf()
+        self.assertEqual(lines, reader._source)
 
-
-    def testHaskeyStrict(self):
-        foo = pyproperties.Properties()
+    def testLoadFileWithSplittedProperties(self):
+        """
+        Method tested: `Reader.loadf()`
+        Test if `loadf()` correctly loads file with splitted properties.
+        """
         lines = [
-                ("#some comment", False),
-                ("#maybe=property", False),
-                ("not a property", False),
-                ("", False),
-                ("  indent", False),
-                ("    ", False),
-                ("some thing = not valid", False),
-                ("  indented=property", True),
-                ("valid  = property", True),
-                ("valid:property", True),
-                ("valid      : property", True),
-                ("   valid  : property", True),
-                ("__include__=./foo.properties", True),
-                ("__include__.as.bar : ./foo.properties", True),
-                ("__include__.hidden.as.bar=./foo.properties", True),
+                "foo=Dura Lex     Sed Lex",
+                "",
+                "bar=Veni  Vidi Vici",
                 ]
-        for line, result in lines: self.assertEqual(foo._linehaskey(line), result)
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.splitted.properties")
+        reader.loadf()
+        self.assertEqual(lines, reader._source)
 
-    def testGetlinekeyNonStrict(self):
-        foo = pyproperties.Properties(strict=False)
+    def testLoadFileWithComments(self):
+        """
+        Method tested: `Reader.loadf()`
+        Test if `loadf()` correctly loads file with comments.
+        """
         lines = [
-                ("#some comment", None),
-                ("#maybe=property", None),
-                ("not a property", None),
-                ("", None),
-                ("  indent", None),
-                ("    ", None),
-                ("some thing = not valid", "some thing"),
-                ("  indented=property", "indented"),
-                ("valid  = property", "valid"),
-                ("valid:property", "valid"),
-                ("valid      : property", "valid"),
-                ("   valid  : property", "valid"),
+                "#   this is",
+                "#   a comment",
+                "foo=Foo  ",
+                "",
+                "#  this is another comment",
+                "bar=Bar",
+                "",
+                "baz=Baz",
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.commented.properties")
+        reader.loadf()
+        self.assertEqual(lines, reader._source)
 
-
-    def testGetlinekeyStrict(self):
-        foo = pyproperties.Properties()
+    def testLoadFileWithCommentsEndingWithBackslash(self):
+        """
+        Method tested: `Reader.loadf()`
+        Test if `loadf()` correctly loads file with comments ending with backslash.
+        """
         lines = [
-                ("#some comment", None),
-                ("#maybe=property", None),
-                ("not a property", None),
-                ("", None),
-                ("  indent", None),
-                ("    ", None),
-                ("some thing = not valid", None),
-                ("  indented=property", "indented"),
-                ("valid  = property", "valid"),
-                ("valid:property", "valid"),
-                ("valid      : property", "valid"),
-                ("   valid  : property", "valid"),
+                "#   this is \\",
+                "foo=Foo",
+                "",
+                "#   a comment \\",
+                "bar=Bar",
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
-
-    def testGetlinevalueNonStrict(self):
-        foo = pyproperties.Properties(strict=False)
-        lines = [
-                ("#some comment", None),
-                ("#maybe=property", None),
-                ("not a property", None),
-                ("", None),
-                ("  indent", None),
-                ("    ", None),
-                ("some thing = not valid", "not valid"),
-                ("  indented=property", "property"),
-                ("valid  = property", "property"),
-                ("valid:property", "property"),
-                ("valid      : property", "property"),
-                ("   valid  : property", "property"),
-                ]
-        for line, result in lines: self.assertEqual(foo.getlinevalue(line), result)
-
-
-    def testGetlinevalueStrict(self):
-        foo = pyproperties.Properties()
-        lines = [
-                ("#some comment", None),
-                ("#maybe=property", None),
-                ("not a property", None),
-                ("", None),
-                ("  indent", None),
-                ("    ", None),
-                ("some thing = not valid", None),
-                ("  indented=property", "property"),
-                ("valid  = property", "property"),
-                ("valid:property", "property"),
-                ("valid      : property", "property"),
-                ("   valid  : property", "property"),
-                ]
-        for line, result in lines: self.assertEqual(foo.getlinevalue(line), result)
-
-    def testHiddenPropertiesDetectionWhenStrict(self):
-        foo = pyproperties.Properties()
-        lines = [
-                ("#some.key=0", True),
-                ("#some key=0", False),
-                ("# some.key=0", False),
-                ]
-        for line, result in lines: self.assertEqual(result, foo._islinehiddenprop(line))
-
-    def testHiddenPropertiesDetectionWhenNonStrict(self):
-        foo = pyproperties.Properties(strict=False)
-        lines = [
-                ("#some.key=0", True),
-                ("#some key=0", True),
-                ("# some.key=0", False),
-                ("# some key=0", False),
-                ]
-        for line, result in lines: self.assertEqual(result, foo._islinehiddenprop(line))
-
-
-class ParselineTest(unittest.TestCase):
-    def testParselineInteger(self):
-        foo = pyproperties.Properties()
-        foo.set("two.0", 2)
-        foo.set("two.1", "2")
-        self.assertEqual(2, foo.get("two.0", parse=True, cast=True))
-        self.assertEqual(2, foo.get("two.0", parse=True, cast=False))
-        self.assertEqual(2, foo.get("two.1", parse=True, cast=True))
-        self.assertEqual("2", foo.get("two.1", parse=True, cast=False))
-
-
-    def testParselineFloat(self):
-        foo = pyproperties.Properties()
-        foo.set("pi.0", 3.14)
-        foo.set("pi.1", "3.14")
-        self.assertEqual(3.14, foo.get("pi.0", parse=True, cast=True))
-        self.assertEqual(3.14, foo.get("pi.0", parse=True, cast=False))
-        self.assertEqual(3.14, foo.get("pi.1", parse=True, cast=True))
-        self.assertEqual("3.14", foo.get("pi.1", parse=True, cast=False))
-
-
-    def testParselineString(self):
-        foo = pyproperties.Properties()
-        foo.set("greeting", "Hello $(name)!")
-        foo.set("name", "World")
-        self.assertEqual("Hello World!", foo.get("greeting", parse=True, cast=True))
-        self.assertEqual("Hello World!", foo.get("greeting", parse=True, cast=False))
-
-
-    def testParselineComplex(self):
-        foo = pyproperties.Properties()
-        foo.set("greeting", "Hello $(name)! Happy $(number)th day of week! Did you know that Pi is $(pi.value)?")
-        foo.set("name", "World")
-        foo.set("number", 7)
-        foo.set("pi.value", 3.14159)
-        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parse=True, cast=True))
-        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parse=True, cast=False))
-
-
-class ParseTest(unittest.TestCase):
-    def testParse(self):
-        bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
-        parsed =    [
-                    ("alert", "Fire!"),
-                    ("message.0", "Apple Jack  ."),
-                    ("message.1", "Arr... Welcome, John the Average!"),
-                    ("name.0", "John the Average"),
-                    ("name.1", "Jack  "),
-                    ("name.2", "\\  William  "),
-                    ]
-        pbar = bar.parse()
-        self.assertEqual(parsed, sorted(pbar.gets("*")))
-        self.assertEqual(pyproperties.Properties, type(pbar))
-
-    def testParseCasted(self):
-        bar = pyproperties.Properties()
-        bar.set("pi.part.0", "3")
-        bar.set("pi.part.1", "14")
-        bar.set("pi", "$(pi.part.0).$(pi.part.1)")
-        bar.set("true.part.0", "Tr")
-        bar.set("true.part.1", "ue")
-        bar.set("true", "$(true.part.0)$(true.part.1)")
-        bar.set("none.part.0", "No")
-        bar.set("none.part.1", "ne")
-        bar.set("none", "$(none.part.0)$(none.part.1)")
-        bar.save()
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.comments_with_escape.properties")
+        reader.loadf()
+        self.assertWarns(UserWarning, reader.loadf)
+        self.assertEqual(lines, reader._source)
+    
+    def testExtractProperties(self):
+        """
+        Method tested: `Reader.extractprops()`
+        Test if `extractprops()` correctly extracts properties from simple file.
+        """
         props = [
-                ("none", None),
-                ("none.part.0", "No"),
-                ("none.part.1", "ne"),
-                ("pi", 3.14),
-                ("pi.part.0", 3),
-                ("pi.part.1", 14),
-                ("true", True),
-                ("true.part.0", "Tr"),
-                ("true.part.1", "ue"),
+                "foo=Foo  ",
+                "bar=Bar",
                 ]
-        pbar = bar.parse(cast=True)
-        self.assertEqual(props, sorted(pbar.gets("*")))
-        self.assertEqual(pyproperties.Properties, type(pbar))
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.simple.properties")
+        reader.loadf()
+        reader.extractprops()
+        self.assertEqual(props, reader._properties)
 
-
-class ConvertTest(unittest.TestCase):
-    def testFloatConversion(self):
-        examples = [("3.14", 3.14),
-                    ("-1.43", -1.43),
-                    ("6.023e+23", 6.023e+23),
-                    ("6.023e-23", 6.023e-23),
-                    ("6.023e23", 6.023e+23),
-                    ]
-        foo = pyproperties.Properties()
-        for s, n in examples:
-            self.assertEqual(foo._convert(s), n)
-
-    def testHexadecimalConversion(self):
-        examples = [("0x0", 0),
-                    ("-0x1", -1),
-                    ("0x16", 22),
-                    ("-0xa2", -162),
-                    ("0x45", 69),
-                    ("0x29a", 666),
-                    ("-0x7cb", -1995),
-                    ("0x7dc", 2012),
-                    ("0x22b8", 8888),
-                    ("0x582", 1410),
-                    ("-0x582", -1410),
-                    ("0x75bcd15", 123456789),
-                    ("-0xf44e", -62542),
-                    ]
-        foo = pyproperties.Properties()
-        for hex, dec in examples:
-            self.assertEqual(foo._convert(hex), dec)
-
-    def testOctalConversion(self):
-        examples = [("0o0", 0),
-                    ("-0o1", -1),
-                    ("0o26", 22),
-                    ("-0o242", -162),
-                    ("0o105", 69),
-                    ("0o1232", 666),
-                    ("-0o3713", -1995),
-                    ("0o3734", 2012),
-                    ("0o21270", 8888),
-                    ("0o2602", 1410),
-                    ("-0o2602", -1410),
-                    ("0o726746425", 123456789),
-                    ("-0o172116", -62542),
-                    ]
-        foo = pyproperties.Properties()
-        for oct, dec in examples:
-            self.assertEqual(foo._convert(oct), dec)
-
-
-class LoadTest(unittest.TestCase):
-    def testLoad(self):
-        props = {
-                    "message.0":"Apple $(name.1).",
-                    "message.1":"Arr... Welcome, $(name.0)!",
-                    "name.0":"John the Average",
-                    "name.1":"Jack  ",
-                    "name.2":"\\  William  ",
-                    "alert":"Fire!",
-                }
-        comments = {"message.0":["This is a comment for massage.0"], 
-                    "name.0":["This is a comment for name.0 which", "value is \"John the Average\""],
+    def testExtractComments(self):
+        """
+        Method tested: `Reader.extractcomments()`
+        Test if `extractprops()` correctly extracts comments from file.
+        """
+        comments =  {
+                    "foo":"this is\na comment",
+                    "bar":"this is another comment",
                     }
-        src = [ "#   second simple properties file",
-                "#   used for testing properties.py module",
+        lines = [
+                "foo=Foo  ",
                 "",
-                "message.0=Apple $(name.1).",
-                "message.1=  Arr... Welcome, $(name.0)!",
-                "name.0 :John the Average",
-                "name.1 : Jack  ",
-                "name.2 :\  William  ",
-                "alert=Fire!"
-                ]
-        loaded = pyproperties.Properties("./data/properties/bar.properties")
-        self.assertEqual(props, loaded.properties)
-        self.assertEqual(comments, loaded.propcomments)
-        self.assertEqual(src, loaded.source)
-
-
-    def testLoadHidden(self):
-        baz = pyproperties.Properties("./data/properties/baz.properties")
-        src =   [
-                "prop.0=Foo",
+                "bar=Bar",
                 "",
-                "prop.1=Bar",
-                "prop.2=Baz",
+                "baz=Baz",
                 ]
-        propcomments = {"prop.0":["this is a comment"], "prop.1":["this is commented property"]}
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.commented.properties")
+        reader.loadf()
+        reader.extractprops()
+        reader.extractcomments()
+        self.assertEqual(comments, reader._comments)
+        self.assertEqual(lines, reader._source)
+
+    def testUncoverHiddenProperties(self):
+        """
+        Method tested: `Reader.uncoverhidden()`
+        Test if `uncoverhidden()` correctly uncovers hidden properties.
+        """
+        hidden = ["foo", "bar"]
+        props = [
+                "foo=Foo",
+                "bar=Bar",
+                ]
+        lines = [
+                "foo=Foo",
+                "",
+                "bar=Bar",
+                ]
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.hidden.properties")
+        reader.loadf()
+        reader.uncoverhidden()
+        reader.extractprops()
+        self.assertEqual(props, reader._properties)
+        self.assertEqual(hidden, reader._hidden)
+        self.assertEqual(lines, reader._source)
+
+    def testUncoverHiddenPropertiesWithComments(self):
+        """
+        Method tested: `Reader.uncoverhidden()`
+        Test if `uncoverhidden()` correctly uncovers hidden properties but leaves comments untouched.
+        """
+        hidden = ["foo", "bar"]
+        props = [
+                "foo=Foo",
+                "bar=Bar",
+                ]
+        comments =  {
+                    "foo":"this is a comment",
+                    }
+        lines = [
+                "#   this is",
+                "#   a comment",
+                "foo=Foo",
+                "",
+                "#   this is",
+                "#   another comment",
+                "bar=Bar",
+                ]
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.hidden.commented.properties")
+        reader.loadf()
+        reader.uncoverhidden()
+        reader.extractprops()
+        self.assertEqual(props, reader._properties)
+        self.assertEqual(hidden, reader._hidden)
+        self.assertEqual(lines, reader._source)
+
+    def testSplitProperties(self):
+        """
+        Method tested: `Reader.splitprops()`
+        Test if `splitprops()` correctly splits properties into key and value.
+        """
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.simple.properties")
+        reader.loadf()
+        reader.extractprops()
+        props = [
+                "foo=Foo  ",
+                "bar=Bar",
+                ]
+        self.assertEqual(props, reader._properties)
+        
+        reader.splitprops()
         props = {
-                "prop.0":"Foo",
-                "prop.1":"Bar",
-                "prop.2":"Baz",
+                "foo":"Foo  ",
+                "bar":"Bar",
                 }
-        self.assertEqual(propcomments, baz.propcomments)
-        self.assertEqual(src, baz.source)
-        self.assertEqual(props, baz.properties)
-        self.assertEqual(["prop.1"], baz.hidden)
+        self.assertEqual(props, reader._properties)
+    def testReadSimple(self):
+        """
+        Method tested: `Reader.read()`
+        Test if `read()` correctly runs the process of reading simple properties file.
+        """
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.simple.properties")
+        reader.read()
+        lines = [
+                "foo=Foo  ",
+                "",
+                "bar=Bar",
+                ]
+        props = {
+                "foo":"Foo  ",
+                "bar":"Bar",
+                }
+        hidden = []
+        comments = {}
+        self.assertEqual(lines, reader._source)
+        self.assertEqual(props, reader._properties)
+        self.assertEqual(hidden, reader._hidden)
+        self.assertEqual(comments, reader._comments)
+    
+    def testReadHidden(self):
+        """
+        Method tested: `Reader.read()`
+        Test if `read()` correctly runs the process of reading properties file with hidden properties.
+        """
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.hidden.properties")
+        reader.read()
+        lines = [
+                "foo=Foo",
+                "",
+                "bar=Bar",
+                ]
+        props = {
+                "foo":"Foo",
+                "bar":"Bar",
+                }
+        hidden = ["foo", "bar"]
+        comments = {}
+        self.assertEqual(lines, reader._source)
+        self.assertEqual(props, reader._properties)
+        self.assertEqual(hidden, reader._hidden)
+        self.assertEqual(comments, reader._comments)
 
-
-    def testNoRead(self):
-        loaded = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
-        self.assertEqual("./data/properties/bar.properties", loaded.path)
-        self.assertEqual([], loaded.origin_source)
-        self.assertEqual([], loaded.source)
-        self.assertEqual({}, loaded.origin_properties)
-        self.assertEqual({}, loaded.properties)
-        self.assertEqual({}, loaded.propcomments)
-
-
-    def testDifferentReadCustoms(self):
-        bara = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
-        barb = pyproperties.Properties()
-        bara.read()
-        barb.read("./data/properties/bar.properties")
-        self.assertEqual(bara.origin_source, barb.origin_source)
-        self.assertEqual(bara.source, barb.source)
-        self.assertEqual(bara.origin_properties, barb.origin_properties)
-        self.assertEqual(bara.properties, barb.properties)
-        self.assertEqual(bara.propcomments, barb.propcomments)
-        self.assertEqual(bara.hidden, barb.hidden)
-
-
-class IncludeTest(unittest.TestCase):
+    def testReadWithComments(self):
+        """
+        Method tested: `Reader.read()`
+        Test if `read()` correctly runs the process of reading properties file with commented properties.
+        """
+        reader = pyproperties.Reader(path="./data/properties/reader_test/foo.commented.properties")
+        reader.read()
+        lines = [
+                "foo=Foo  ",
+                "",
+                "bar=Bar",
+                "",
+                "baz=Baz",
+                ]
+        props = {
+                "foo":"Foo  ",
+                "bar":"Bar",
+                "baz":"Baz",
+                }
+        hidden = []
+        comments =  {
+                    "foo":"this is\na comment",
+                    "bar":"this is another comment",
+                    }
+        self.assertEqual(lines, reader._source)
+        self.assertEqual(props, reader._properties)
+        self.assertEqual(hidden, reader._hidden)
+        self.assertEqual(comments, reader._comments)
+    
     def testIncludeRaisesErrorWhenFileNotFound(self):
-        self.assertRaises(OSError, pyproperties.Properties, "./data/properties/include_test/test_error.properties")
+        """
+        Method tested: `Reader._include()`
+        Test if raises an error when file being included is not found.
+        """
+        reader = pyproperties.Reader(path="")
+        self.assertRaises(OSError, reader._include, path="./data/properties/include_test/test_error.properties", line_number=0)
+
+    def testIncludeWarnsWhenFileNotFound(self):
+        reader = pyproperties.Reader(path="./data/properties/include_test/test_error.properties")
+        self.assertWarns(pyproperties.IncludeWarning, reader._include, path="./data/properties/include_test/test_error.properties", line_number=0)
 
 
+@unittest.skip("removed due to code refactoring")
+class IncludeTest(unittest.TestCase):
     def testIncludeSimple(self):
-        test = pyproperties.Properties("./data/properties/include_test/test.properties")
-        combined = pyproperties.Properties("./data/properties/include_test/combined.properties")
+        test = pyproperties.Reader(path="./data/properties/include_test/test.properties")
+        combined = pyproperties.Reader(path="./data/properties/include_test/combined.properties")
+        
+        test.read()
+        combined.read()
 
-        self.assertEqual(test.source, combined.source)
-        self.assertEqual(test.properties, combined.properties)
-        self.assertEqual(test.propcomments, combined.propcomments)
-        self.assertListEqual(sorted(test.hidden), sorted(combined.hidden))
-
+        self.assertEqual(test._source, combined._source)
+        self.assertEqual(test._properties, combined.properties)
+        self.assertEqual(test._comments, combined._comments)
+        self.assertListEqual(sorted(test._hidden), sorted(combined._hidden))
 
     def testIncludePrefixed(self):
         test = pyproperties.Properties("./data/properties/include_test/test.prefix.properties")
@@ -550,6 +474,611 @@ class IncludeTest(unittest.TestCase):
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
+
+
+class WriterTest(unittest.TestCase):
+    def testRaisesUnsavedChangesError(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "bar")
+        writer = pyproperties.Writer(foo)
+        self.assertRaises(pyproperties.UnsavedChangesError, writer.store, "")
+
+
+    def testRaisesStoreErrorWhenNoPathGiven(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "bar")
+        foo.save()
+        writer = pyproperties.Writer(foo)
+        self.assertRaises(pyproperties.StoreError, writer.store, "")
+
+    def testStoreLoadedWithNoModifications(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "#   This is a comment for massage.0",
+                    "message.0=Apple $(name.1).",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is a comment for name.0 which",
+                    "#   value is \"John the Average\"",
+                    "name.0=John the Average",
+                    "name.1=Jack  ",
+                    "name.2=\\  William  ",
+                    "alert=Fire!",
+                    ]
+        writer = pyproperties.Writer(bar)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+    def testStoreLoadedSomeValuesRemoved(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is a comment for name.0 which",
+                    "#   value is \"John the Average\"",
+                    "name.0=John the Average",
+                    "name.2=\\  William  ",
+                    "alert=Fire!",
+                    ]
+        bar.remove("message.0")
+        bar.remove("name.1")
+        bar.save()
+        writer = pyproperties.Writer(bar)
+        writer.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+    def testStoreLoadedEveryOriginalValueRemoved(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    ]
+        bar.removes("*")
+        bar.save()
+        writer = pyproperties.Writer(bar)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+
+    def testStoreLoadedEveryOriginalPropertyRemovedAndNewPropertiesAdded(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "prop.0=0",
+                    "#   this is a comment for prop.1",
+                    "prop.1=1",
+                    "#prop.2=2",
+                    ]
+        bar.removes("*")
+        bar.set("prop.0", "0")
+        bar.set("prop.1", "1")
+        bar.comment("prop.1", "this is a comment for prop.1")
+        bar.set("prop.2", "2")
+        bar.hide("prop.2")
+        bar.save()
+        writer = pyproperties.Writer(bar)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+
+    def testStoreLoadedAndCommented(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "#   This is a comment for massage.0",
+                    "message.0=Apple $(name.1).",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is a comment for name.0 which",
+                    "#   value is \"John the Average\"",
+                    "name.0=John the Average",
+                    "#   possibly Sparrow",
+                    "name.1=Jack  ",
+                    "#   his name is William",
+                    "#   that's for sure",
+                    "name.2=\\  William  ",
+                    "#alert=Fire!",
+                    ]
+        bar.hide("alert")
+        bar.comment("name.2", "his name is William\nthat's for sure")
+        bar.comment("name.1", "possibly Sparrow")
+        bar.save()
+        writer = pyproperties.Writer(bar)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+
+    def testStoreLoadedAndCommentsRemoved(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "message.0=Apple $(name.1).",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is a comment for name.0 which",
+                    "#   value is \"John the Average\"",
+                    "name.0=John the Average",
+                    "name.1=Jack  ",
+                    "name.2=\\  William  ",
+                    "alert=Fire!",
+                    ]
+        bar.rmcomment("message.0")
+        bar.save()
+        writer = pyproperties.Writer(bar)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+
+    def testStoreChangedComments(self):
+        bar = pyproperties.Properties("./data/properties/bar.properties")
+        lines = [   "#   second simple properties file",
+                    "#   used for testing properties.py module",
+                    "",
+                    "#   This is a comment for massage.0",
+                    "message.0=Apple $(name.1).",
+                    "message.1=Arr... Welcome, $(name.0)!",
+                    "#   This is changed comment for name.0",
+                    "name.0=John the Average",
+                    "name.1=Jack  ",
+                    "name.2=\\  William  ",
+                    "alert=Fire!",
+                    ]
+        bar.comment("name.0", "This is changed comment for name.0")
+        bar.save()
+        writer = pyproperties.Writer(bar)
+        writer.store(path="./test.properties~", no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+    def testStoreCreatedFromBlankAndCommented(self):
+        foo = pyproperties.Properties("foo.properties", no_read=True)
+        foo.set("foo", "Foo")
+        foo.set("bar", "Bar")
+        foo.save()
+        foo.hide("foo")
+        self.assertRaises(KeyError, foo.comment, "foo", "foo's comment")
+        foo.comment("bar", "bar's comment")
+        self.assertRaises(pyproperties.UnsavedChangesError, foo.store, "")
+        foo.save()
+        lines = [
+                "#   bar's comment",
+                "bar=Bar",
+                "#foo=Foo",
+                ]
+        writer = pyproperties.Writer(foo)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+
+    def testStoreIncludesAdded(self):
+        foo = pyproperties.Properties("foo.properties", no_read=True)
+        foo.addinclude(path="foo.properties", prefix="", hidden=False)
+        foo.addinclude(path="bar.properties", prefix="", hidden=False)
+        foo.save()
+        lines = [
+                "__include__=foo.properties",
+                "",
+                "__include__=bar.properties",
+                ]
+        writer = pyproperties.Writer(foo)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+    def testStoreIncludesAddedHidden(self):
+        foo = pyproperties.Properties("foo.properties", no_read=True)
+        foo.addinclude(path="foo.properties", prefix="", hidden=True)
+        foo.addinclude(path="bar.properties", prefix="", hidden=False)
+        foo.save()
+        lines = [
+                "__include__.hidden=foo.properties",
+                "",
+                "__include__=bar.properties",
+                ]
+        writer = pyproperties.Writer(foo)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+    def testStoreIncludesAddedPrefixed(self):
+        foo = pyproperties.Properties("foo.properties", no_read=True)
+        foo.addinclude(path="foo.properties", prefix="foo", hidden=False)
+        foo.addinclude(path="bar.properties", prefix="", hidden=False)
+        foo.save()
+        lines = [
+                "__include__.as.foo=foo.properties",
+                "",
+                "__include__=bar.properties",
+                ]
+        writer = pyproperties.Writer(foo)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+    def testStoreIncludesAddedPrefixedAndHidden(self):
+        foo = pyproperties.Properties("foo.properties", no_read=True)
+        foo.addinclude(path="foo.properties", prefix="foo", hidden=False)
+        foo.addinclude(path="bar.properties", prefix="", hidden=True)
+        foo.addinclude(path="baz.properties", prefix="baz", hidden=True)
+        foo.save()
+        lines = [
+                "__include__.as.foo=foo.properties",
+                "",
+                "__include__.hidden=bar.properties",
+                "",
+                "__include__.hidden.as.baz=baz.properties",
+                ]
+        writer = pyproperties.Writer(foo)
+        writer.store(no_dump=True)
+        self.assertEqual(lines, writer.lines)
+
+    def testStoreForced(self):
+        foo = pyproperties.Properties("foo.properties", no_read=True)
+        foo.set("some.prop", "some value")
+        foo.set("other.prop", "other value")
+        foo.save()
+        writer = pyproperties.Writer(foo)
+        writer.store(no_dump=True)
+        self.assertEqual(["other.prop=other value", "some.prop=some value"], writer.lines)
+        foo.set("another.prop", "another value")
+        writer = pyproperties.Writer(foo)
+        writer.store(no_dump=True, force=True)
+        self.assertEqual(["other.prop=other value", "some.prop=some value"], writer.lines)
+
+
+class ValidatorsTest(unittest.TestCase):
+    def testCommentlineValidator(self):
+        lines = [
+                ("#some comment", True),
+                ("!  text", True),
+                ("#   string", True),
+                ("!", True),
+                ("# ", True),
+                ("  ! ", True),
+                ("#maybe=property", True),
+                ("not a comment", False),
+                ("", False),
+                ("  indent", False),
+                ("  indented=property", False),
+                ("  some#string", False),
+                ]
+        for line, result in lines: self.assertEqual(pyproperties.iscomment(line), result)
+    
+    def testHaskeyNonStrict(self):
+        lines = [
+                ("#some comment", False),
+                ("#maybe=property", False),
+                ("not a property", False),
+                ("", False),
+                ("  indent", False),
+                ("    ", False),
+                ("some thing = not valid", True),
+                ("  indented=property", True),
+                ("valid  = property", True),
+                ("valid:property", True),
+                ("valid      : property", True),
+                ("   valid  : property", True),
+                ]
+        for line, result in lines: self.assertEqual(pyproperties.linehaskey(line, strict=False), result)
+
+    def testHaskeyStrict(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some comment", False),
+                ("#maybe=property", False),
+                ("not a property", False),
+                ("", False),
+                ("  indent", False),
+                ("    ", False),
+                ("some thing = not valid", False),
+                ("  indented=property", True),
+                ("valid  = property", True),
+                ("valid:property", True),
+                ("valid      : property", True),
+                ("   valid  : property", True),
+                ("__include__=./foo.properties", True),
+                ("__include__.as.bar : ./foo.properties", True),
+                ("__include__.hidden.as.bar=./foo.properties", True),
+                ]
+        for line, result in lines: self.assertEqual(pyproperties.linehaskey(line, strict=True), result)
+
+    def testGetlinekeyNonStrict(self):
+        foo = pyproperties.Properties(strict=False)
+        lines = [
+                ("#some comment", None),
+                ("#maybe=property", None),
+                ("not a property", None),
+                ("", None),
+                ("  indent", None),
+                ("    ", None),
+                ("some thing = not valid", "some thing"),
+                ("  indented=property", "indented"),
+                ("valid  = property", "valid"),
+                ("valid:property", "valid"),
+                ("valid      : property", "valid"),
+                ("   valid  : property", "valid"),
+                ]
+        for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
+
+
+    def testGetlinekeyStrict(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some comment", None),
+                ("#maybe=property", None),
+                ("not a property", None),
+                ("", None),
+                ("  indent", None),
+                ("    ", None),
+                ("some thing = not valid", None),
+                ("  indented=property", "indented"),
+                ("valid  = property", "valid"),
+                ("valid:property", "valid"),
+                ("valid      : property", "valid"),
+                ("   valid  : property", "valid"),
+                ]
+        for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
+
+    def testGetlinevalueNonStrict(self):
+        foo = pyproperties.Properties(strict=False)
+        lines = [
+                ("#some comment", None),
+                ("#maybe=property", None),
+                ("not a property", None),
+                ("", None),
+                ("  indent", None),
+                ("    ", None),
+                ("some thing = not valid", "not valid"),
+                ("  indented=property", "property"),
+                ("valid  = property", "property"),
+                ("valid:property", "property"),
+                ("valid      : property", "property"),
+                ("   valid  : property", "property"),
+                ]
+        for line, result in lines: self.assertEqual(foo.getlinevalue(line), result)
+
+
+    def testGetlinevalueStrict(self):
+        foo = pyproperties.Properties()
+        lines = [
+                ("#some comment", None),
+                ("#maybe=property", None),
+                ("not a property", None),
+                ("", None),
+                ("  indent", None),
+                ("    ", None),
+                ("some thing = not valid", None),
+                ("  indented=property", "property"),
+                ("valid  = property", "property"),
+                ("valid:property", "property"),
+                ("valid      : property", "property"),
+                ("   valid  : property", "property"),
+                ]
+        for line, result in lines: self.assertEqual(foo.getlinevalue(line), result)
+
+    def testHiddenPropertiesDetectionWhenStrict(self):
+        r = pyproperties.Reader(path="")
+        lines = [
+                ("#some.key=0", True),
+                ("#some key=0", False),
+                ("# some.key=0", False),
+                ]
+        for line, result in lines: self.assertEqual(result, r._islinehiddenprop(line))
+
+    def testHiddenPropertiesDetectionWhenNonStrict(self):
+        foo = pyproperties.Reader(path="", strict=False)
+        lines = [
+                ("#some.key=0", True),
+                ("#some key=0", True),
+                ("# some.key=0", False),
+                ("# some key=0", False),
+                ]
+        for line, result in lines: self.assertEqual(result, foo._islinehiddenprop(line))
+
+
+class ParselineTest(unittest.TestCase):
+    def testParselineInteger(self):
+        foo = pyproperties.Properties()
+        foo.set("two.0", 2)
+        foo.set("two.1", "2")
+        self.assertEqual(2, foo.get("two.0", parse=True, cast=True))
+        self.assertEqual(2, foo.get("two.0", parse=True, cast=False))
+        self.assertEqual(2, foo.get("two.1", parse=True, cast=True))
+        self.assertEqual("2", foo.get("two.1", parse=True, cast=False))
+
+
+    def testParselineFloat(self):
+        foo = pyproperties.Properties()
+        foo.set("pi.0", 3.14)
+        foo.set("pi.1", "3.14")
+        self.assertEqual(3.14, foo.get("pi.0", parse=True, cast=True))
+        self.assertEqual(3.14, foo.get("pi.0", parse=True, cast=False))
+        self.assertEqual(3.14, foo.get("pi.1", parse=True, cast=True))
+        self.assertEqual("3.14", foo.get("pi.1", parse=True, cast=False))
+
+
+    def testParselineString(self):
+        foo = pyproperties.Properties()
+        foo.set("greeting", "Hello $(name)!")
+        foo.set("name", "World")
+        self.assertEqual("Hello World!", foo.get("greeting", parse=True, cast=True))
+        self.assertEqual("Hello World!", foo.get("greeting", parse=True, cast=False))
+
+
+    def testParselineComplex(self):
+        foo = pyproperties.Properties()
+        foo.set("greeting", "Hello $(name)! Happy $(number)th day of week! Did you know that Pi is $(pi.value)?")
+        foo.set("name", "World")
+        foo.set("number", 7)
+        foo.set("pi.value", 3.14159)
+        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parse=True, cast=True))
+        self.assertEqual("Hello World! Happy 7th day of week! Did you know that Pi is 3.14159?", foo.get("greeting", parse=True, cast=False))
+
+
+class ParseTest(unittest.TestCase):
+    def testParse(self):
+        bar = pyproperties.Properties(foo_path.replace("foo", "bar"))
+        parsed =    [
+                    ("alert", "Fire!"),
+                    ("message.0", "Apple Jack  ."),
+                    ("message.1", "Arr... Welcome, John the Average!"),
+                    ("name.0", "John the Average"),
+                    ("name.1", "Jack  "),
+                    ("name.2", "\\  William  "),
+                    ]
+        pbar = bar.parse()
+        self.assertEqual(parsed, sorted(pbar.gets("*")))
+        self.assertEqual(pyproperties.Properties, type(pbar))
+
+    def testParseCasted(self):
+        bar = pyproperties.Properties()
+        bar.set("pi.part.0", "3")
+        bar.set("pi.part.1", "14")
+        bar.set("pi", "$(pi.part.0).$(pi.part.1)")
+        bar.set("true.part.0", "Tr")
+        bar.set("true.part.1", "ue")
+        bar.set("true", "$(true.part.0)$(true.part.1)")
+        bar.set("none.part.0", "No")
+        bar.set("none.part.1", "ne")
+        bar.set("none", "$(none.part.0)$(none.part.1)")
+        bar.save()
+        props = [
+                ("none", None),
+                ("none.part.0", "No"),
+                ("none.part.1", "ne"),
+                ("pi", 3.14),
+                ("pi.part.0", 3),
+                ("pi.part.1", 14),
+                ("true", True),
+                ("true.part.0", "Tr"),
+                ("true.part.1", "ue"),
+                ]
+        pbar = bar.parse(cast=True)
+        self.assertEqual(props, sorted(pbar.gets("*")))
+        self.assertEqual(pyproperties.Properties, type(pbar))
+
+
+class ConvertTest(unittest.TestCase):
+    def testFloatConversion(self):
+        examples = [("3.14", 3.14),
+                    ("-1.43", -1.43),
+                    ("6.023e+23", 6.023e+23),
+                    ("6.023e-23", 6.023e-23),
+                    ("6.023e23", 6.023e+23),
+                    ]
+        foo = pyproperties.Properties()
+        for s, n in examples:
+            self.assertEqual(foo._convert(s), n)
+
+    def testHexadecimalConversion(self):
+        examples = [("0x0", 0),
+                    ("-0x1", -1),
+                    ("0x16", 22),
+                    ("-0xa2", -162),
+                    ("0x45", 69),
+                    ("0x29a", 666),
+                    ("-0x7cb", -1995),
+                    ("0x7dc", 2012),
+                    ("0x22b8", 8888),
+                    ("0x582", 1410),
+                    ("-0x582", -1410),
+                    ("0x75bcd15", 123456789),
+                    ("-0xf44e", -62542),
+                    ]
+        foo = pyproperties.Properties()
+        for hex, dec in examples:
+            self.assertEqual(foo._convert(hex), dec)
+
+    def testOctalConversion(self):
+        examples = [("0o0", 0),
+                    ("-0o1", -1),
+                    ("0o26", 22),
+                    ("-0o242", -162),
+                    ("0o105", 69),
+                    ("0o1232", 666),
+                    ("-0o3713", -1995),
+                    ("0o3734", 2012),
+                    ("0o21270", 8888),
+                    ("0o2602", 1410),
+                    ("-0o2602", -1410),
+                    ("0o726746425", 123456789),
+                    ("-0o172116", -62542),
+                    ]
+        foo = pyproperties.Properties()
+        for oct, dec in examples:
+            self.assertEqual(foo._convert(oct), dec)
+
+
+@unittest.skip("deprecated")
+class LoadTest(unittest.TestCase):
+    def testLoad(self):
+        props = {
+                    "message.0":"Apple $(name.1).",
+                    "message.1":"Arr... Welcome, $(name.0)!",
+                    "name.0":"John the Average",
+                    "name.1":"Jack  ",
+                    "name.2":"\\  William  ",
+                    "alert":"Fire!",
+                }
+        comments = {"message.0":"This is a comment for massage.0", 
+                    "name.0":"This is a comment for name.0 which\nvalue is \"John the Average\"",
+                    }
+        src = [ "#   second simple properties file",
+                "#   used for testing properties.py module",
+                "",
+                "message.0=Apple $(name.1).",
+                "message.1=  Arr... Welcome, $(name.0)!",
+                "name.0 :John the Average",
+                "name.1 : Jack  ",
+                "name.2 :\  William  ",
+                "alert=Fire!"
+                ]
+        loaded = pyproperties.Reader(path="./data/properties/bar.properties")
+        loaded.read()
+        self.assertEqual(props, loaded._properties)
+        self.assertEqual(comments, loaded._comments)
+        self.assertEqual(src, loaded._source)
+
+
+    def testLoadHidden(self):
+        baz = pyproperties.Properties("./data/properties/baz.properties")
+        src =   [
+                "prop.0=Foo",
+                "",
+                "prop.1=Bar",
+                "prop.2=Baz",
+                ]
+        propcomments = {"prop.0":["this is a comment"], "prop.1":["this is commented property"]}
+        props = {
+                "prop.0":"Foo",
+                "prop.1":"Bar",
+                "prop.2":"Baz",
+                }
+        self.assertEqual(propcomments, baz.propcomments)
+        self.assertEqual(src, baz.source)
+        self.assertEqual(props, baz.properties)
+        self.assertEqual(["prop.1"], baz.hidden)
+
+
+    def testNoRead(self):
+        loaded = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
+        self.assertEqual("./data/properties/bar.properties", loaded.path)
+        self.assertEqual([], loaded.origin_source)
+        self.assertEqual([], loaded.source)
+        self.assertEqual({}, loaded.origin_properties)
+        self.assertEqual({}, loaded.properties)
+        self.assertEqual({}, loaded.propcomments)
+
+
+    def testDifferentReadCustoms(self):
+        bara = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
+        barb = pyproperties.Properties()
+        bara.read()
+        barb.read("./data/properties/bar.properties")
+        self.assertEqual(bara.origin_source, barb.origin_source)
+        self.assertEqual(bara.source, barb.source)
+        self.assertEqual(bara.origin_properties, barb.origin_properties)
+        self.assertEqual(bara.properties, barb.properties)
+        self.assertEqual(bara.propcomments, barb.propcomments)
+        self.assertEqual(bara.hidden, barb.hidden)
 
 
 class KeyGetterTest(unittest.TestCase):
@@ -1179,254 +1708,6 @@ class RevertTest(unittest.TestCase):
         self.assertEqual(includes, foo.includes)
         foo.revert()
         self.assertEqual([], foo.includes)
-
-
-class WriterTest(unittest.TestCase):
-    def testRaisesUnsavedChangesError(self):
-        foo = pyproperties.Properties()
-        foo.set("foo", "bar")
-        writer = pyproperties.Writer(foo)
-        self.assertRaises(pyproperties.UnsavedChangesError, writer.store, "")
-
-
-    def testRaisesStoreErrorWhenNoPathGiven(self):
-        foo = pyproperties.Properties()
-        foo.set("foo", "bar")
-        foo.save()
-        writer = pyproperties.Writer(foo)
-        self.assertRaises(pyproperties.StoreError, writer.store, "")
-
-    def testStoreLoadedWithNoModifications(self):
-        bar = pyproperties.Properties("./data/properties/bar.properties")
-        lines = [   "#   second simple properties file",
-                    "#   used for testing properties.py module",
-                    "",
-                    "#   This is a comment for massage.0",
-                    "message.0=Apple $(name.1).",
-                    "message.1=Arr... Welcome, $(name.0)!",
-                    "#   This is a comment for name.0 which",
-                    "#   value is \"John the Average\"",
-                    "name.0=John the Average",
-                    "name.1=Jack  ",
-                    "name.2=\\  William  ",
-                    "alert=Fire!",
-                    ]
-        writer = pyproperties.Writer(bar)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-    def testStoreLoadedSomeValuesRemoved(self):
-        bar = pyproperties.Properties("./data/properties/bar.properties")
-        lines = [   "#   second simple properties file",
-                    "#   used for testing properties.py module",
-                    "",
-                    "message.1=Arr... Welcome, $(name.0)!",
-                    "#   This is a comment for name.0 which",
-                    "#   value is \"John the Average\"",
-                    "name.0=John the Average",
-                    "name.2=\\  William  ",
-                    "alert=Fire!",
-                    ]
-        bar.remove("message.0")
-        bar.remove("name.1")
-        bar.save()
-        writer = pyproperties.Writer(bar)
-        writer.store(path="./test.properties~", no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-    def testStoreLoadedEveryOriginalValueRemoved(self):
-        bar = pyproperties.Properties("./data/properties/bar.properties")
-        lines = [   "#   second simple properties file",
-                    "#   used for testing properties.py module",
-                    ]
-        bar.removes("*")
-        bar.save()
-        writer = pyproperties.Writer(bar)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-
-    def testStoreLoadedEveryOriginalPropertyRemovedAndNewPropertiesAdded(self):
-        bar = pyproperties.Properties("./data/properties/bar.properties")
-        lines = [   "#   second simple properties file",
-                    "#   used for testing properties.py module",
-                    "",
-                    "prop.0=0",
-                    "#   this is a comment for prop.1",
-                    "prop.1=1",
-                    "#prop.2=2",
-                    ]
-        bar.removes("*")
-        bar.set("prop.0", "0")
-        bar.set("prop.1", "1")
-        bar.comment("prop.1", "this is a comment for prop.1")
-        bar.set("prop.2", "2")
-        bar.hide("prop.2")
-        bar.save()
-        writer = pyproperties.Writer(bar)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-
-    def testStoreLoadedAndCommented(self):
-        bar = pyproperties.Properties("./data/properties/bar.properties")
-        lines = [   "#   second simple properties file",
-                    "#   used for testing properties.py module",
-                    "",
-                    "#   This is a comment for massage.0",
-                    "message.0=Apple $(name.1).",
-                    "message.1=Arr... Welcome, $(name.0)!",
-                    "#   This is a comment for name.0 which",
-                    "#   value is \"John the Average\"",
-                    "name.0=John the Average",
-                    "#   possibly Sparrow",
-                    "name.1=Jack  ",
-                    "#   his name is William",
-                    "#   that's for sure",
-                    "name.2=\\  William  ",
-                    "#alert=Fire!",
-                    ]
-        bar.hide("alert")
-        bar.comment("name.2", "his name is William\nthat's for sure")
-        bar.comment("name.1", "possibly Sparrow")
-        bar.save()
-        writer = pyproperties.Writer(bar)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-
-    def testStoreLoadedAndCommentsRemoved(self):
-        bar = pyproperties.Properties("./data/properties/bar.properties")
-        lines = [   "#   second simple properties file",
-                    "#   used for testing properties.py module",
-                    "",
-                    "message.0=Apple $(name.1).",
-                    "message.1=Arr... Welcome, $(name.0)!",
-                    "#   This is a comment for name.0 which",
-                    "#   value is \"John the Average\"",
-                    "name.0=John the Average",
-                    "name.1=Jack  ",
-                    "name.2=\\  William  ",
-                    "alert=Fire!",
-                    ]
-        bar.rmcomment("message.0")
-        bar.save()
-        writer = pyproperties.Writer(bar)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-
-    def testStoreChangedComments(self):
-        bar = pyproperties.Properties("./data/properties/bar.properties")
-        lines = [   "#   second simple properties file",
-                    "#   used for testing properties.py module",
-                    "",
-                    "#   This is a comment for massage.0",
-                    "message.0=Apple $(name.1).",
-                    "message.1=Arr... Welcome, $(name.0)!",
-                    "#   This is changed comment for name.0",
-                    "name.0=John the Average",
-                    "name.1=Jack  ",
-                    "name.2=\\  William  ",
-                    "alert=Fire!",
-                    ]
-        bar.comment("name.0", "This is changed comment for name.0")
-        bar.save()
-        writer = pyproperties.Writer(bar)
-        writer.store(path="./test.properties~", no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-    def testStoreCreatedFromBlankAndCommented(self):
-        foo = pyproperties.Properties("foo.properties", no_read=True)
-        foo.set("foo", "Foo")
-        foo.set("bar", "Bar")
-        foo.save()
-        foo.hide("foo")
-        self.assertRaises(KeyError, foo.comment, "foo", "foo's comment")
-        foo.comment("bar", "bar's comment")
-        self.assertRaises(pyproperties.UnsavedChangesError, foo.store, "")
-        foo.save()
-        lines = [
-                "#   bar's comment",
-                "bar=Bar",
-                "#foo=Foo",
-                ]
-        writer = pyproperties.Writer(foo)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-
-    def testStoreIncludesAdded(self):
-        foo = pyproperties.Properties("foo.properties", no_read=True)
-        foo.addinclude(path="foo.properties", prefix="", hidden=False)
-        foo.addinclude(path="bar.properties", prefix="", hidden=False)
-        foo.save()
-        lines = [
-                "__include__=foo.properties",
-                "",
-                "__include__=bar.properties",
-                ]
-        writer = pyproperties.Writer(foo)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-    def testStoreIncludesAddedHidden(self):
-        foo = pyproperties.Properties("foo.properties", no_read=True)
-        foo.addinclude(path="foo.properties", prefix="", hidden=True)
-        foo.addinclude(path="bar.properties", prefix="", hidden=False)
-        foo.save()
-        lines = [
-                "__include__.hidden=foo.properties",
-                "",
-                "__include__=bar.properties",
-                ]
-        writer = pyproperties.Writer(foo)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-    def testStoreIncludesAddedPrefixed(self):
-        foo = pyproperties.Properties("foo.properties", no_read=True)
-        foo.addinclude(path="foo.properties", prefix="foo", hidden=False)
-        foo.addinclude(path="bar.properties", prefix="", hidden=False)
-        foo.save()
-        lines = [
-                "__include__.as.foo=foo.properties",
-                "",
-                "__include__=bar.properties",
-                ]
-        writer = pyproperties.Writer(foo)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-    def testStoreIncludesAddedPrefixedAndHidden(self):
-        foo = pyproperties.Properties("foo.properties", no_read=True)
-        foo.addinclude(path="foo.properties", prefix="foo", hidden=False)
-        foo.addinclude(path="bar.properties", prefix="", hidden=True)
-        foo.addinclude(path="baz.properties", prefix="baz", hidden=True)
-        foo.save()
-        lines = [
-                "__include__.as.foo=foo.properties",
-                "",
-                "__include__.hidden=bar.properties",
-                "",
-                "__include__.hidden.as.baz=baz.properties",
-                ]
-        writer = pyproperties.Writer(foo)
-        writer.store(no_dump=True)
-        self.assertEqual(lines, writer.lines)
-
-    def testStoreForced(self):
-        foo = pyproperties.Properties("foo.properties", no_read=True)
-        foo.set("some.prop", "some value")
-        foo.set("other.prop", "other value")
-        foo.save()
-        writer = pyproperties.Writer(foo)
-        writer.store(no_dump=True)
-        self.assertEqual(["other.prop=other value", "some.prop=some value"], writer.lines)
-        foo.set("another.prop", "another value")
-        writer = pyproperties.Writer(foo)
-        writer.store(no_dump=True, force=True)
-        self.assertEqual(["other.prop=other value", "some.prop=some value"], writer.lines)
 
 
 class AddcommentTest(unittest.TestCase):
