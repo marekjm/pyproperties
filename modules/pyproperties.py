@@ -156,12 +156,12 @@ class Reader():
         This method is only run when a property file is being read. 
         It will dump another file in place specified by `__include__` directive.
         """
-        if not os.path.isabs(path): path = os.path.join(os.path.split(self._path)[0], path)
-        if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path")
-        if not os.path.isfile(path): raise IncludeError("__include__ file not found: {0}".format(path))
+        if not os.path.isabs(path): tpath = os.path.join(os.path.split(self._path)[0], path)
+        else: tpath = path
+        if tpath.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path")
+        if not os.path.isfile(tpath): raise IncludeError("__include__ file not found: {0}".format(tpath))
         
-        path = os.path.normpath(path)
-        fpath = open(path)
+        fpath = open(tpath)
         file = fpath.readlines()
         fpath.close()
 
@@ -281,7 +281,7 @@ class Reader():
         """
         Returns list of keys in read file.
         """
-        return self._properties.keys()
+        return list(self._properties.keys())
 
 
 class Writer():
@@ -746,7 +746,7 @@ class Properties():
         self.properties = reader._properties
         self.hidden = reader._hidden
         self.propcomments = reader._comments
-        self.includes = self.includes_stored = reader._included
+        self.includes = reader._included
         self.source = reader._source
         self.save()
 
@@ -1252,9 +1252,8 @@ class Properties():
         """
         Removes include directive from a list of directives. 
         """
-        for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
-            if path == ipath and prefix == iprefix and hidden == ihidden: 
-                if self.includes[i] in self.includes_stored: self.includes_stored.remove( self.includes[i] )
+        for _path, _prefix, _hidden in self.includes:
+            if path == _path and prefix == _prefix and hidden == _hidden: 
                 self.includes.remove( (path, prefix, hidden) )
                 break
 
@@ -1263,18 +1262,16 @@ class Properties():
         Removes include directive from a list of directives and all properties corresponding to it.
         """
         purged = False
-        if not os.path.isabs(path): path = os.path.abspath(path)
-        print( (path, prefix, hidden) )
         for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
             if path == ipath and prefix == iprefix and hidden == ihidden:
                 self.rminclude( path, prefix, hidden )
-                """
-                reader = Reader(ipath).read()
+                if os.path.isabs(path): tpath = path
+                else: tpath = os.path.normpath(os.path.join(os.path.split(self.path)[0], path))
+                reader = Reader(path=tpath)
+                reader.read()
                 for key in reader.keys():
                     if prefix: key = "{0}.{1}".format(prefix, key)
-                    print(key)
                     self.remove(key)
-                """
                 purged = True
                 break
         if not purged: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden))
@@ -1286,3 +1283,9 @@ class Properties():
         """
         self.purgeinclude(path, prefix, hidden)
         self.addinclude(path, prefix, hidden)
+
+    def listincludes(self):
+        """
+        Returns list of tuples containg information about `includes` of this properties.
+        """
+        return self.includes

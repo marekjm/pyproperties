@@ -17,6 +17,7 @@
 
 
 * __new__:  `Reader()` class,
+* __new__:  `listincludes()` method,
 
 
 * __rem__:  

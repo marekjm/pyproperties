@@ -1,5 +1,5 @@
 #### Including properties
-###### _version: `0.2.2`_
+###### _version: `0.2.3`_
 
 ###### [Index](index.mdown)
 ----
@@ -62,7 +62,11 @@ In `pyproperties` you can pass some arguments to `__include__`.
 ##### Paths
 
 `_include()` can deal with absolute and relative paths.  
-__Important detail:__ relative ___path is relative to file___ _in which it will be included_ and __not__ working directory.
+
+__Important detail:__ relative ___path is relative to file___ _in which it will be included_ and __not__ working directory. 
+When reading from relative path - path of the file inside which include is performed will be appended to the path being included.  
+But it is important to remember that the manipulation of path is only internal and the changes are temporary - 
+when doing something with the include tuple you will need to enter the original path - as it was written in the file.
 
 
 ----
@@ -71,6 +75,7 @@ __Important detail:__ relative ___path is relative to file___ _in which it will 
 
 For easier manipulation of `__include__`'s version `0.2.2` introduced three methods: 
 `addinclude()`, `rminclude()` and `purgeinclude()`.  
+From `0.2.3` the `listincludes()` method is available.
 
 
 &nbsp;

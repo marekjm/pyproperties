@@ -388,6 +388,7 @@ class IncludeTest(unittest.TestCase):
         p = pyproperties.Properties()
         p.addinclude("./data/properties/include_test/test.properties")
         p.rminclude("./data/properties/include_test/test.properties")
+        
         self.assertEqual(p.includes, [])
 
     def testRmIncludePrefixed(self):
@@ -402,6 +403,7 @@ class IncludeTest(unittest.TestCase):
         p.addinclude("./data/properties/include_test/test.properties", hidden=True)
         p.addinclude("./data/properties/include_test/test.properties")
         p.rminclude("./data/properties/include_test/test.properties", hidden=True)
+        
         self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "", False)])
 
     def testRmIncludePrefixedAndHidden(self):
@@ -421,100 +423,87 @@ class IncludeTest(unittest.TestCase):
     def testPurgeIncludeSimple(self):
         test = pyproperties.Properties("./data/properties/include_test/test.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
-        test.purgeinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties")
-        
-        print()
-        for i in test.includes:
-            path, x, y = i
-            print( path )
-        print( os.path.abspath("./data/properties/include_test/./../../../data/properties/include_test/bar.properties") )
+        test.purgeinclude("./../../../data/properties/include_test/bar.properties")
         
         print( test.includes )
-        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False)])
-        #   self.assertEqual(test.properties, combined.properties)
-        #   self.assertEqual(test.propcomments, combined.propcomments)
-        #   self.assertEqual(test.hidden, combined.hidden)
+        self.assertEqual(test.includes, [("foo.properties", "", False)])
+        self.assertEqual(test.properties, combined.properties)
+        self.assertEqual(test.propcomments, combined.propcomments)
+        self.assertEqual(test.hidden, combined.hidden)
 
-    @unittest.skip("not implemented")
     def testPurgeIncludePrefixed(self):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.prefixed.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
-        test.purgeinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", prefix="bar")
+        test.purgeinclude("./../../../data/properties/include_test/bar.properties", prefix="bar")
         
-        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False)])
+        self.assertEqual(test.includes, [("foo.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
 
-    @unittest.skip("not implemented")
     def testPurgeIncludeHidden(self):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
-        test.purgeinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", hidden=True)
+        test.purgeinclude("./../../../data/properties/include_test/bar.properties", hidden=True)
         
-        print( test.includes )
-        print("-"*8)
-        print( combined.includes )
-        
-        self.assertEqual(test.includes, [(os.path.abspath("./data/properties/include_test/foo.properties"), "", False)])
+        self.assertEqual(test.includes, [("foo.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
 
-    @unittest.skip("not implemented")
     def testPurgeIncludePrefixedAndHidden(self):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.prefixed.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
-        test.purgeinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", prefix="bar", hidden=True)
+        test.purgeinclude("./../../../data/properties/include_test/bar.properties", prefix="bar", hidden=True)
         
-        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False)])
+        self.assertEqual(test.includes, [("foo.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
 
-    @unittest.skip("not implemented")
     def testStripIncludeSimple(self):
         test = pyproperties.Properties("./data/properties/include_test/test.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
-        test.stripinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties")
+        test.stripinclude("./../../../data/properties/include_test/bar.properties")
         
-        #   self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False), ("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", "", False)])
+        self.assertEqual(test.includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
 
-    @unittest.skip("not implemented")
     def testStripIncludePrefixed(self):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.prefixed.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
-        test.stripinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", prefix="bar")
+        test.stripinclude("./../../../data/properties/include_test/bar.properties", prefix="bar")
         
-        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False), ("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", "bar", False)])
+        self.assertEqual(test.includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "bar", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
 
-    @unittest.skip("not implemented")
     def testStripIncludeHidden(self):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
-        test.stripinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", hidden=True)
+        test.stripinclude("./../../../data/properties/include_test/bar.properties", hidden=True)
         
-        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False), ("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", "", True)])
+        self.assertEqual(test.includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "", True)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
 
-    @unittest.skip("not implemented")
     def testStripIncludePrefixedAndHidden(self):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.prefixed.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
-        test.stripinclude("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", prefix="bar", hidden=True)
+        test.stripinclude("./../../../data/properties/include_test/bar.properties", prefix="bar", hidden=True)
         
-        self.assertEqual(test.includes, [("./data/properties/include_test/foo.properties", "", False), ("./data/properties/include_test/./../../../data/properties/include_test/bar.properties", "bar", True)])
+        self.assertEqual(test.includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "bar", True)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
+    
+    def testListinlcudes(self):
+        test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.prefixed.properties")
+        self.assertEqual( test.listincludes(), test.includes )
 
 
 class WriterTest(unittest.TestCase):
