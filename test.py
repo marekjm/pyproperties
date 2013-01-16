@@ -826,7 +826,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "valid"),
                 ("   valid  : property", "valid"),
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
+        for line, result in lines: self.assertEqual(pyproperties.getlinekey(line, strict=foo.strict), result)
 
 
     def testGetlinekeyStrict(self):
@@ -845,7 +845,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "valid"),
                 ("   valid  : property", "valid"),
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinekey(line), result)
+        for line, result in lines: self.assertEqual(pyproperties.getlinekey(line, strict=foo.strict), result)
 
     def testGetlinevalueNonStrict(self):
         foo = pyproperties.Properties(strict=False)
@@ -863,7 +863,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "property"),
                 ("   valid  : property", "property"),
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinevalue(line), result)
+        for line, result in lines: self.assertEqual(pyproperties.getlinevalue(line, strict=foo.strict), result)
 
 
     def testGetlinevalueStrict(self):
@@ -882,7 +882,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "property"),
                 ("   valid  : property", "property"),
                 ]
-        for line, result in lines: self.assertEqual(foo.getlinevalue(line), result)
+        for line, result in lines: self.assertEqual(pyproperties.getlinevalue(line, strict=foo.strict), result)
 
     def testHiddenPropertiesDetectionWhenStrict(self):
         r = pyproperties.Reader(path="")
