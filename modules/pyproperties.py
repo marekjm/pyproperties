@@ -156,13 +156,11 @@ class Reader():
         This method is only run when a property file is being read. 
         It will dump another file in place specified by `__include__` directive.
         """
-        #   TODO: reimplement and improve `include` mechanism
+        if not os.path.isabs(path): path = os.path.join(os.path.split(self._path)[0], path)
         if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path")
         if not os.path.isfile(path): raise IncludeError("__include__ file not found: {0}".format(path))
         
-        if os.path.isabs(path): pass
-        else: path = os.path.join(os.path.split(self._path)[0], path)
-        
+        path = os.path.normpath(path)
         fpath = open(path)
         file = fpath.readlines()
         fpath.close()
@@ -176,8 +174,7 @@ class Reader():
             if line[-1] == "\n": line = line[:-1]
             file[i] = line
 
-        new_source = [ line for line in file ]
-        self.source = self._source[:line_number] + new_source + self._source[line_number+1:]
+        self._source = self._source[:line_number] + file + self._source[line_number+1:]
 
     def makeincludes(self):
         """
@@ -248,7 +245,7 @@ class Reader():
                     n -= 1
                 if n != i-1:
                     comment.reverse()
-                    comments[ getlinekey(line) ] = "\n".join( comment )
+                    comments[ getlinekey(line) ] = comment
                     self._source = self._source[:n+1] + self._source[i:]
             i += 1
         self._comments = comments
@@ -279,6 +276,12 @@ class Reader():
         self.extractprops()
         self.splitprops()
         if self._cast: self.castprops()
+    
+    def keys(self):
+        """
+        Returns list of keys in read file.
+        """
+        return self._properties.keys()
 
 
 class Writer():
@@ -738,16 +741,13 @@ class Properties():
         except AttributeError: pass
         finally: self.blank(path, strict)
 
-        if os.path.isfile(self.path): self._loadf(self.path)
-        elif os.path.isdir(self.path): self._loadd(self.path)
-        else: raise LoadError("'{0}' no such file or directory".format(self.path))
-
-        if not no_includes: self._makeincludes()
-        self._extracthidden()
-        self._extractcomments()
-        self._extractprops()
-        self._split()
-        if cast: self._tcasts("*")
+        reader = Reader(path=self.path, includes=not no_includes, cast=cast, strict=strict)
+        reader.read()
+        self.properties = reader._properties
+        self.hidden = reader._hidden
+        self.propcomments = reader._comments
+        self.includes = self.includes_stored = reader._included
+        self.source = reader._source
         self.save()
 
     def reload(self):
@@ -1255,7 +1255,7 @@ class Properties():
         for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
             if path == ipath and prefix == iprefix and hidden == ihidden: 
                 if self.includes[i] in self.includes_stored: self.includes_stored.remove( self.includes[i] )
-                self.includes.remove( self.includes[i] )
+                self.includes.remove( (path, prefix, hidden) )
                 break
 
     def purgeinclude(self, path, prefix="", hidden=False):
@@ -1263,12 +1263,18 @@ class Properties():
         Removes include directive from a list of directives and all properties corresponding to it.
         """
         purged = False
+        if not os.path.isabs(path): path = os.path.abspath(path)
+        print( (path, prefix, hidden) )
         for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
             if path == ipath and prefix == iprefix and hidden == ihidden:
                 self.rminclude( path, prefix, hidden )
-                for key in Properties(ipath).getnames():
+                """
+                reader = Reader(ipath).read()
+                for key in reader.keys():
                     if prefix: key = "{0}.{1}".format(prefix, key)
+                    print(key)
                     self.remove(key)
+                """
                 purged = True
                 break
         if not purged: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden))
