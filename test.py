@@ -27,7 +27,7 @@ class ReaderTest(unittest.TestCase):
         self.assertEqual(r._hidden, [])
         self.assertEqual(r._comments, {})
         self.assertEqual(r._properties, [])
-    
+
     def testLoadSimpleFile(self):
         """
         Method tested: `Reader.loadf()`
@@ -202,6 +202,7 @@ class ReaderTest(unittest.TestCase):
                 "bar":"Bar",
                 }
         self.assertEqual(props, reader._properties)
+
     def testReadSimple(self):
         """
         Method tested: `Reader.read()`
@@ -1037,57 +1038,7 @@ class ConvertTest(unittest.TestCase):
             self.assertEqual(foo._convert(oct), dec)
 
 
-@unittest.skip("deprecated")
 class LoadTest(unittest.TestCase):
-    def testLoad(self):
-        props = {
-                    "message.0":"Apple $(name.1).",
-                    "message.1":"Arr... Welcome, $(name.0)!",
-                    "name.0":"John the Average",
-                    "name.1":"Jack  ",
-                    "name.2":"\\  William  ",
-                    "alert":"Fire!",
-                }
-        comments = {"message.0":"This is a comment for massage.0", 
-                    "name.0":"This is a comment for name.0 which\nvalue is \"John the Average\"",
-                    }
-        src = [ "#   second simple properties file",
-                "#   used for testing properties.py module",
-                "",
-                "message.0=Apple $(name.1).",
-                "message.1=  Arr... Welcome, $(name.0)!",
-                "name.0 :John the Average",
-                "name.1 : Jack  ",
-                "name.2 :\  William  ",
-                "alert=Fire!"
-                ]
-        loaded = pyproperties.Reader(path="./data/properties/bar.properties")
-        loaded.read()
-        self.assertEqual(props, loaded._properties)
-        self.assertEqual(comments, loaded._comments)
-        self.assertEqual(src, loaded._source)
-
-
-    def testLoadHidden(self):
-        baz = pyproperties.Properties("./data/properties/baz.properties")
-        src =   [
-                "prop.0=Foo",
-                "",
-                "prop.1=Bar",
-                "prop.2=Baz",
-                ]
-        propcomments = {"prop.0":["this is a comment"], "prop.1":["this is commented property"]}
-        props = {
-                "prop.0":"Foo",
-                "prop.1":"Bar",
-                "prop.2":"Baz",
-                }
-        self.assertEqual(propcomments, baz.propcomments)
-        self.assertEqual(src, baz.source)
-        self.assertEqual(props, baz.properties)
-        self.assertEqual(["prop.1"], baz.hidden)
-
-
     def testNoRead(self):
         loaded = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
         self.assertEqual("./data/properties/bar.properties", loaded.path)
@@ -1096,7 +1047,6 @@ class LoadTest(unittest.TestCase):
         self.assertEqual({}, loaded.origin_properties)
         self.assertEqual({}, loaded.properties)
         self.assertEqual({}, loaded.propcomments)
-
 
     def testDifferentReadCustoms(self):
         bara = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
