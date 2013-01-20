@@ -63,9 +63,9 @@ In `pyproperties` you can pass some arguments to `__include__`.
 
 `_include()` can deal with absolute and relative paths.  
 
-__Important detail:__ relative ___path is relative to file___ _in which it will be included_ and __not__ working directory. 
+__Important detail:__ relative ***path is relative to file in which it will be included and not working directory***. 
 When reading from relative path - path of the file inside which include is performed will be appended to the path being included.  
-But it is important to remember that the manipulation of path is only internal and the changes are temporary - 
+But it is important to remember that the manipulation on path is only internal and the changes are temporary - 
 when doing something with the include tuple you will need to enter the original path - as it was written in the file.
 
 
@@ -73,9 +73,8 @@ when doing something with the include tuple you will need to enter the original 
 
 ##### Methods
 
-For easier manipulation of `__include__`'s version `0.2.2` introduced three methods: 
-`addinclude()`, `rminclude()` and `purgeinclude()`.  
-From `0.2.3` the `listincludes()` method is available.
+To ease manipulation of `__include__`s version `0.2.3` introduced these methods: 
+`addinclude()`, `rminclude()`, `purgeinclude()`, `stripinclude()` and `listincludes()`.
 
 
 &nbsp;
@@ -100,14 +99,26 @@ This method is of no use after saving the properties and reading them because th
 replaced with contents of files they are pointing to.
 
 
-
 &nbsp;
 
 ##### _Methods: `purgeinclude()`_
 
-`purgeinclude()` is used to remove `__include__` directives from `includes` instance variable **AND** 
-all corresponding properties.  
+`purgeinclude()` is used to remove `__include__` directive from `includes` instance variable **AND** 
+all properties which came from this `__include__`.  
 
+
+&nbsp;
+
+#### _Methods: `stripinclude()`_ 
+
+This method is used to remove all properties which were added by given include but not to remove the include directive.  
+
+
+&nbsp;
+
+#### _Methods: `listincludes()`_ 
+
+Returns list of all include-tuples.
 
 ----
 

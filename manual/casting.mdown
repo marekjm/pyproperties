@@ -1,5 +1,5 @@
 #### Typecasting in `pyroperties`
-###### _version: `0.2.2`_
+###### _version: `0.2.3`_
 
 ###### [Index](index.mdown)
 ----

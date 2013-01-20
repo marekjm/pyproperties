@@ -6,7 +6,7 @@
 
 #### Version 0.2.3 ():
 
-* __upd__:  `pops()` owns no code by itslef - it uses `gets()` and `removes()` as a backend,
+* __upd__:  `pops()` owns no code by itself - it uses `gets()` and `removes()` as a backend,
 * __upd__:  `pops()` and `gets()` no longer return dictionaries - they return list of tuples,
 * __upd__:  `_linehaskey()` is now *helper-function* with name `linehaskey()`,
 * __upd__:  `_convert()` is now *helper-function* with name `convert()`,
@@ -18,9 +18,6 @@
 
 * __new__:  `Reader()` class,
 * __new__:  `listincludes()` method,
-
-
-* __rem__:  
 
 
 ----

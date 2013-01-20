@@ -991,9 +991,9 @@ class ConvertTest(unittest.TestCase):
     def testFloatConversion(self):
         examples = [("3.14", 3.14),
                     ("-1.43", -1.43),
-                    ("6.023e+23", 6.023e+23),
-                    ("6.023e-23", 6.023e-23),
-                    ("6.023e23", 6.023e+23),
+                    ("6.02e+23", 6.02e+23),
+                    ("6.02e-23", 6.02e-23),
+                    ("6.02e23", 6.02e+23),
                     ]
         foo = pyproperties.Properties()
         for s, n in examples:

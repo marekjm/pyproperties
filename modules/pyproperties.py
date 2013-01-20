@@ -31,7 +31,6 @@ def ishex(s):
     if re.match(re.compile(guess_hex_re), s): result = True
     return result
 
-
 def isoct(s):
     """
     Helper function.
@@ -61,7 +60,6 @@ def linehaskey(line, strict=True):
         else: 
             result = True
     return result
-
 
 def iscomment(line):
     """
@@ -495,8 +493,7 @@ class Properties():
 
     def _expandidentifier(self, identifier):
         """
-        Applies needed changes to identifier and compiles regular expression pattern. 
-        Returns compiled pattern.
+        Applies needed changes to identifier pattern (regular expression). 
         """
         return "^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re))
         
