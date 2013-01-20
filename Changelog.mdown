@@ -2,9 +2,14 @@
 
 ###### [Release file](./RELEASE.mdown), [Manual](./manual/index.mdown)
 
+**__upd__**: updates in code, dependencies and changes in code and userspace, information about deprecations;  
+**__rem__**: what was removed in given release;  
+**__new__**: new features of library;  
+**__fix__**: list of bug fixes in this release;  
+
 ----
 
-#### Version 0.2.3 ():
+#### Version 0.2.3 (2013.01.20):
 
 * __upd__:  `pops()` owns no code by itself - it uses `gets()` and `removes()` as a backend,
 * __upd__:  `pops()` and `gets()` no longer return dictionaries - they return list of tuples,
@@ -12,13 +17,21 @@
 * __upd__:  `_convert()` is now *helper-function* with name `convert()`,
 * __upd__:  `getlinekey()` and `getlinevalue()` are now *helper-functions* and have new `strict` argument,
 * __upd__:  `_expandidentifier()` moved out of `Properties()` (is now a *helper-function*),
+* __upd__: `Properties.getnames()` method is deprecated and will be removed in `0.2.4`: use `keys()` instead,
+* __upd__: regular expression patterns for integers and floats are updated to accept preceding and trailing whitespace,
+* __upd__: regular expression pattern for indentifier now accpets capital letters,
 
 
 * __fix__:  `guess_float_re` now matches also floats of form `6.02e-23` and `6.02e23`
+* __fix__:  `keys()` (old `getnames()`) is now behaving correctly when `hidden` is passed as `True`,
 
 
 * __new__:  `Reader()` class,
 * __new__:  `listincludes()` method,
+* __new__:  `Properties.keys()` method,
+* __new__:  `guess_bin_re` regular expression pattern added,
+* __new__:  support for binary integers in `convert()`,
+* __new__:  `isbin()` *helper-function*,
 
 
 ----

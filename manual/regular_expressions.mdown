@@ -12,23 +12,16 @@ methods working with multiple properties:
 *   `sets()`
 *   `removes()`
 *   `pops()`
-*   `_getidentifier()`
+*   `expandidentifier()`
 
 with groups of properties:
 
 *   `getgroups()`
 *   `getsingles()`
 
-with type guessing:
-
-*   `typeguess()`
-
 with type conversion:
 
-*   `_convert()`,
-*   `ishex()`,
-*   `isoct()`,
-
+*   `convert()`
 
 ----
 
@@ -42,7 +35,7 @@ transformed in such way:
 
 
 Every `*` character in identifier is replaced by `wildcart_re` string and every `.` in identifier 
-is escaped.
+is escaped. This is provided by `expandidentifier()`.
 
         *   ->  [a-z0-9_.-]*
         .   ->  \.
@@ -51,13 +44,14 @@ is escaped.
 ----
 
 
-There are five regular expressions used in `pyproperties`:
+##### Regexp patterns used in `pyproperties`:
 
-        wildcart_re = "[a-z0-9_.-]*"
-        guess_int_re = "^[-]?[0-9]+$"
-        guess_hex_re = "^-?(0x)?[0-9a-fA-F]+$"
-        guess_oct_re = "^-?(0o)?[0-7]+$"
-        guess_float_re = "^[-]?[0-9]*\.[0-9]+$"
+        wildcart_re = "[a-zA-Z0-9_.-]*"
+        guess_int_re = "^-?[0-9]+$"
+        guess_bin_re = "^-?0b[0-1]+$"
+        guess_oct_re = "^-?0o[0-7]+$"
+        guess_hex_re = "^-?0x[0-9a-fA-F]+$"
+        guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$"
 
 
 ----

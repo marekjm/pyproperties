@@ -9,10 +9,11 @@ import warnings
 __version__ = "0.2.3"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
-wildcart_re = "[a-z0-9_.-]*"
+wildcart_re = "[a-zA-Z0-9_.-]*"
 guess_int_re = "^-?[0-9]+$"
-guess_hex_re = "^-?0x[0-9a-fA-F]+$"
+guess_bin_re = "^-?0b[0-1]+$"
 guess_oct_re = "^-?0o[0-7]+$"
+guess_hex_re = "^-?0x[0-9a-fA-F]+$"
 guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$"
 
 class LoadError(IOError): pass
@@ -22,22 +23,31 @@ class IncludeError(Exception): pass
 class IncludeWarning(UserWarning): pass
 class MultipleDeclarationWarning(UserWarning): pass
 
-def ishex(s):
+def isbin(s):
     """
     Helper function.
-    Returns True if given string conatins only hexadecimal numbers.
+    Returns True if given string contains valid binary number.
     """
     result = False
-    if re.match(re.compile(guess_hex_re), s): result = True
+    if re.match(re.compile(guess_bin_re), s): result = True
     return result
 
 def isoct(s):
     """
     Helper function.
-    Returns True if given string conatins only octal numbers.
+    Returns True if given string contains valid octal number.
     """
     result = False
     if re.match(re.compile(guess_oct_re), s): result = True
+    return result
+
+def ishex(s):
+    """
+    Helper function.
+    Returns True if given string contains valid hexadecimal number.
+    """
+    result = False
+    if re.match(re.compile(guess_hex_re), s): result = True
     return result
 
 def linehaskey(line, strict=True):
@@ -98,7 +108,7 @@ def getlinevalue(line, strict=True):
     if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
     return value
 
-def convert(value):
+def convert(value, strict=True):
     """
     Returns value with it's type converted. 
     Can convert from str to: int, float, True/False and None.
@@ -109,6 +119,7 @@ def convert(value):
     elif value == "False": value = False
     elif ishex(value): value = int(value, 16)
     elif isoct(value): value = int(value, 8)
+    elif isbin(value): value = int(value, 2)
     elif re.match(re.compile(guess_int_re), value): value = int(value)
     elif re.match(re.compile(guess_float_re), value): value = float(value)
     return value
@@ -430,39 +441,6 @@ class Properties():
         else: message = "'{0}' is not available in {1}".format(key, self)
         raise KeyError(message)
 
-    def _tcast(self, key):
-        """
-        Converts property of the given key from str (default) to int, float, bool or None if needed.
-        """
-        self.set(key, convert(self.get(key)))
-
-    def _tcasts(self, identifier):
-        """
-        Converts properties type from str (default) to int or float if pattern match. 
-        """
-        identifier = re.compile(expandidentifier(identifier))
-        for key in self.properties.keys():
-            if re.match(identifier, key): self._tcast(key)
-
-    def _iscommentline(self, line):
-        """
-        Checks if the line contains a comment string. 
-        Valid string is non-empty string and its first character is '#' or '!'.
-        """
-        line = line.strip()
-        result = line != "" and line[0] in ["#", "!"]
-        return result
-
-    def _islinehiddenprop(self, line):
-        """
-        Defines if commented line is commented property or casual comment.
-        Used to distinguish comments from commented properties during load.
-        """
-        # a little hack to not generate too many warnings when just checking if a line is hidden property
-        if line != "" and line[0] in ["!", "#"] and line[1] != " ": result = self._linehaskey(line.strip()[1:])
-        else: result = False
-        return result
-
     def _appendsrc(self, props, prefix=""):
         """
         This methods appends source of given properties to the base. 
@@ -505,7 +483,7 @@ class Properties():
         """
         Reads properties file and processes it to be available to a Python 3 program.
         You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
-        and convert it accordingly (the _tcasts method will be called).
+        and convert it accordingly.
         """
         try:
             if self.path != "": path = self.path
@@ -657,7 +635,8 @@ class Properties():
         parsed.merge(self)
         for key in parsed.getnames(): parsed.set(key, parsed.get(key, parse=True))
         parsed.save()
-        if cast: parsed._tcasts("*")
+        if cast: 
+            for key in parsed.keys(hidden=True): parsed.set(key, convert(parsed.get(key)))
         return parsed
 
     def save(self):
@@ -840,7 +819,7 @@ class Properties():
         self.unsaved = True
         return popped
 
-    def getnames(self, hidden=False):
+    def keys(self, hidden=False):
         """
         Returns sorted list of the non-commented properties names. 
         If `commented` arg was passed as `True` returns sorted list 
@@ -848,9 +827,19 @@ class Properties():
         """
         keys = []
         for key in list(self.properties.keys()):
-            if key not in self.hidden and not hidden: keys.append(key)
-            else: keys.append(key)
+            if key not in self.hidden: keys.append(key)
+            elif key in self.hidden and hidden == True: keys.append(key)
         return sorted(keys)
+
+    def getnames(self, hidden=False):
+        """
+        Returns sorted list of the non-commented properties names. 
+        If `commented` arg was passed as `True` returns sorted list 
+        of commented properties names.
+        DEPRECTAED: use `keys()` instead
+        """
+        warnings.warn("`getnames()` will be removed in version 0.2.4: use `keys()` instead", DeprecationWarning)
+        return self.keys()
 
     def getkeysof(self, value, no_hidden=True):
         """

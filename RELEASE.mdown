@@ -1,21 +1,53 @@
-#### Release 0.2.3
+#### Release 0.2.3 of `pyproperties`
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
+
+
+This release had slipped a little bit. But is pretty fruitful. 
+Version `0.2.3` introduces further improvements in the `__include__` field. 
+
+What is more - heavy refactoring. 
+New class emerged from the base `Properties()` - `Reader()`. 
+Responsibilities in `pyproperties` are now well defined: 
+`Reader()` writes and parses the initial file, `Properties()` provides interface for working with loaded file and 
+`Wrier()` stores the file after the job is finished.  
+Also - several small methods were removed (`Properties()` is now slightly slimmer) or 
+factored out as functions available directly from `pyproperties`. 
+
+As always everything is in [Changelog](Changelog.mdown), [DOC](DOC) and [manuals](./manual/index.html)
 
 
 ----
 
 
 ##### This release brings you:
-*   a update(s),
-*   b fix(es),
-*   c new feature(s),
-*   d removal(s),
+*   8 update(s),
+*   2 fix(es),
+*   6 new feature(s),
 
 
-#### Version 0.2.3 ():
+#### Version 0.2.3 (2013.01.20):
 
-*
+* __upd__:  `pops()` owns no code by itself - it uses `gets()` and `removes()` as a backend,
+* __upd__:  `pops()` and `gets()` no longer return dictionaries - they return list of tuples,
+* __upd__:  `_linehaskey()` is now *helper-function* with name `linehaskey()`,
+* __upd__:  `_convert()` is now *helper-function* with name `convert()`,
+* __upd__:  `getlinekey()` and `getlinevalue()` are now *helper-functions* and have new `strict` argument,
+* __upd__:  `_expandidentifier()` moved out of `Properties()` (is now a *helper-function*),
+* __upd__: `Properties.getnames()` method is deprecated and will be removed in `0.2.4`: use `keys()` instead,
+* __upd__: regular expression patterns for integers and floats are updated to accept preceding and trailing whitespace,
+
+
+* __fix__:  `guess_float_re` now matches also floats of form `6.02e-23` and `6.02e23`
+* __fix__:  `keys()` (old `getnames()`) is now behaving correctly when `hidden` is passed as `True`,
+
+
+* __new__:  `Reader()` class,
+* __new__:  `listincludes()` method,
+* __new__:  `Properties.keys()` method,
+* __new__:  `guess_bin_re` regular expression pattern added,
+* __new__:  support for binary integers in `convert()`,
+* __new__:  `isbin()` *helper-function*,
 
 &nbsp;
 

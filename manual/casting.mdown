@@ -1,35 +1,27 @@
-#### Typecasting in `pyroperties`
+#### Typecasting in `pyproperties`
 ###### _version: `0.2.3`_
 
 ###### [Index](index.mdown)
 ----
 
-##### `_tcast()` and `_tcasts()`
+##### `convert()`
 
+This is the mathod which handles type conversion in `pyproperties`. 
 
-`_tcast()` and `_tcasts()` methods are casting type of property of given `key` inside the main dictionary causing properties status to go `unsaved`.
+It can convert from string to: 
 
+0.  decimal integer,
+1.  octal integer,
+2.  hexadecimal integer,
+3.  decimal float,
+4.  boolean values (`True` and `False`),
+5.  `None`,
 
-This functionality is intended to be used only internaly but it is worth remembering that  `get()` and `gets()` both 
-have functionality providing typecasting. 
+Numbers can be both positive and negative. 
 
-You can tell them to convert a value before returning it by providing `cast` argument as `True`.  
+----
 
-
-        foo = pyproperties.Properties()
-        foo.set('pi', '3.14')
-        foo.set('false', 'False')
-
-        foo.get('pi')
-        '3.14'
-        foo.get('false')
-        'False'
-
-        foo.get('pi', cast=True)
-        3.14
-        foo.get('false', cast=True)
-        False
-
+**Implementation detail:** `convert()` is very strict. It will not convert a value even if it is only preceded or followed (or both) by a single whitespace.
 
 ----
 

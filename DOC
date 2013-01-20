@@ -16,6 +16,7 @@ CLASSES
         MultipleDeclarationWarning
     builtins.object
         Properties
+        Reader
         Writer
     
     class IncludeError(builtins.Exception)
@@ -404,25 +405,11 @@ CLASSES
      |      If `no_hidden` was passed as `False` includes also 
      |      commented properties.
      |  
-     |  getlinekey(self, line)
-     |      Extracts key from given line and returns it. 
-     |      If the line does not contain a key returns None. 
-     |      
-     |      If in strict mode (default) and find a whitespace in key it will 
-     |      complain with a warning and return None. 
-     |      If in non-strict mode (strict passed as `False`) it will only complain and 
-     |      do nothing else.
-     |  
-     |  getlinevalue(self, line)
-     |      Extracts value from given line and returns it. 
-     |      If the line does not have a value returns None (remeber: empty string is returned when line has it as a value). 
-     |      It is done this way to distinguish properties with empty value 
-     |      from lines which do not carry a property.
-     |  
      |  getnames(self, hidden=False)
      |      Returns sorted list of the non-commented properties names. 
      |      If `commented` arg was passed as `True` returns sorted list 
      |      of commented properties names.
+     |      DEPRECTAED: use `keys()` instead
      |  
      |  getre(self, identifier, parse=False, cast=False)
      |      Returns dict of properties which names matched given pattern.
@@ -430,8 +417,9 @@ CLASSES
      |      If cast is passed as True pyproperties will try to cast types of properties.
      |  
      |  gets(self, identifier, parse=False, cast=False, no_expand=False)
-     |      Returns dict of properties which names matched pattern given as identifier.
-     |      If parsed is set to True values will be parsed before returning.
+     |      Returns list of tuples containig (key, value) of properties which names matched pattern given as identifier.
+     |      If `parse` is set to True values will be parsed before returning.
+     |      If `cast` is set to True values will be casted before returning.
      |  
      |  getsingles(self)
      |      Returns list of properties which do not belong to any group.
@@ -448,6 +436,14 @@ CLASSES
      |      You can pass `prefix` as empty string to add properties without prefix. 
      |      Prefix defaluts to the name of joined file. 
      |      Source of joined properties is appended to base source.
+     |  
+     |  keys(self, hidden=False)
+     |      Returns sorted list of the non-commented properties names. 
+     |      If `commented` arg was passed as `True` returns sorted list 
+     |      of commented properties names.
+     |  
+     |  listincludes(self)
+     |      Returns list of tuples containg information about `includes` of this properties.
      |  
      |  merge(self, properties)
      |      Completes and merges properties with the base. 
@@ -469,9 +465,9 @@ CLASSES
      |      Removes include directive from a list of directives and all properties corresponding to it.
      |  
      |  read(self, path='', cast=False, no_includes=False, strict=True)
-     |      Reads properties file and processes it to be available in Python 3 program.
+     |      Reads properties file and processes it to be available to a Python 3 program.
      |      You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
-     |      and convert it accordingly (the _tcasts method will be called).
+     |      and convert it accordingly.
      |  
      |  refresh(self, overwrite=True)
      |      Refreshes from file. Missing values are added.
@@ -557,6 +553,58 @@ CLASSES
      |      before you merge it's better to call `save()`.
      |      During merging properties are not copied directly to `origins` of the base 
      |      properties.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class Reader(builtins.object)
+     |  This class utilizes methods for reading properties files.
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, path, includes=True, cast=False, strict=True)
+     |  
+     |  castprops(self)
+     |      This method tries to cast values of loaded properties.
+     |  
+     |  extractcomments(self)
+     |      Extracts comments from `_source` and attaches them to properties.
+     |  
+     |  extractprops(self)
+     |      Extracts lines containing valid properties from `_source` to `_properties`.
+     |  
+     |  keys(self)
+     |      Returns list of keys in read file.
+     |  
+     |  loadf(self)
+     |      Loads file to which `_path` points, and 
+     |      concatenates properties split into several lines. 
+     |      Lines are loaded with trailing newlines characters and preceding whitespace stripped. 
+     |      Comments which end with backslash (`\`) are left untouched but a warning is raised.
+     |  
+     |  makeincludes(self)
+     |      This method runs during load and is kind of preprocessor. It will replace 
+     |      every line which key begins with `__include__` with lines of file 
+     |      it will try to read from the path specified in the value of the mentioned line. 
+     |      
+     |      Although it may be temptating - using `for` loop in this method is not good. 
+     |      `for` will not "keep track" of changes in file lenghts and you will end up on overwriting previous __include__'s contents. 
+     |      Indexes generated by `for` will not take into account the fact that source may have been already expanded. 
+     |      Adding this functionality will result in unnecessary bloat so `while` stays.
+     |  
+     |  read(self)
+     |  
+     |  splitprops(self)
+     |      This method converts self.properties from list containing extracted lines to a dictionary.
+     |  
+     |  uncoverhidden(self)
+     |      Unvoers hidden properties -- makes them available for `_extractprops()`.
      |  
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -769,26 +817,61 @@ CLASSES
      |      list of weak references to the object (if defined)
 
 FUNCTIONS
+    convert(value, strict=True)
+        Returns value with it's type converted. 
+        Can convert from str to: int, float, True/False and None.
+    
+    expandidentifier(identifier)
+        Applies needed changes to identifier pattern (regular expression).
+    
+    getlinekey(line, strict=True)
+        Extracts key from given line and returns it. 
+        If the line does not contain a key returns None. 
+        
+        If in strict mode (default) and find a whitespace in key it will 
+        complain with a warning and return None. 
+        If in non-strict mode (strict passed as `False`) it will only complain and 
+        do nothing else.
+    
+    getlinevalue(line, strict=True)
+        Extracts value from given line and returns it. 
+        If the line does not have a value returns None (remeber: empty string is returned when line has it as a value). 
+        It is done this way to distinguish properties with empty value 
+        from lines which do not carry a property.
+    
+    isbin(s)
+        Helper function.
+        Returns True if given string contains valid binary number.
+    
+    iscomment(line)
+        Helper function.
+        Checks if given line is a comment.
+    
     ishex(s)
         Helper function.
-        Returns True if given string conatins only hexadecimal numbers.
+        Returns True if given string contains valid hexadecimal number.
     
     isoct(s)
         Helper function.
-        Returns True if given string conatins only octal numbers.
+        Returns True if given string contains valid octal number.
+    
+    linehaskey(line, strict=True)
+        Helper function.
+        Checks if the line contains a key.
 
 DATA
-    __vertuple__ = (0, 2, 2)
-    guess_float_re = r'^-?[0-9]*\.[0-9]+(e\+)?[0-9]*$'
+    __vertuple__ = (0, 2, 3)
+    guess_bin_re = '^-?0b[0-1]+$'
+    guess_float_re = r'^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$'
     guess_hex_re = '^-?0x[0-9a-fA-F]+$'
     guess_int_re = '^-?[0-9]+$'
     guess_oct_re = '^-?0o[0-7]+$'
     wildcart_re = '[a-z0-9_.-]*'
 
 VERSION
-    0.2.2
+    0.2.3
 
 FILE
-    /home/triviuss/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py
+    /home/marekjm/RAWD/Python3/Projects/pyproperties/modules/pyproperties.py
 
 

@@ -988,31 +988,25 @@ class ParseTest(unittest.TestCase):
 
 
 class ConvertTest(unittest.TestCase):
-    def testFloatConversion(self):
-        examples = [("3.14", 3.14),
-                    ("-1.43", -1.43),
-                    ("6.02e+23", 6.02e+23),
-                    ("6.02e-23", 6.02e-23),
-                    ("6.02e23", 6.02e+23),
+    def testIntegerConversion(self):
+        examples = [("3", 3),
+                    ("-1", -1),
+                    ("16", 16),
+                    ("-12648", -12648),
+                    ("-666324992", -666324992),
+                    ("666324992", 666324992),
                     ]
         for s, n in examples: self.assertEqual(pyproperties.convert(s), n)
 
-    def testHexadecimalConversion(self):
-        examples = [("0x0", 0),
-                    ("-0x1", -1),
-                    ("0x16", 22),
-                    ("-0xa2", -162),
-                    ("0x45", 69),
-                    ("0x29a", 666),
-                    ("-0x7cb", -1995),
-                    ("0x7dc", 2012),
-                    ("0x22b8", 8888),
-                    ("0x582", 1410),
-                    ("-0x582", -1410),
-                    ("0x75bcd15", 123456789),
-                    ("-0xf44e", -62542),
+    def testBinaryConversion(self):
+        examples = [("0b0", 0),
+                    ("-0b1", -1),
+                    ("0b10", 2),
+                    ("0b11", 3),
+                    ("-0b110101001", -425),
+                    ("0b1010011010", 666),
                     ]
-        for hex, dec in examples: self.assertEqual(pyproperties.convert(hex), dec)
+        for s, n in examples: self.assertEqual(pyproperties.convert(s), n)
 
     def testOctalConversion(self):
         examples = [("0o0", 0),
@@ -1031,6 +1025,32 @@ class ConvertTest(unittest.TestCase):
                     ]
         for oct, dec in examples: self.assertEqual(pyproperties.convert(oct), dec)
     
+    def testHexadecimalConversion(self):
+        examples = [("0x0", 0),
+                    ("-0x1", -1),
+                    ("0x16", 22),
+                    ("-0xa2", -162),
+                    ("0x45", 69),
+                    ("0x29a", 666),
+                    ("-0x7cb", -1995),
+                    ("0x7dc", 2012),
+                    ("0x22b8", 8888),
+                    ("0x582", 1410),
+                    ("-0x582", -1410),
+                    ("0x75bcd15", 123456789),
+                    ("-0xf44e", -62542),
+                    ]
+        for hex, dec in examples: self.assertEqual(pyproperties.convert(hex), dec)
+
+    def testFloatConversion(self):
+        examples = [("3.14", 3.14),
+                    ("-1.43", -1.43),
+                    ("6.02e+23", 6.02e+23),
+                    ("6.02e-23", 6.02e-23),
+                    ("6.02e23", 6.02e+23),
+                    ]
+        for s, n in examples: self.assertEqual(pyproperties.convert(s), n)
+
     def testBooleanConversion(self):
         self.assertEqual(pyproperties.convert("True"), True)
         self.assertEqual(pyproperties.convert("False"), False)
@@ -1065,36 +1085,21 @@ class KeyGetterTest(unittest.TestCase):
     def testGetKeysOf(self):
         foo = pyproperties.Properties("./data/properties/foo.properties")
         self.assertEqual(["literal.string.0", "literal.string.1"], sorted(foo.getkeysof("Hello World!")))
+    
+    def testKeys(self):
+        foo = pyproperties.Properties()
+        foo.set("foo")
+        foo.set("bar")        
+        self.assertEqual(["bar", "foo"], foo.keys())
 
-
-class NameGetterTest(unittest.TestCase):
-    def testGetNames(self):
-        foo = pyproperties.Properties("./data/properties/foo.properties")
-        names = ["numeral.float.0",
-                "numeral.float.1",
-                "numeral.pi",
-                "numeral.int",
-                "literal.string.0",
-                "literal.string.1",
-                "customer.0.name",
-                "customer.0.phone_number.0",
-                "customer.0.phone_number.1",
-                "customer.0.address",
-                "customer.0.postal_code",
-                "customer.1.name",
-                "customer.1.phone_number.0",
-                "customer.1.address",
-                "customer.1.postal_code",
-                "person.name",
-                "person.surname",
-                "foo.0.fame",
-                "foo.0.money",
-                "foo.0.power",
-                "foo.1.fame",
-                "foo.1.money",
-                "foo.1.power",
-                ]
-        self.assertEqual(sorted(names), foo.getnames())
+    def testKeysHidden(self):
+        foo = pyproperties.Properties()
+        foo.set("foo")
+        foo.set("bar")
+        foo.hide("foo")
+        
+        self.assertEqual(["bar"], foo.keys())
+        self.assertEqual(["bar", "foo"], foo.keys(hidden=True))
 
 
 class GetTest(unittest.TestCase):
