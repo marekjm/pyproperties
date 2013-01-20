@@ -866,7 +866,7 @@ DATA
     guess_hex_re = '^-?0x[0-9a-fA-F]+$'
     guess_int_re = '^-?[0-9]+$'
     guess_oct_re = '^-?0o[0-7]+$'
-    wildcart_re = '[a-z0-9_.-]*'
+    wildcart_re = '[a-zA-Z0-9_.-]*'
 
 VERSION
     0.2.3
