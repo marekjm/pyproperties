@@ -127,8 +127,8 @@ Returns list of all include-tuples.
 Only `__include__`s added via library are being stored in a form of directive.  
 When a file that contained `__include__` directive is stored the directive itself is not stored - only properties added by it are stored.  
 
-To store read `__include__` as a directive use `makeincldirective()` with include tuple as an argument - it will firstly purge it from the object and 
-then add it simply as a directive.
+To store read `__include__` as a directive use `stripinclude()` - it will first purge it from the object and 
+then add it as a directive.
 
 ----
 

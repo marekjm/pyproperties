@@ -995,9 +995,7 @@ class ConvertTest(unittest.TestCase):
                     ("6.02e-23", 6.02e-23),
                     ("6.02e23", 6.02e+23),
                     ]
-        foo = pyproperties.Properties()
-        for s, n in examples:
-            self.assertEqual(foo._convert(s), n)
+        for s, n in examples: self.assertEqual(pyproperties.convert(s), n)
 
     def testHexadecimalConversion(self):
         examples = [("0x0", 0),
@@ -1014,9 +1012,7 @@ class ConvertTest(unittest.TestCase):
                     ("0x75bcd15", 123456789),
                     ("-0xf44e", -62542),
                     ]
-        foo = pyproperties.Properties()
-        for hex, dec in examples:
-            self.assertEqual(foo._convert(hex), dec)
+        for hex, dec in examples: self.assertEqual(pyproperties.convert(hex), dec)
 
     def testOctalConversion(self):
         examples = [("0o0", 0),
@@ -1033,10 +1029,14 @@ class ConvertTest(unittest.TestCase):
                     ("0o726746425", 123456789),
                     ("-0o172116", -62542),
                     ]
-        foo = pyproperties.Properties()
-        for oct, dec in examples:
-            self.assertEqual(foo._convert(oct), dec)
-
+        for oct, dec in examples: self.assertEqual(pyproperties.convert(oct), dec)
+    
+    def testBooleanConversion(self):
+        self.assertEqual(pyproperties.convert("True"), True)
+        self.assertEqual(pyproperties.convert("False"), False)
+    
+    def testNoneConversion(self):
+        self.assertEqual(pyproperties.convert("None"), None)
 
 class LoadTest(unittest.TestCase):
     def testNoRead(self):

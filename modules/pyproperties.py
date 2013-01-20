@@ -104,14 +104,20 @@ def convert(value):
     Can convert from str to: int, float, True/False and None.
     """
     value = str(value)
-    if value == "True": value = True
+    if value == "None": value = None
+    elif value == "True": value = True
     elif value == "False": value = False
-    elif value == "None": value = None
     elif ishex(value): value = int(value, 16)
     elif isoct(value): value = int(value, 8)
     elif re.match(re.compile(guess_int_re), value): value = int(value)
     elif re.match(re.compile(guess_float_re), value): value = float(value)
     return value
+
+def expandidentifier(identifier):
+    """
+    Applies needed changes to identifier pattern (regular expression). 
+    """
+    return "^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re))
 
 
 class Reader():
@@ -428,33 +434,15 @@ class Properties():
         """
         Converts property of the given key from str (default) to int, float, bool or None if needed.
         """
-        self.set(key, self._convert(self.get(key)))
+        self.set(key, convert(self.get(key)))
 
     def _tcasts(self, identifier):
         """
         Converts properties type from str (default) to int or float if pattern match. 
         """
-        identifier = re.compile(self._expandidentifier(identifier))
+        identifier = re.compile(expandidentifier(identifier))
         for key in self.properties.keys():
             if re.match(identifier, key): self._tcast(key)
-
-    def _convert(self, value, from_key=False):
-        """
-        Returns value with it's type converted. 
-        Can convert from str to: int, float, True/False and None.
-        If `from_key` is passed as True then `value` is treated as a key and used to obtain value of this key.
-        Be aware that this can cause a KeyError to be raised.
-        """
-        if from_key: value = self.get(value)
-        value = str(value)
-        if value == "True": value = True
-        elif value == "False": value = False
-        elif value == "None": value = None
-        elif ishex(value): value = int(value, 16)
-        elif isoct(value): value = int(value, 8)
-        elif re.match(re.compile(guess_int_re), value): value = int(value)
-        elif re.match(re.compile(guess_float_re), value): value = float(value)
-        return value
 
     def _iscommentline(self, line):
         """
@@ -491,12 +479,6 @@ class Properties():
         if self.source: self.source.append("")
         self.source.extend(lines)
 
-    def _expandidentifier(self, identifier):
-        """
-        Applies needed changes to identifier pattern (regular expression). 
-        """
-        return "^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re))
-        
     def setstrict(self, strict):
         """
         Sets parser mode to strict (True) or non-strict (False).
@@ -734,7 +716,7 @@ class Properties():
         
         if parse: value = self._parseline(self.properties[key])
         else: value = self.properties[key]
-        if cast and type(value) == str: value = self._convert(value)
+        if cast and type(value) == str: value = convert(value)
         return value
 
     def gets(self, identifier, parse=False, cast=False, no_expand=False):
@@ -744,14 +726,14 @@ class Properties():
         If `cast` is set to True values will be casted before returning.
         """
         if type(identifier) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
-        if not no_expand: identifier = self._expandidentifier(identifier)
+        if not no_expand: identifier = expandidentifier(identifier)
         
         matched = []
         for key, value in self.properties.items():
             if re.match(identifier, key) and parse: matched.append( (key, self._parseline(value)) )
             elif re.match(identifier, key) and not parse: matched.append( (key, value) )
         if cast:
-            matched = [ (key, self._convert(value)) for key, value in matched ]
+            matched = [ (key, convert(value)) for key, value in matched ]
         return matched
 
     def getre(self, identifier, parse=False, cast=False):
@@ -770,7 +752,7 @@ class Properties():
             if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
             elif re.match(identifier, key) and not parse: matched[key] = value
         if cast:
-            for key, value in matched.items(): matched[key] = self._convert(value)
+            for key, value in matched.items(): matched[key] = convert(value)
         return matched
 
     def set(self, key, value=""):
@@ -802,7 +784,7 @@ class Properties():
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
         
-        identifier = re.compile(self._expandidentifier(identifier))
+        identifier = re.compile(expandidentifier(identifier))
         for key, x in self.properties.items():
             if re.match(identifier, key): keys.append(key)
         keys.sort()
@@ -832,7 +814,7 @@ class Properties():
         Removed properties will be not saved using store().
         """
         to_remove = []
-        identifier = re.compile(self._expandidentifier(identifier))
+        identifier = re.compile(expandidentifier(identifier))
         for key in self.properties.keys():
             if re.match(identifier, key): to_remove.append(key)
         for key in to_remove: self.remove(key)
@@ -845,7 +827,7 @@ class Properties():
         if key not in self.properties or key in self.hidden: self._notavailable(key)
 
         prop = self.properties.pop(key)
-        if cast: prop = self._convert(prop)
+        if cast: prop = convert(prop)
         self.unsaved = True
         return prop
 
@@ -1006,7 +988,7 @@ class Properties():
         """
         Hides every property which key will match given identifier. 
         """
-        identifier = self._expandidentifier(identifier)
+        identifier = expandidentifier(identifier)
         for key in self.getnames():
             if re.match(identifier, key): self.hide(key)
 
@@ -1022,7 +1004,7 @@ class Properties():
         """
         Unhides every property which key will match given identifier.
         """
-        identifier = self._expandidentifier(identifier)
+        identifier = expandidentifier(identifier)
         to_unhide = []
         for i in range(len(self.hidden)):
             if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
