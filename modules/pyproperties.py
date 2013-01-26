@@ -467,6 +467,8 @@ class Properties():
         """
         Creates blank properties object. 
         Can be used to erase contents of your `pyproperties` object.
+        WARNING if used for cleaning object:
+        clears also origins.
         """
         self.path = os.path.expanduser(path.strip())
         self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
