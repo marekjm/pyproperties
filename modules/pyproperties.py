@@ -9,7 +9,7 @@ import warnings
 __version__ = "0.2.4"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
-wildcart_re = "[a-zA-Z0-9_.-]*"
+wildcart_re = "[a-zA-Z0-9_.-]+"
 guess_int_re = "^-?[0-9]+$"
 guess_bin_re = "^-?0b[0-1]+$"
 guess_oct_re = "^-?0o[0-7]+$"
@@ -152,8 +152,8 @@ class Reader():
             path = open(self._path)
             file = path.readlines()
             path.close()
-        except (IOError, FileNotFoundError): 
-            raise ReadError()
+        except (IOError, FileNotFoundError) as e:
+            raise ReadError(e)
         source = []
         i = 0
         while i < len(file):

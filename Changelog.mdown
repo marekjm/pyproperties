@@ -12,6 +12,7 @@
 #### Version 0.2.4 ():
 
 * __upd__:  `LoadError` renamed to `ReadError`,
+* __upd__:  `wildcart_re` changed from `[a-zA-Z0-9_.-]*` to `[a-zA-Z0-9_.-]+`,
 
 
 * __fix__:  ,
