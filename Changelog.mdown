@@ -9,6 +9,20 @@
 
 ----
 
+#### Version 0.2.4 ():
+
+* __upd__:  `LoadError` renamed to `ReadError`,
+
+
+* __fix__:  ,
+
+
+* __new__:  ,
+
+
+----
+
+
 #### Version 0.2.3 (2013.01.20):
 
 * __upd__:  `pops()` owns no code by itself - it uses `gets()` and `removes()` as a backend,

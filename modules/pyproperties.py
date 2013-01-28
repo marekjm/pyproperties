@@ -6,7 +6,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-zA-Z0-9_.-]*"
@@ -16,7 +16,7 @@ guess_oct_re = "^-?0o[0-7]+$"
 guess_hex_re = "^-?0x[0-9a-fA-F]+$"
 guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$"
 
-class LoadError(IOError): pass
+class ReadError(IOError): pass
 class StoreError(IOError): pass
 class UnsavedChangesError(BaseException): pass
 class IncludeError(Exception): pass
@@ -148,9 +148,12 @@ class Reader():
         Lines are loaded with trailing newlines characters and preceding whitespace stripped. 
         Comments which end with backslash (`\\`) are left untouched but a warning is raised.
         """
-        path = open(self._path)
-        file = path.readlines()
-        path.close()
+        try:
+            path = open(self._path)
+            file = path.readlines()
+            path.close()
+        except (IOError, FileNotFoundError): 
+            raise ReadError()
         source = []
         i = 0
         while i < len(file):

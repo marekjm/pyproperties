@@ -3,14 +3,19 @@
 import unittest
 import re
 import os
+import sys
 
 from modules import pyproperties
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 
 foo_path = "./data/properties/foo.properties"
 
 class ReaderTest(unittest.TestCase):
+    def testRaisesReadErrorWhenFileNotFound(self):
+        reader = pyproperties.Reader(path="./file_not_found.properties")
+        self.assertRaises(pyproperties.ReadError, reader.read)
+    
     def testReaderInit(self):
         p = pyproperties.Reader(path="./data/properties/reader_test/foo.properties", cast=True, includes=False, strict=False)
         self.assertEqual(p._path, os.path.abspath("./data/properties/reader_test/foo.properties"))
