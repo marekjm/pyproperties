@@ -6,17 +6,17 @@ import os
 import re
 import warnings
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
-wildcart_re = "[a-zA-Z0-9_.-]*"
+wildcart_re = "[a-zA-Z0-9_.-]+"
 guess_int_re = "^-?[0-9]+$"
 guess_bin_re = "^-?0b[0-1]+$"
 guess_oct_re = "^-?0o[0-7]+$"
 guess_hex_re = "^-?0x[0-9a-fA-F]+$"
 guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$"
 
-class LoadError(IOError): pass
+class ReadError(IOError): pass
 class StoreError(IOError): pass
 class UnsavedChangesError(BaseException): pass
 class IncludeError(Exception): pass
@@ -148,9 +148,12 @@ class Reader():
         Lines are loaded with trailing newlines characters and preceding whitespace stripped. 
         Comments which end with backslash (`\\`) are left untouched but a warning is raised.
         """
-        path = open(self._path)
-        file = path.readlines()
-        path.close()
+        try:
+            path = open(self._path)
+            file = path.readlines()
+            path.close()
+        except (IOError, FileNotFoundError) as e:
+            raise ReadError(e)
         source = []
         i = 0
         while i < len(file):
@@ -429,7 +432,7 @@ class Properties():
         To create a blank instance with path specified you can run:
             pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
-        if path.strip() != "" and not no_read: self.read(path, cast, no_includes, strict)
+        if path.strip() and not no_read: self.read(path, cast, no_includes, strict)
         else: self.blank(path, strict)
 
     def _notavailable(self, key):
@@ -470,7 +473,11 @@ class Properties():
         WARNING if used for cleaning object:
         clears also origins.
         """
-        self.path = os.path.expanduser(path.strip())
+        try: 
+            if self.path: path = self.path
+        except AttributeError: path = os.path.expanduser(path.strip())
+        finally: self.path = path
+        
         self.name = os.path.splitext(os.path.split(self.path)[-1])[0]
         self.strict = strict
         self.source, self.origin_source = ([], [])
@@ -480,18 +487,13 @@ class Properties():
         self.includes, self.origin_includes = ([], [])
         self.includes_stored = ([])
         self.unsaved = False
-
+    
     def read(self, path="", cast=False, no_includes=False, strict=True):
         """
-        Reads properties file and processes it to be available to a Python 3 program.
         You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly.
         """
-        try:
-            if self.path != "": path = self.path
-        except AttributeError: pass
-        finally: self.blank(path, strict)
-
+        self.blank(path=path, strict=strict)
         reader = Reader(path=self.path, includes=not no_includes, cast=cast, strict=strict)
         reader.read()
         self.properties = reader._properties
@@ -635,7 +637,7 @@ class Properties():
         """
         parsed = Properties()
         parsed.merge(self)
-        for key in parsed.getnames(): parsed.set(key, parsed.get(key, parse=True))
+        for key in parsed.keys(): parsed.set(key, parsed.get(key, parse=True))
         parsed.save()
         if cast: 
             for key in parsed.keys(hidden=True): parsed.set(key, convert(parsed.get(key)))
@@ -823,9 +825,9 @@ class Properties():
 
     def keys(self, hidden=False):
         """
-        Returns sorted list of the non-commented properties names. 
-        If `commented` arg was passed as `True` returns sorted list 
-        of commented properties names.
+        Returns sorted list of the non-hidden properties names. 
+        If `hidden` is passed as `True` returns sorted list 
+        of including names of hidden properties.
         """
         keys = []
         for key in list(self.properties.keys()):
@@ -833,15 +835,20 @@ class Properties():
             elif key in self.hidden and hidden == True: keys.append(key)
         return sorted(keys)
 
-    def getnames(self, hidden=False):
+    def values(self, hidden=False):
         """
-        Returns sorted list of the non-commented properties names. 
-        If `commented` arg was passed as `True` returns sorted list 
-        of commented properties names.
-        DEPRECTAED: use `keys()` instead
+        Returns list of values this object holds. 
+        If `hidden` is passed as `True` returns list of values 
+        including values of hidden properties.
         """
-        warnings.warn("`getnames()` will be removed in version 0.2.4: use `keys()` instead", DeprecationWarning)
-        return self.keys()
+        values = []
+        for key in self.keys(hidden=hidden):
+            if key not in self.hidden: values.append( self.get(key) )
+            elif key in self.hidden and hidden == True: 
+                self.unhide(key)
+                values.append( self.get(key) )
+                self.hide(key)
+        return values
 
     def getkeysof(self, value, no_hidden=True):
         """
@@ -879,7 +886,7 @@ class Properties():
 
         This is because only digits are considered 'groupers'.
         """
-        names = [ key.split(".") for key in self.getnames() ]
+        names = [ key.split(".") for key in self.keys() ]
         groups = []
         for key in names:
             identifier = ""
@@ -896,7 +903,7 @@ class Properties():
         """
         groups = self.getgroups()
         singles = []
-        for key in self.getnames():
+        for key in self.keys():
             key = re.sub(re.compile("\.[0-9]+\."), ".*.", key)
             key = re.sub(re.compile("\.[0-9]+$"), ".*", key)
             if key not in groups: singles.append(key)
@@ -980,7 +987,7 @@ class Properties():
         Hides every property which key will match given identifier. 
         """
         identifier = expandidentifier(identifier)
-        for key in self.getnames():
+        for key in self.keys():
             if re.match(identifier, key): self.hide(key)
 
     def unhide(self, key):
