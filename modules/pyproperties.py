@@ -6,7 +6,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.2.4"
+__version__ = "0.2.3.1"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-zA-Z0-9_.-]+"
@@ -470,8 +470,6 @@ class Properties():
         """
         Creates blank properties object. 
         Can be used to erase contents of your `pyproperties` object.
-        WARNING if used for cleaning object:
-        clears also origins.
         """
         try: 
             if self.path: path = self.path
