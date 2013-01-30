@@ -1,10 +1,10 @@
-#### Release 0.2.3 of `pyproperties`
+#### Release 0.2.3.1 of `pyproperties`
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 
 
 This release had slipped a little bit. But is pretty fruitful. 
-Version `0.2.3` introduces further improvements in the `__include__` field. 
+Version `0.2.3.1` introduces further improvements in the `__include__` field. 
 
 What is more - heavy refactoring. 
 New class emerged from the base `Properties()` - `Reader()`. 
@@ -26,7 +26,7 @@ As always everything is in [Changelog](Changelog.mdown), [DOC](DOC) and [manuals
 *   6 new feature(s),
 
 
-#### Version 0.2.3 (2013.01.20):
+#### Version 0.2.3.1 (2013.01.20):
 
 * __upd__:  `pops()` owns no code by itself - it uses `gets()` and `removes()` as a backend,
 * __upd__:  `pops()` and `gets()` no longer return dictionaries - they return list of tuples,

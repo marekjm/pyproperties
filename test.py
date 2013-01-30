@@ -1063,7 +1063,16 @@ class ConvertTest(unittest.TestCase):
     def testNoneConversion(self):
         self.assertEqual(pyproperties.convert("None"), None)
 
-class LoadTest(unittest.TestCase):
+class BlankTest(unittest.TestCase):
+    def testBlank(self):
+        test = pyproperties.Properties("./foo.properties", no_read=True)
+        test.set("foo", "Foo")
+        test.set("boo", "Bar")
+        test.save()
+        test.blank()
+        self.assertEqual("./foo.properties", test.path)
+
+class ReadFromPropertiesTest(unittest.TestCase):
     def testNoRead(self):
         loaded = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
         self.assertEqual("./data/properties/bar.properties", loaded.path)
@@ -1078,6 +1087,12 @@ class LoadTest(unittest.TestCase):
         barb = pyproperties.Properties()
         bara.read()
         barb.read("./data/properties/bar.properties")
+
+        print()
+        print( bara.path )
+        print( barb.path )
+
+        self.assertEqual(bara.path, barb.path)
         self.assertEqual(bara.origin_source, barb.origin_source)
         self.assertEqual(bara.source, barb.source)
         self.assertEqual(bara.origin_properties, barb.origin_properties)
@@ -1085,8 +1100,49 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(bara.propcomments, barb.propcomments)
         self.assertEqual(bara.hidden, barb.hidden)
 
+    def testReadOnStartup(self):
+        test = pyproperties.Properties("./data/properties/bar.properties")
+        keys =  [
+                "alert",
+                "message.0",
+                "message.1",
+                "name.0",
+                "name.1",
+                "name.2",
+                ]
+        self.assertEqual(test.path, "./data/properties/bar.properties")
+        self.assertEqual(test.keys(), keys)
 
-class KeyGetterTest(unittest.TestCase):
+    def testReadAfterStartupWithPathGivenAtStartup(self):
+        test = pyproperties.Properties("./data/properties/bar.properties", no_read=True)
+        keys =  [
+                "alert",
+                "message.0",
+                "message.1",
+                "name.0",
+                "name.1",
+                "name.2",
+                ]
+        test.read()
+        self.assertEqual(test.path, "./data/properties/bar.properties")
+        self.assertEqual(test.keys(), keys)
+
+    def testReadAfterStartupWithPathGivenAtRead(self):
+        test = pyproperties.Properties()
+        keys =  [
+                "alert",
+                "message.0",
+                "message.1",
+                "name.0",
+                "name.1",
+                "name.2",
+                ]
+        test.read("./data/properties/bar.properties")
+        self.assertEqual(test.path, "./data/properties/bar.properties")
+        self.assertEqual(test.keys(), keys)
+
+
+class KeyAndValuesGetterTest(unittest.TestCase):
     def testGetKeysOf(self):
         foo = pyproperties.Properties("./data/properties/foo.properties")
         self.assertEqual(["literal.string.0", "literal.string.1"], sorted(foo.getkeysof("Hello World!")))
@@ -1105,6 +1161,21 @@ class KeyGetterTest(unittest.TestCase):
         
         self.assertEqual(["bar"], foo.keys())
         self.assertEqual(["bar", "foo"], foo.keys(hidden=True))
+    
+    def testValuesGetter(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "Foo")
+        foo.set("bar", "Bar")
+        self.assertListEqual(["Bar", "Foo"], foo.values())
+
+    def testValuesGetterWithHiddenProperties(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "Foo")
+        foo.set("bar", "Bar")
+        foo.hide("foo")
+        
+        self.assertEqual(["Bar"], foo.values())
+        self.assertListEqual(["Bar", "Foo"], foo.values(hidden=True))
 
 
 class GetTest(unittest.TestCase):
@@ -1204,13 +1275,11 @@ class SetterTest(unittest.TestCase):
                 ]
         foo = pyproperties.Properties()
         for i in range(4): foo.set("foo.{0}".format(i))
-        self.assertEqual(keys, foo.getnames())
-
+        self.assertEqual(keys, foo.keys())
 
     def testSetRaisesErrorWhenKeyContainsSpace(self):
         foo = pyproperties.Properties()
         self.assertRaises(TypeError, foo.set, "some key")
-
 
     def testSets(self):
         contents =  [
@@ -1225,7 +1294,6 @@ class SetterTest(unittest.TestCase):
         for key, value in contents:
             self.assertEqual(value, foo.get(key))
 
-
 class RemoverTest(unittest.TestCase):
     def testRemove(self):
         foo = pyproperties.Properties()
@@ -1234,7 +1302,7 @@ class RemoverTest(unittest.TestCase):
         foo.set("foo.2")
         foo.set("foo.3")
         foo.remove("foo.0")
-        self.assertEqual(["foo.1", "foo.2", "foo.3"], foo.getnames())
+        self.assertEqual(["foo.1", "foo.2", "foo.3"], foo.keys())
 
     def testRemoves(self):
         foo = pyproperties.Properties()
@@ -1244,7 +1312,7 @@ class RemoverTest(unittest.TestCase):
         foo.set("foo.3")
         foo.set("bar.0")
         foo.removes("foo.*")
-        self.assertEqual(["bar.0"], foo.getnames())
+        self.assertEqual(["bar.0"], foo.keys())
 
 
 class PopperTest(unittest.TestCase):
@@ -1255,7 +1323,7 @@ class PopperTest(unittest.TestCase):
         foo.set("foo.2")
         foo.set("foo.3")
         self.assertEqual("", foo.pop("foo.0"))
-        self.assertEqual(["foo.1", "foo.2", "foo.3"], foo.getnames())
+        self.assertEqual(["foo.1", "foo.2", "foo.3"], foo.keys())
 
     def testPops(self):
         foo = pyproperties.Properties()
@@ -1271,7 +1339,7 @@ class PopperTest(unittest.TestCase):
                 ("foo.3", ""),
                 ]
         self.assertEqual(props, sorted(foo.pops("foo.*")))
-        self.assertEqual(["bar.0"], foo.getnames())
+        self.assertEqual(["bar.0"], foo.keys())
 
     def testPopsCasted(self):
         foo = pyproperties.Properties()
@@ -1287,7 +1355,7 @@ class PopperTest(unittest.TestCase):
                 ("foo.3", True),
                 ]
         self.assertEqual(props, sorted(foo.pops("foo.*", cast=True)))
-        self.assertEqual(["bar.0"], foo.getnames())
+        self.assertEqual(["bar.0"], foo.keys())
 
 
 class GroupingTest(unittest.TestCase):

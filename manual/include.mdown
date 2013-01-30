@@ -1,5 +1,5 @@
 #### Including properties
-###### _version: `0.2.3`_
+###### _version: `0.2.3.1`_
 
 ###### [Index](index.mdown)
 ----
@@ -75,7 +75,7 @@ when doing something with the include tuple you will need to enter the original 
 
 To ease manipulation of `__include__`s version `0.2.2` introduced these methods: 
 `addinclude()`, `rminclude()`, `purgeinclude()`, `stripinclude()`. 
-Version `0.2.3` also introduced `listincludes()`.
+Version `0.2.3.1` also introduced `listincludes()`.
 
 
 &nbsp;

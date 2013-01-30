@@ -9,22 +9,26 @@
 
 ----
 
-#### Version 0.2.4 ():
+#### Version 0.2.3.1.1 (2013.01.30):
 
 * __upd__:  `LoadError` renamed to `ReadError`,
 * __upd__:  `wildcart_re` changed from `[a-zA-Z0-9_.-]*` to `[a-zA-Z0-9_.-]+`,
 
 
-* __fix__:  ,
+* __fix__:  after using `blank()` `store()` has been raising `StoreError`,
+* __fix__:  `read()` was raising errors when path had been not specified before calling it (would fail if path have been set by it),
 
 
-* __new__:  ,
+* __new__:  `values()` method which returns all values contained by properties,
+
+
+* __rem__:  `getnames()` has been removed - use `keys()` instead,
 
 
 ----
 
 
-#### Version 0.2.3 (2013.01.20):
+#### Version 0.2.3.1 (2013.01.20):
 
 * __upd__:  `pops()` owns no code by itself - it uses `gets()` and `removes()` as a backend,
 * __upd__:  `pops()` and `gets()` no longer return dictionaries - they return list of tuples,
@@ -57,7 +61,7 @@
 * __upd__:  `addcomment()` and `addcomments()` renamed to `comment()` and `comments()` respectively,
 * __upd__:  `srcorigin` renamed to `origin_source`,
 * __upd__:  `propsorigin` renamed to `origin_properties`,
-* __upd__:  `getre()` will be removed in `0.2.3` - use `gets()` with `no_expand` argument set to `True`,
+* __upd__:  `getre()` will be removed in `0.2.3.1` - use `gets()` with `no_expand` argument set to `True`,
 
 
 * __fix__:  `guess_float_re` now accepts floats of form `6.02e+23`,
