@@ -6,7 +6,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.2.3.1"
+__version__ = "0.2.4"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-zA-Z0-9_.-]+"
@@ -432,8 +432,14 @@ class Properties():
         To create a blank instance with path specified you can run:
             pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
         """
-        if path.strip() and not no_read: self.read(path, cast, no_includes, strict)
-        else: self.blank(path, strict)
+        if type(path) == Reader:
+            self.blank(path=path._path, strict=strict)
+            self._feed(path)
+        elif path.strip() and not no_read: 
+            self.read(path, cast, no_includes, strict)
+        else: 
+            self.blank(path, strict)
+        self.save()
 
     def _notavailable(self, key):
         """
@@ -443,6 +449,20 @@ class Properties():
         if key in self.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, self)
         else: message = "'{0}' is not available in {1}".format(key, self)
         raise KeyError(message)
+
+    def _parseline(self, value):
+        """
+        This method searches for every $(reference) string in given line and 
+        replaces it with value of corresponding property. 
+        """
+        if type(value) == str:
+            while "$(" in value and ")" in value:
+                a = value.find("$(")
+                b = value[a:].find(")")
+                name = value[a+2: a+b]
+                if a == -1 or b == -1: break
+                value = value.replace("$({0})".format(name), str(self.properties[name]))
+        return value
 
     def _appendsrc(self, props, prefix=""):
         """
@@ -459,6 +479,17 @@ class Properties():
             else: pass
         if self.source: self.source.append("")
         self.source.extend(lines)
+        
+    def _feed(self, reader):
+        """
+        Reads passed `Reader` object and tries to extract properties data out of it. 
+        Designed to use with native `Reader` objects but will accept any properly crafted object.
+        """
+        self.properties = reader._properties
+        self.hidden = reader._hidden
+        self.propcomments = reader._comments
+        self.includes = reader._included
+        self.source = reader._source
 
     def setstrict(self, strict):
         """
@@ -494,13 +525,8 @@ class Properties():
         self.blank(path=path, strict=strict)
         reader = Reader(path=self.path, includes=not no_includes, cast=cast, strict=strict)
         reader.read()
-        self.properties = reader._properties
-        self.hidden = reader._hidden
-        self.propcomments = reader._comments
-        self.includes = reader._included
-        self.source = reader._source
-        self.save()
-
+        self._feed(reader)
+        
     def reload(self):
         """
         Reloads properties from `self.path`. Parser mode for reloading will be taken from `self.strict`.
@@ -614,20 +640,6 @@ class Properties():
         self.update(properties)
         self._appendsrc(properties)
         self.unsaved = True
-
-    def _parseline(self, value):
-        """
-        This method searches for every $(reference) string in given line and 
-        replaces it with value of corresponding property. 
-        """
-        if type(value) == str:
-            while "$(" in value and ")" in value:
-                a = value.find("$(")
-                b = value[a:].find(")")
-                name = value[a+2: a+b]
-                if a == -1 or b == -1: break
-                value = value.replace("$({0})".format(name), str(self.properties[name]))
-        return value
 
     def parse(self, cast=False):
         """

@@ -7,7 +7,7 @@ import sys
 
 from modules import pyproperties
 
-__version__ = "0.2.3.1"
+__version__ = "0.2.4"
 
 foo_path = "./data/properties/foo.properties"
 
@@ -1140,7 +1140,21 @@ class ReadFromPropertiesTest(unittest.TestCase):
         test.read("./data/properties/bar.properties")
         self.assertEqual(test.path, "./data/properties/bar.properties")
         self.assertEqual(test.keys(), keys)
-
+    
+    def testReadFromPassedReader(self):
+        reader = pyproperties.Reader("./data/properties/bar.properties")
+        reader.read()
+        test = pyproperties.Properties(reader)
+        keys =  [
+                "alert",
+                "message.0",
+                "message.1",
+                "name.0",
+                "name.1",
+                "name.2",
+                ]
+        self.assertEqual(test.path, os.path.abspath("./data/properties/bar.properties"))
+        self.assertEqual(test.keys(), keys)
 
 class KeyAndValuesGetterTest(unittest.TestCase):
     def testGetKeysOf(self):

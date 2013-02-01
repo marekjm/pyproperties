@@ -858,7 +858,7 @@ FUNCTIONS
         Checks if the line contains a key.
 
 DATA
-    __vertuple__ = (0, 2, 3, 1)
+    __vertuple__ = (0, 2, 4)
     guess_bin_re = '^-?0b[0-1]+$'
     guess_float_re = r'^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$'
     guess_hex_re = '^-?0x[0-9a-fA-F]+$'
@@ -867,7 +867,7 @@ DATA
     wildcart_re = '[a-zA-Z0-9_.-]+'
 
 VERSION
-    0.2.3.1
+    0.2.4
 
 FILE
     /home/marekjm/Development/Python3/Projects/pyproperties/modules/pyproperties.py
