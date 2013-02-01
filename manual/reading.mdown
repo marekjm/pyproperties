@@ -5,7 +5,7 @@
 ----
 
 
-There are several patterns for loading properties files.
+There are several patterns for loading properties files using just `Properties` class:
 
 _stadard way_
 
@@ -27,7 +27,13 @@ _third way_
         foo.read("/path/to/foo.properties")
 
 
-Either way will result with `pyproperties.Properties` object with exactly the same values.
+There is another way -- it requires creating `Reader()` instance (which is called by `Properties()` implicitly) and passing it to the properties object.
+
+        reader = pyproperties.Reader("/path/to/foo.properties")
+        foo = pyproperties.Properties(reader)
+
+
+Either way will result with `Properties()` object with exactly the same values.
 
 
 #### Parser mode
@@ -40,6 +46,7 @@ Parser defaults to _strict_ mode. If you want to read properties in _non-strict_
         
 If you want to change mode after loading file you can use `setstrict()` method.
 
+**NOTE**: both `Reader()` and `Properties()` have the `strict` variable as well as number of helper functions.
 
 ----
 
