@@ -14,7 +14,7 @@
 * __upd__:  you can now pass `Reader` object to `Properties()` and it will be loaded,
 
 
-* __fix__:  ,
+* __fix__:  `setstrict()` now does conversion to `bool` before setting value,
 
 
 * __new__:  `_feed()` method: read DOC for more,

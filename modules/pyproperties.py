@@ -495,7 +495,7 @@ class Properties():
         """
         Sets parser mode to strict (True) or non-strict (False).
         """
-        self.strict = strict
+        self.strict = bool(strict)
 
     def blank(self, path="", strict=True):
         """
@@ -519,7 +519,7 @@ class Properties():
     
     def read(self, path="", cast=False, no_includes=False, strict=True):
         """
-        You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
+        You can pass `cast` as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly.
         """
         self.blank(path=path, strict=strict)

@@ -1,5 +1,5 @@
 #### Setting a property, updating value of a property
-###### _version: `0.2.3.1`_
+###### _version: `0.2.4`_
 
 ###### [Index](index.mdown)
 ----

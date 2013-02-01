@@ -1,5 +1,5 @@
 #### Manual for `pyproperties`
-###### _version: `0.2.3.1`_
+###### _version: `0.2.4`_
 
 ###### [Release file](./../RELEASE.mdown), [Changelog](./../Changelog.mdown)
 
@@ -10,7 +10,7 @@
 
 ##### Working with files
 
-0.  [Loading](loading.mdown)
+0.  [Reading](reading.mdown)
 1.  [Storing](storing.mdown)
 
 ----

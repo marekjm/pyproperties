@@ -1,5 +1,5 @@
 #### Storing properties
-###### _version: `0.2.3.1`_
+###### _version: `0.2.4`_
 
 ###### [Index](index.mdown)
 ----
@@ -27,7 +27,7 @@ Either comments or hidden properties are preceded by a _hash_ sign (`#`) **but**
 
 #### Store methods
 
-_Version `0.2.3.1` introduced `Writer()` class. Now there are two ways of storing properties._  
+_Version `0.2.4` introduced `Writer()` class. Now there are two ways of storing properties._  
 
 First is explicit - it requires you to create an instance of `Writer()` and then calling its `store()` method. 
 `Writer()` class takes only one thing during creation - a properties for which we create a writer.
@@ -87,5 +87,6 @@ Second argument related to source is `no_dump` (also of `bool` type). If you wan
 ----
 
 SEE ALSO:  
+[reading](reading.mdown)
 [saving](saving.mdown)  
 [grouping](grouping.mdown)

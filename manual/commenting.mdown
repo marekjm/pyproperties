@@ -1,5 +1,5 @@
 #### Commenting properties
-###### _version: `0.2.3.1`_
+###### _version: `0.2.4`_
 
 ###### [Index](index.mdown)
 ----
@@ -30,14 +30,14 @@ This is done by `comment()` and `uncomment()` methods.
         >>> p.set("foo")
         >>> p.get("foo")
         ''
-        >>> p.addcomment("foo", "this is a comment")
+        >>> p.comment("foo", "this is a comment")
         >>> p.getcomment("foo")
         'this is a comment'
         >>> p.rmcomment("foo")
         >>> p.getcomment("foo")
         ''
-        >>> p.addcomment("foo", "this is a comment")
-        >>> p.addcomment("foo", "this is a newer comment")
+        >>> p.comment("foo", "this is a comment")
+        >>> p.comment("foo", "this is a newer comment")
         >>> p.getcomment("foo")
         'this is a newer comment'
         >>>
@@ -60,7 +60,7 @@ This is done by `comment()` and `uncomment()` methods.
 
 
 Problem is encoutered when it comes to decide if a line is comment or hidden property. 
-There is a special method which does this: `_islinehiddenprop()`.  
+There is a special method in `Reader()` class which does this -- `_islinehiddenprop()`.  
 A line is considered hidden property when:
 
 0.  it's not empty,
@@ -72,7 +72,7 @@ Example:
 *   `#some.property=value` evaluates as hidden property,
 *   `# some.property=value` does not evaluate as hidden property (comment char is not immediately followed by a valid line it is separated from it by a space char),
 
-Hidden properties cannot span several lines.
+Hidden properties have one limitation: they cannot span several lines.
 
 
 ----
