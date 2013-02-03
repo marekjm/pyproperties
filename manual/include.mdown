@@ -10,7 +10,7 @@ The idea to implement it came from [this](http://commons.apache.org/configuratio
 it's functionality is expanded a little bit and the name of _special key_ is changed from `include` to `__include__`.
 
 
-In `pyproperties` you can pass some arguments to `__include__`.  
+In `smallticket` you can pass some arguments to `__include__`.  
 
 
 1.  `as` which will add prefix to all included properties,
