@@ -9,7 +9,7 @@
 
 ----
 
-#### Version 0.2.4 ():
+#### Version 0.2.4 (2013.02.10):
 
 * __upd__:  you can now pass `Reader` object to `Properties()` and it will be loaded,
 
@@ -20,7 +20,7 @@
 * __new__:  `_feed()` method: read DOC for more,
 
 
-* __rem__:  ,
+* __rem__:  removed support for passing comments as lists of strings (use `comment('\n'.join(['your', 'list']))` if you have to),
 
 
 ----
