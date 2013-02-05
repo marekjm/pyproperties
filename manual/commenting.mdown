@@ -44,64 +44,13 @@ This is done by `comment()` and `uncomment()` methods.
 
 ----
 
-&nbsp;
+#### Comments that had been read from file
 
-#### Hiding and _un_-hiding properties
+When comment spanning multiple lines is being read it becomes a string with 
+newline character (`\n`) inserted when newline was in original file.  
+This is not only intuitional (comments are strings) but 
+by accident preserves the original layout of comments.
 
-`pyproperties` parser recongnizes few kinds of lines:
-
-
-*   empty,
-*   valid,
-*   invalid,
-*   comment,
-*   hidden property,
-*   property,
-
-
-Problem is encoutered when it comes to decide if a line is comment or hidden property. 
-There is a special method in `Reader()` class which does this -- `_islinehiddenprop()`.  
-A line is considered hidden property when:
-
-0.  it's not empty,
-1.  it's first character is not `#` or `!`,
-1.  it's first character is immediately followed by a valid property line,
-
-Example:
-
-*   `#some.property=value` evaluates as hidden property,
-*   `# some.property=value` does not evaluate as hidden property (comment char is not immediately followed by a valid line it is separated from it by a space char),
-
-Hidden properties have one limitation: they cannot span several lines.
-
-
-----
-
-##### Hiding and _un_-hiding: API
-
-You can use `hide()` and `unhide()` methods to change status of a property.
-
-        Python 3.3.0 (default, Oct 24 2012, 19:57:05) 
-        [GCC 4.7.2 20120921 (Red Hat 4.7.2-2)] on linux
-        Type "help", "copyright", "credits" or "license" for more information.
-        >>> from modules import pyproperties
-        >>> foo = pyproperties.Properties()
-        >>> foo.set("foo")
-        >>> foo.get("foo")
-        ''
-        >>> foo.hide("foo")
-        >>> foo.get("foo")
-        Traceback (most recent call last):
-          File "<stdin>", line 1, in <module>
-          File "./modules/pyproperties.py", line 672, in get
-            if key not in self.properties or key in self.hidden: self._notavailable(key)
-          File "./modules/pyproperties.py", line 105, in _notavailable
-            raise KeyError(message)
-        KeyError: "'foo' is not available in <modules.pyproperties.Properties object at 0x7fb3f862e150>: hidden property"
-        >>> 
-        >>> foo.unhide("foo")
-        >>> foo.get("foo")
-        ''
 
 ----
 

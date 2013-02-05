@@ -377,7 +377,7 @@ CLASSES
      |      Removes include directive from a list of directives and all properties corresponding to it.
      |  
      |  read(self, path='', cast=False, no_includes=False, strict=True)
-     |      You can pass 'cast' as True to tell pyproperties that it should guess the type of the property 
+     |      You can pass `cast` as True to tell pyproperties that it should guess the type of the property 
      |      and convert it accordingly.
      |  
      |  refresh(self, overwrite=True)

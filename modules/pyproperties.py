@@ -263,7 +263,7 @@ class Reader():
                     n -= 1
                 if n != i-1:
                     comment.reverse()
-                    comments[ getlinekey(line) ] = comment
+                    comments[ getlinekey(line) ] = "\n".join(comment)
                     self._source = self._source[:n+1] + self._source[i:]
             i += 1
         self._comments = comments
@@ -376,7 +376,7 @@ class Writer():
         """
         Appends comment of a property of given key to self.lines
         """
-        [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key] ]
+        [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key].split("\n") ]
 
     def dump(self, path):
         """
@@ -932,14 +932,6 @@ class Properties():
         """
         if key not in self.properties or key in self.hidden: self._notavailable(key)
 
-        if type(comment) == str: comment = comment.split("\n")
-        elif type(comment) == list:
-            _comment = []
-            [ _comment.extend(l.split("\n")) for l in comment ]
-            comment = _comment
-            warnings.warn("support for passing a list of strings will be removed in 0.2.3; if you need it use: '\\n'.join(['your', 'list'])", DeprecationWarning)
-        else: comment = [comment]
-        for i in range(len(comment)): comment[i] = "{0}".format(comment[i])
         self.propcomments[key] = comment
         self.unsaved = True
 

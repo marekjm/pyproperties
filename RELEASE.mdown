@@ -1,18 +1,8 @@
-#### Release 0.2.3.1 of `pyproperties`
+#### Release 0.2.4 of `pyproperties`
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 
 
-This release had slipped a little bit. But is pretty fruitful. 
-Version `0.2.3.1` introduces further improvements in the `__include__` field. 
-
-What is more - heavy refactoring. 
-New class emerged from the base `Properties()` - `Reader()`. 
-Responsibilities in `pyproperties` are now well defined: 
-`Reader()` writes and parses the initial file, `Properties()` provides interface for working with loaded file and 
-`Wrier()` stores the file after the job is finished.  
-Also - several small methods were removed (`Properties()` is now slightly slimmer) or 
-factored out as functions available directly from `pyproperties`. 
 
 As always everything is in [Changelog](Changelog.mdown), [DOC](DOC) and [manuals](./manual/index.html)
 

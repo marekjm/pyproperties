@@ -117,8 +117,8 @@ class ReaderTest(unittest.TestCase):
         Test if `extractprops()` correctly extracts comments from file.
         """
         comments =  {
-                    "foo":["this is", "a comment"],
-                    "bar":["this is another comment"],
+                    "foo":"this is\na comment",
+                    "bar":"this is another comment",
                     }
         lines = [
                 "foo=Foo  ",
@@ -275,8 +275,8 @@ class ReaderTest(unittest.TestCase):
                 }
         hidden = []
         comments =  {
-                    "foo":["this is", "a comment"],
-                    "bar":["this is another comment"],
+                    "foo":"this is\na comment",
+                    "bar":"this is another comment",
                     }
         self.assertEqual(lines, reader._source)
         self.assertEqual(props, reader._properties)
@@ -1475,9 +1475,9 @@ class CompleteTest(unittest.TestCase):
         bar.save()
         foo.complete(bar)
         self.assertEqual(foo_completed, foo.properties)
-        self.assertEqual({"prop.2":["this is a comment"]}, foo.propcomments)
+        self.assertEqual({"prop.2":"this is a comment"}, foo.propcomments)
         self.assertNotEqual(foo_completed, foo.origin_properties)
-        self.assertNotEqual({"prop.2":["this is a comment"]}, foo.origin_propcomments)
+        self.assertNotEqual({"prop.2":"this is a comment"}, foo.origin_propcomments)
         foo.save()
         self.assertEqual(foo_completed, foo.origin_properties)
     
@@ -1553,10 +1553,10 @@ class UpdateTest(unittest.TestCase):
                 "prop.1":"0x1",
                 }
         comments_bu =   {
-                        "prop.1":["this is original comment"],
+                        "prop.1":"this is original comment",
                         }
         comments_au =   {
-                        "prop.1":["this is updated comment"],
+                        "prop.1":"this is updated comment",
                         }
         foo = pyproperties.Properties()
         bar = pyproperties.Properties()
@@ -1617,8 +1617,8 @@ class MergeTest(unittest.TestCase):
                 "prop.3":"0x3",
                 }
         comments =  {
-                    "prop.0":["this is a comment"],
-                    "prop.3":["this is another comment"],
+                    "prop.0":"this is a comment",
+                    "prop.3":"this is another comment",
                     }
         hidden = ["prop.0", "prop.3"]
         foo.set("prop.0", "0")
@@ -1699,7 +1699,7 @@ class SaveTest(unittest.TestCase):
         self.assertEqual(foo_saved, foo.origin_properties)
 
     def testSaveComments(self):
-        comments = {"foo":["comment"]}
+        comments = {"foo":"comment"}
         foo = pyproperties.Properties()
         foo.set("foo")
         foo.comment("foo", "comment")
@@ -1747,7 +1747,7 @@ class RevertTest(unittest.TestCase):
         self.assertEqual({}, foo.properties)
 
     def testRevertComments(self):
-        comments = {"foo":["test"]}
+        comments = {"foo":"test"}
         foo = pyproperties.Properties()
         foo.set("foo")
         foo.comment("foo", "test")
@@ -1787,34 +1787,18 @@ class AddcommentTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.comment("foo", "first part")
-        self.assertEqual(["first part"], foo.propcomments["foo"])
+        self.assertEqual("first part", foo.propcomments["foo"])
         self.assertRaises(KeyError, foo.comment, "bar", "")
-
 
     def testAddcommentTestStringWithNewlines(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
         foo.comment("foo", "this\nis\na\ncomment")
-        self.assertEqual(["this", "is", "a", "comment"], foo.propcomments["foo"])
+        self.assertEqual("this\nis\na\ncomment", foo.propcomments["foo"])
         self.assertRaises(KeyError, foo.comment, "bar", "")
 
 
-    def testAddcommentTestSimpleList(self):
-        foo = pyproperties.Properties()
-        foo.set("foo", "")
-        foo.comment("foo", ["first", "part"])
-        self.assertEqual(["first", "part"], foo.propcomments["foo"])
-        self.assertRaises(KeyError, foo.comment, "bar", "")
 
-
-    def testAddcommentTestListWithNewlines(self):
-        foo = pyproperties.Properties()
-        foo.set("foo", "")
-        foo.comment("foo", ["this\nis", "a\ncomment"])
-        self.assertEqual(["this", "is", "a", "comment"], foo.propcomments["foo"])
-        self.assertRaises(KeyError, foo.comment, "bar", "")
-        
-        
 class GetcommentTest(unittest.TestCase):
     def testGetcomment(self):
         foo = pyproperties.Properties()
