@@ -9,6 +9,23 @@
 
 ----
 
+#### Version 0.2.5 ():
+
+* __upd__:  ,
+
+
+* __fix__:  ,
+
+
+* __new__:  ,
+
+
+* __rem__:  ,
+
+
+----
+
+
 #### Version 0.2.4 (2013.02.12):
 
 * __upd__:  you can now pass `Reader` object to `Properties()` and it will be loaded,
