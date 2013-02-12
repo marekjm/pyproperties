@@ -9,21 +9,25 @@
 
 ----
 
-#### Version 0.2.4 (2013.02.10):
+#### Version 0.2.4 (2013.02.12):
 
 * __upd__:  you can now pass `Reader` object to `Properties()` and it will be loaded,
+* __upd__:  `purgeinclude()` now triggers warnings with `IncludeWarning` type,
 
 
 * __fix__:  `setstrict()` now does conversion to `bool` before setting value,
 
 
 * __new__:  `_feed()` method: read DOC for more,
+* __new__:  `_rmkeysfrom()` method for removing all keys which are also present in different file,
 
 
-* __rem__:  removed support for passing comments as lists of strings (use `comment('\n'.join(['your', 'list']))` if you have to),
+* __rem__:  removed support for passing comments as lists of strings (use `comment('\n'.join(['your', 'list']))` if you have to), 
+            you can still add comments as a lists but it will generate errors later (during `getcomment()` call),
 
 
 ----
+
 
 #### Version 0.2.3.1 (2013.01.30):
 

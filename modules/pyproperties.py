@@ -969,7 +969,7 @@ class Properties():
         """
         if key not in self.properties or key in self.hidden: self._notavailable(key)
         
-        if key in self.propcomments: comment = "\n".join(self.propcomments[key])
+        if key in self.propcomments: comment = self.propcomments[key]
         else: comment = ""
         if lines and comment != "": comment = comment.split("\n")
         elif lines and comment == "": comment = []
@@ -1028,24 +1028,27 @@ class Properties():
                 self.includes.remove( (path, prefix, hidden) )
                 break
 
+    def _rmkeysfrom(self, path, prefix=""):
+        """
+        Removes all properties present in file to which given path is pointing.
+        """
+        path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
+        reader = Reader(path=path)
+        reader.read()
+        for key in reader.keys():
+            if prefix: key = "{0}.{1}".format(prefix, key)
+            self.remove(key)
+
     def purgeinclude(self, path, prefix="", hidden=False):
         """
         Removes include directive from a list of directives and all properties corresponding to it.
         """
-        purged = False
         for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
             if path == ipath and prefix == iprefix and hidden == ihidden:
                 self.rminclude( path, prefix, hidden )
-                if os.path.isabs(path): tpath = path
-                else: tpath = os.path.normpath(os.path.join(os.path.split(self.path)[0], path))
-                reader = Reader(path=tpath)
-                reader.read()
-                for key in reader.keys():
-                    if prefix: key = "{0}.{1}".format(prefix, key)
-                    self.remove(key)
-                purged = True
+                self._rmkeysfrom(path=path, prefix=prefix)
                 break
-        if not purged: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden))
+        if not self.unsaved: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden), IncludeWarning)
 
     def stripinclude(self, path, prefix="", hidden=False):
         """

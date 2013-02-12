@@ -426,6 +426,10 @@ class IncludeTest(unittest.TestCase):
         p.rminclude("./data/properties/include_test/test.properties", prefix="bar", hidden=True)
         self.assertEqual(p.includes, includes)
 
+    def testPurgeIncludeWarnsWhenNothingWasRemoved(self):
+        p = pyproperties.Properties()
+        self.assertWarns(pyproperties.IncludeWarning, p.purgeinclude, "./data/properties/include_test/test.properties")
+
     def testPurgeIncludeSimple(self):
         test = pyproperties.Properties("./data/properties/include_test/test.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
@@ -510,6 +514,15 @@ class IncludeTest(unittest.TestCase):
     def testListinlcudes(self):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.prefixed.properties")
         self.assertEqual( test.listincludes(), test.includes )
+    
+    def testRemovingKeysOfFile(self):
+        test = pyproperties.Properties()
+        test.set("prop.0")
+        test.set("prop.1")
+        test.set("prop.2")
+        test.set("foo")
+        test._rmkeysfrom("./data/properties/baz.properties")
+        self.assertEqual({"foo":""}, test.properties)
 
 
 class WriterTest(unittest.TestCase):
@@ -1804,7 +1817,7 @@ class GetcommentTest(unittest.TestCase):
         foo = pyproperties.Properties()
         foo.set("foo")
         foo.set("bar")
-        foo.comment("foo", ["this\nis", "a\ncomment"])
+        foo.comment("foo", "this\nis\na\ncomment")
         self.assertEqual(["this", "is", "a", "comment"], foo.getcomment("foo", lines=True))
         self.assertEqual("this\nis\na\ncomment", foo.getcomment("foo"))
         self.assertEqual([], foo.getcomment("bar", lines=True))

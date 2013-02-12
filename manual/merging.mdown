@@ -1,4 +1,5 @@
 #### Merging properties
+###### _version: `0.2.4`_
 
 ###### [Index](index.mdown)
 ----

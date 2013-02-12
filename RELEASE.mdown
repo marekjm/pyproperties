@@ -3,41 +3,40 @@
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 
 
+In this release there is a small improvement - you can use explicit workflow with `pyproperties` which means you can 
+create `Reader()` object and read properties in it, feed it to `Properties()` object and do your stuff and at last 
+feed properties to `Writer()` object and store.  
+This functionality is available directly from `Properties` via `read()` and `store()` methods but this allows user 
+to skip some step when eg. they do not like original reader, writer or main interface.  
 
-As always everything is in [Changelog](Changelog.mdown), [DOC](DOC) and [manuals](./manual/index.html)
+This is one of NIR - Not Impressing Release.
 
 
 ----
 
 
 ##### This release brings you:
-*   8 update(s),
-*   2 fix(es),
-*   6 new feature(s),
+*   2 update(s),
+*   1 fix(es),
+*   2 new feature(s),
+*   1 removal(s),
 
 
 #### Version 0.2.3.1 (2013.01.20):
 
-* __upd__:  `pops()` owns no code by itself - it uses `gets()` and `removes()` as a backend,
-* __upd__:  `pops()` and `gets()` no longer return dictionaries - they return list of tuples,
-* __upd__:  `_linehaskey()` is now *helper-function* with name `linehaskey()`,
-* __upd__:  `_convert()` is now *helper-function* with name `convert()`,
-* __upd__:  `getlinekey()` and `getlinevalue()` are now *helper-functions* and have new `strict` argument,
-* __upd__:  `_expandidentifier()` moved out of `Properties()` (is now a *helper-function*),
-* __upd__: `Properties.getnames()` method is deprecated and will be removed in `0.2.4`: use `keys()` instead,
-* __upd__: regular expression patterns for integers and floats are updated to accept preceding and trailing whitespace,
+* __upd__:  you can now pass `Reader` object to `Properties()` and it will be loaded,
+* __upd__:  `purgeinclude()` now triggers warnings with `IncludeWarning` type,
 
 
-* __fix__:  `guess_float_re` now matches also floats of form `6.02e-23` and `6.02e23`
-* __fix__:  `keys()` (old `getnames()`) is now behaving correctly when `hidden` is passed as `True`,
+* __fix__:  `setstrict()` now does conversion to `bool` before setting value,
 
 
-* __new__:  `Reader()` class,
-* __new__:  `listincludes()` method,
-* __new__:  `Properties.keys()` method,
-* __new__:  `guess_bin_re` regular expression pattern added,
-* __new__:  support for binary integers in `convert()`,
-* __new__:  `isbin()` *helper-function*,
+* __new__:  `_feed()` method: read DOC for more,
+* __new__:  `_rmkeysfrom()` method for removing all keys which are also present in different file,
+
+
+* __rem__:  removed support for passing comments as lists of strings (use `comment('\n'.join(['your', 'list']))` if you have to), 
+            you can still add comments as a lists but it will generate errors later (during `getcomment()` call),
 
 &nbsp;
 
