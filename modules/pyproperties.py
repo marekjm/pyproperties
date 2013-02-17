@@ -6,7 +6,7 @@ import os
 import re
 import warnings
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-zA-Z0-9_.-]+"
