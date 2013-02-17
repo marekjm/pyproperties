@@ -1,5 +1,5 @@
 #### Grouping properties
-###### _version: `0.2.4`_
+###### _version: `0.2.5`_
 
 ###### [Index](index.mdown)
 ----

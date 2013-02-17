@@ -1,42 +1,36 @@
-#### Release 0.2.5 of `pyproperties`
+#### Release `0.2.5` of `pyproperties`
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 
 
-In this release there is a small improvement - you can use explicit workflow with `pyproperties` which means you can 
-create `Reader()` object and read properties in it, feed it to `Properties()` object and do your stuff and at last 
-feed properties to `Writer()` object and store.  
-This functionality is available directly from `Properties` via `read()` and `store()` methods but this allows user 
-to skip some step when eg. they do not like original reader, writer or main interface.  
-
-This is one of NIR - Not Impressing Release.
+Version `0.2.5` gives you ability for exporting properties into JSON format. 
+Besides this, there were few small updates but they are not worth mentioning - 
+it was mostly minor refactoring and updates of unit tests and manuals. 
 
 
 ----
 
 
 ##### This release brings you:
-*   2 update(s),
-*   1 fix(es),
-*   2 new feature(s),
-*   1 removal(s),
+*   0 update(s),
+*   0 fix(es),
+*   1 new feature(s),
+*   0 removal(s),
 
 
-#### Version 0.2.3.1 (2013.01.20):
+#### Version 0.2.5 (2013.02.17):
 
-* __upd__:  you can now pass `Reader` object to `Properties()` and it will be loaded,
-* __upd__:  `purgeinclude()` now triggers warnings with `IncludeWarning` type,
-
-
-* __fix__:  `setstrict()` now does conversion to `bool` before setting value,
+* __upd__:  ,
 
 
-* __new__:  `_feed()` method: read DOC for more,
-* __new__:  `_rmkeysfrom()` method for removing all keys which are also present in different file,
+* __fix__:  ,
 
 
-* __rem__:  removed support for passing comments as lists of strings (use `comment('\n'.join(['your', 'list']))` if you have to), 
-            you can still add comments as a lists but it will generate errors later (during `getcomment()` call),
+* __new__:  `Exporter` class,
+* __new__:  `Exporter.JSON()` class which provides functionality for exporting properties to JSON format,
+
+
+* __rem__:  ,
 
 &nbsp;
 

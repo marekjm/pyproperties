@@ -435,7 +435,6 @@ class IncludeTest(unittest.TestCase):
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.purgeinclude("./../../../data/properties/include_test/bar.properties")
         
-        print( test.includes )
         self.assertEqual(test.includes, [("foo.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
@@ -532,7 +531,6 @@ class WriterTest(unittest.TestCase):
         writer = pyproperties.Writer(foo)
         self.assertRaises(pyproperties.UnsavedChangesError, writer.store, "")
 
-
     def testRaisesStoreErrorWhenNoPathGiven(self):
         foo = pyproperties.Properties()
         foo.set("foo", "bar")
@@ -540,7 +538,7 @@ class WriterTest(unittest.TestCase):
         writer = pyproperties.Writer(foo)
         self.assertRaises(pyproperties.StoreError, writer.store, "")
 
-    def testStoreLoadedWithNoModifications(self):
+    def testWriteLoadedWithNoModifications(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -559,7 +557,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-    def testStoreLoadedSomeValuesRemoved(self):
+    def testWriteLoadedSomeValuesRemoved(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -578,7 +576,7 @@ class WriterTest(unittest.TestCase):
         writer.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-    def testStoreLoadedEveryOriginalValueRemoved(self):
+    def testWriteLoadedEveryOriginalValueRemoved(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -589,8 +587,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-
-    def testStoreLoadedEveryOriginalPropertyRemovedAndNewPropertiesAdded(self):
+    def testWriteLoadedEveryOriginalPropertyRemovedAndNewPropertiesAdded(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -611,8 +608,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-
-    def testStoreLoadedAndCommented(self):
+    def testWriteLoadedAndCommented(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -638,8 +634,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-
-    def testStoreLoadedAndCommentsRemoved(self):
+    def testWriteLoadedAndCommentsRemoved(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -659,8 +654,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-
-    def testStoreChangedComments(self):
+    def testWriteChangedComments(self):
         bar = pyproperties.Properties("./data/properties/bar.properties")
         lines = [   "#   second simple properties file",
                     "#   used for testing properties.py module",
@@ -680,7 +674,7 @@ class WriterTest(unittest.TestCase):
         writer.store(path="./test.properties~", no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-    def testStoreCreatedFromBlankAndCommented(self):
+    def testWriteCreatedFromBlankAndCommented(self):
         foo = pyproperties.Properties("foo.properties", no_read=True)
         foo.set("foo", "Foo")
         foo.set("bar", "Bar")
@@ -699,8 +693,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-
-    def testStoreIncludesAdded(self):
+    def testWriteIncludesAdded(self):
         foo = pyproperties.Properties("foo.properties", no_read=True)
         foo.addinclude(path="foo.properties", prefix="", hidden=False)
         foo.addinclude(path="bar.properties", prefix="", hidden=False)
@@ -714,7 +707,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-    def testStoreIncludesAddedHidden(self):
+    def testWriteIncludesAddedHidden(self):
         foo = pyproperties.Properties("foo.properties", no_read=True)
         foo.addinclude(path="foo.properties", prefix="", hidden=True)
         foo.addinclude(path="bar.properties", prefix="", hidden=False)
@@ -728,7 +721,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-    def testStoreIncludesAddedPrefixed(self):
+    def testWriteIncludesAddedPrefixed(self):
         foo = pyproperties.Properties("foo.properties", no_read=True)
         foo.addinclude(path="foo.properties", prefix="foo", hidden=False)
         foo.addinclude(path="bar.properties", prefix="", hidden=False)
@@ -742,7 +735,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-    def testStoreIncludesAddedPrefixedAndHidden(self):
+    def testWriteIncludesAddedPrefixedAndHidden(self):
         foo = pyproperties.Properties("foo.properties", no_read=True)
         foo.addinclude(path="foo.properties", prefix="foo", hidden=False)
         foo.addinclude(path="bar.properties", prefix="", hidden=True)
@@ -759,7 +752,7 @@ class WriterTest(unittest.TestCase):
         writer.store(no_dump=True)
         self.assertEqual(lines, writer.lines)
 
-    def testStoreForced(self):
+    def testWriteForced(self):
         foo = pyproperties.Properties("foo.properties", no_read=True)
         foo.set("some.prop", "some value")
         foo.set("other.prop", "other value")
@@ -771,6 +764,40 @@ class WriterTest(unittest.TestCase):
         writer = pyproperties.Writer(foo)
         writer.store(no_dump=True, force=True)
         self.assertEqual(["other.prop=other value", "some.prop=some value"], writer.lines)
+
+
+class JSONExporterTests(unittest.TestCase):
+    def testExporterInit(self):
+        foo = pyproperties.Properties(path="foo.properties", no_read=True)
+        writer = pyproperties.Exporter.JSON(foo)
+        self.assertEqual("foo.json", writer._path)
+
+        bar = pyproperties.Properties(path="/home/user/bar.properties", no_read=True)
+        writer = pyproperties.Exporter.JSON(bar)
+        self.assertEqual("/home/user/bar.json", writer._path)
+    
+    def testRaisesUnsavedChangesError(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "bar")
+        writer = pyproperties.Exporter.JSON(foo)
+        self.assertRaises(pyproperties.UnsavedChangesError, writer.store, "")
+
+    def testRaisesStoreErrorWhenNoPathGiven(self):
+        foo = pyproperties.Properties()
+        foo.set("foo", "bar")
+        foo.save()
+        writer = pyproperties.Exporter.JSON(foo)
+        self.assertRaises(pyproperties.StoreError, writer.store, "")
+    
+    def testStoreProperty(self):
+        foo = pyproperties.Properties()
+        foo.set("foo")
+        foo.save()
+        writer = pyproperties.Exporter.JSON(foo)
+        writer.storeprop("foo")
+        writer.encode()
+        self.assertEqual({'foo':''}, writer._json)
+        self.assertEqual('{"foo": ""}', writer.json)
 
 
 class ValidatorsTest(unittest.TestCase):

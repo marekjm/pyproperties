@@ -1,0 +1,32 @@
+#### Exporting properties
+###### _version: `0.2.5`_
+
+###### [Index](index.mdown)
+----
+
+
+In version `0.2.5` `Exporter` class had been implemented in `pyproperties`. 
+Purpose of this class is to provide functionality for exporting properties to other formats. 
+
+Exporters implemented as writers and are mimicing default `Writer()` interface. 
+In order to export you create instance of exporter and pass `Properites()` object to it. 
+Then it is a matter of single call to `exporter.store()`. 
+
+Exporters can differ in arguments they accept in their `store()` method. 
+Some can have more than `Writer`'s `store()` and some can have less. 
+Differences are covered by [`DOC`](../DOC).
+
+----
+
+##### JSON (added in `0.2.5`)
+
+`Exporter.JSON()` provides interface for exporting properties to JSON format. 
+It is lightweight subset of Javascript used for storing data. 
+Nearly every programming language has implementation of JSON so 
+it is good format for exchanging data between programs.
+
+----
+
+SEE ALSO:  
+[reading](reading.mdown)
+[storing](storing.mdown)
