@@ -1,5 +1,5 @@
 #### Manual for `pyproperties`
-###### _version: `0.2.4`_
+###### _version: `0.2.5`_
 
 ###### [Release file](./../RELEASE.mdown), [Changelog](./../Changelog.mdown)
 
@@ -44,7 +44,8 @@
 1.  [Merging](merging.mdown)
 2.  [Commenting](commenting.mdown)
 3.  [Hiding](hiding.mdown)
-3.  [Grouping](grouping.mdown)
+4.  [Grouping](grouping.mdown)
+5.  [Exporting](exporting.mdown)
 
 ----
 

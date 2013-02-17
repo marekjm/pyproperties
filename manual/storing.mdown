@@ -1,5 +1,5 @@
 #### Storing properties
-###### _version: `0.2.4`_
+###### _version: `0.2.5`_
 
 ###### [Index](index.mdown)
 ----
@@ -84,9 +84,18 @@ If you want `pyproperties` to format the file exlusively by itself and not look 
 Second argument related to source is `no_dump` (also of `bool` type). If you want to examine the lines genrated by `Writer()` you will have to pass 
 `no_dump` as `True` - it will tell the writer to not write the file and leave the lines untouched (they are getting cleared after the file has been written).
 
+
+----
+
+##### Storing in different format
+
+From version `0.2.5` `pyproperties` can [export](exporting.mdown) properties into 
+different format using `Exporter` classes.
+
 ----
 
 SEE ALSO:  
 [reading](reading.mdown)
 [saving](saving.mdown)  
+[exporting](exporting.mdown)  
 [grouping](grouping.mdown)

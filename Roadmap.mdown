@@ -2,16 +2,30 @@
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 
-This file lists new features and updates which were planned for 
-particular release of `pyproperties`. 
+
+This file lists new features and updates which were/are planned for `pyproperties`. 
 By looking on it and Changelog you can see what was achieved and what was not. 
 
 
 ----
 
 
-#### Version 0.2.5:
+##### *`Writer()` should be able to export to JSON*  
+>   This may require creating two classes inside `Writer`: `Properties` and `JSON`. 
+>   JSON will be not available directly from `Properties.store()` to avoid unnecessary mess in code. 
 
-**`Writer()` should be able to export to JSON**
-This may require creating two classes inside `Writer`: `Properties` and `JSON`. 
-JSON will be not available directly from `Properties.store()` to avoid unnecessary mess in code. 
+##### *Implemented in `0.2.5`*  
+Implemented `Exporter` which contains class `JSON`. `Writer` had been left untouched. 
+
+    p = pyproperties.Properties("example.properties")
+    
+    exporter = pyproperties.Exporter.JSON(p)
+    exporter.store()
+    
+When passing properties read from file the extension is automatically changed to `.json` to avoid 
+accidental overwrites.
+
+    p.path = 'example.properties'
+    exporter._path = 'example.json'
+
+----

@@ -9,7 +9,7 @@
 
 ----
 
-#### Version 0.2.5 ():
+#### Version 0.2.5 (2013.02.17):
 
 * __upd__:  ,
 
@@ -17,7 +17,8 @@
 * __fix__:  ,
 
 
-* __new__:  ,
+* __new__:  `Exporter` class,
+* __new__:  `Exporter.JSON()` class which provides functionality for exporting properties to JSON format,
 
 
 * __rem__:  ,

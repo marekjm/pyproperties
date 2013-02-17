@@ -348,9 +348,7 @@ class Exporter:
             """
             for identifier in self._properties.getgroups():
                 keys = [ key for key in dict(self._properties.gets(identifier)) ]
-                for key in sorted(keys): 
-                    print("--> ", end="")
-                    self.storeprop(key)
+                for key in sorted(keys): self.storeprop(key)
 
         def storesingles(self):
             """
