@@ -127,16 +127,6 @@ def expandidentifier(identifier):
     return "^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re))
 
 
-def dictsort(dict):
-    """
-    Returns dictionary with sorted keys.
-    """
-    keys = sorted(dict.keys())
-    dict_sorted = {}
-    for key in keys:
-        dict_sorted[key] = dict[key]
-    return dict_sorted
-    
 class Reader():
     """
     This class utilizes methods for reading properties files.
@@ -433,7 +423,9 @@ class Writer:
             **JSON Writer version**
             This method encode generated Python dict to JSON.
             """
-            self.json = json.dumps(self._json)
+            s = json.dumps(self._json)
+            print(s)
+            self.json = s
             
         def storeprop(self, key):
             """

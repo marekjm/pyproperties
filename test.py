@@ -11,12 +11,6 @@ __version__ = "0.2.5"
 
 foo_path = "./data/properties/foo.properties"
 
-class HelperFunctionsTest(unittest.TestCase):
-    def testDictionarySorting(self):
-        foo = {"baz":"0", "foo":"1", "bar":"2"}
-        bar = {"bar":"2", "baz":"0", "foo":"1"}
-        self.assertEqual(bar, pyproperties.dictsort(foo))
-
 class ReaderTest(unittest.TestCase):
     def testRaisesReadErrorWhenFileNotFound(self):
         reader = pyproperties.Reader(path="./file_not_found.properties")
@@ -804,7 +798,31 @@ class JSONWriterTests(unittest.TestCase):
         writer.storeprop("foo")
         writer.encode()
         self.assertEqual({'foo':'', 'foo.comment':'', 'foo.hidden':False}, writer._json)
-        self.assertEqual("{'foo':'', 'foo.comment':'', 'foo.hidden':false}", writer.json)
+        self.assertEqual('{"foo":"", "foo.comment":"", "foo.hidden":false}', writer.json)
+
+    @unittest.skip("skipped in order to keep commit tests clean")
+    def testStoreSinglePropertyCommented(self):
+        foo = pyproperties.Properties()
+        foo.set("foo")
+        foo.comment("foo", "comment")
+        foo.save()
+        writer = pyproperties.Writer.JSON(foo)
+        writer.storeprop("foo")
+        writer.encode()
+        self.assertEqual({'foo':'', 'foo.comment':'comment', 'foo.hidden':False}, writer._json)
+        self.assertEqual('{"foo":"", "foo.comment":"comment", "foo.hidden":false}', writer.json)
+
+    @unittest.skip("skipped in order to keep commit tests clean")
+    def testStoreSinglePropertyHidden(self):
+        foo = pyproperties.Properties()
+        foo.set("foo")
+        foo.save()
+        writer = pyproperties.Writer.JSON(foo)
+        writer.storeprop("foo")
+        writer.encode()
+        self.assertEqual({'foo':'', 'foo.comment':'', 'foo.hidden':False}, writer._json)
+        self.assertEqual('{"foo":"", "foo.comment":"", "foo.hidden":false}', writer.json)
+
     @unittest.skip("skipped in order to keep commit tests clean")
     def testWriteSimpleProperties(self):
         foo = pyproperties.Properties()
