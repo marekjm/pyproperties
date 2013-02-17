@@ -1,0 +1,11 @@
+*.sh
+*.pdf
+.*
+!.gitignore
+
+scitesession
+
+__pycache__/
+modules/__pycache__/
+
+releases/
