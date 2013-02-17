@@ -1,4 +1,4 @@
-#### Release `0.2.5` of `pyproperties`
+#### Release `0.2.6` of `pyproperties`
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 

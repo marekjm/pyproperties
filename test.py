@@ -7,7 +7,7 @@ import sys
 
 from modules import pyproperties
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 foo_path = "./data/properties/foo.properties"
 
