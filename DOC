@@ -15,9 +15,32 @@ CLASSES
         IncludeWarning
         MultipleDeclarationWarning
     builtins.object
+        Exporter
         Properties
         Reader
         Writer
+    
+    class Exporter(builtins.object)
+     |  This class conatins engines for exporting properties to different formats.
+     |  
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  JSON = <class 'pyproperties.Exporter.JSON'>
+     |      This class provides functionality for storing properties in JSON format. 
+     |      
+     |      **IMPORTANT NOTE**
+     |      During conversion all information about included files, comments and 
+     |      properties' status (hidden/not-hidden) is lost.
+     |      Only data is exported.
     
     class IncludeError(builtins.Exception)
      |  Method resolution order:
@@ -760,7 +783,15 @@ CLASSES
     
     class Writer(builtins.object)
      |  This class utilizes methods for storing properties. 
-     |  When creating new instance of Writer() pass a Properties() object to it.
+     |  When creating new instance of Writer pass a Properties() object to it.
+     |  
+     |  This class is written for storing edited properties. 
+     |  It can use original source as a template for new file but 
+     |  can also generate new file entirely on its own. 
+     |  Styling features of `Writer.Properties` can be handy at times. 
+     |  When you have to deal with badly formed and hard to read file `Writer` can act as a *cleaner*. 
+     |  It will parse properties and write new file which will have properties grouped and styled in 
+     |  human-readable way.
      |  
      |  Methods defined here:
      |  
@@ -838,27 +869,22 @@ FUNCTIONS
         from lines which do not carry a property.
     
     isbin(s)
-        Helper function.
         Returns True if given string contains valid binary number.
     
     iscomment(line)
-        Helper function.
         Checks if given line is a comment.
     
     ishex(s)
-        Helper function.
         Returns True if given string contains valid hexadecimal number.
     
     isoct(s)
-        Helper function.
         Returns True if given string contains valid octal number.
     
     linehaskey(line, strict=True)
-        Helper function.
         Checks if the line contains a key.
 
 DATA
-    __vertuple__ = (0, 2, 4)
+    __vertuple__ = (0, 2, 5)
     guess_bin_re = '^-?0b[0-1]+$'
     guess_float_re = r'^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$'
     guess_hex_re = '^-?0x[0-9a-fA-F]+$'
@@ -867,9 +893,9 @@ DATA
     wildcart_re = '[a-zA-Z0-9_.-]+'
 
 VERSION
-    0.2.4
+    0.2.5
 
 FILE
-    /home/marekjm/Development/Python3/Projects/pyproperties/modules/pyproperties.py
+    /home/marek/Development/Python3/pyproperties/modules/pyproperties.py
 
 
