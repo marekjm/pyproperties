@@ -298,134 +298,38 @@ class Reader():
         return list(self._properties.keys())
 
 
-class Writer:
+class Exporter:
     """
-    This class utilizes methods for storing properties. 
-    When creating new instance of Writer() pass a Properties() object to it.
+    This class conatins engines for exporting properties to different formats.
     """
-    class Properties():
-        def __init__(self, properties):
-            self.properties = properties
-            self.stored, self.includes_stored, self.lines = ([], self.properties.includes_stored, [])
-            self.origin_properties, self.origin_includes = (self.properties.origin_properties, self.properties.origin_includes)
-            self.origin_propcomments, self.origin_hidden = (self.properties.origin_propcomments, self.properties.origin_hidden)
-            self.source = self.properties.origin_source
-
-        def storeprop(self, key):
-            """
-            This method stores single property and takes responsibility of storing it's comment and 
-            possibly hiding the property itself. 
-            This method looks at the `stored` list and checks if the given key has already 
-            been stored to prevent storing it two times.
-            It will also check if the key is in `origin_properties` dict to ensure that unsaved properties 
-            would not get stored.
-            """
-            if key not in self.stored and key in self.origin_properties:
-                if key in self.origin_propcomments: self.storecomment(key)
-                if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.origin_properties[key]))
-                else: self.lines.append("#{0}={1}".format(key, self.origin_properties[key]))
-                self.stored.append(key)
-
-        def storeincludes(self):
-            """
-            This method stores __include__ directives added via the library. 
-            Each directive is separated by a blank line.
-            """
-            if self.lines != [] and self.lines[-1] != "": self.lines.append("")
-            for path, prefix, hidden in self.origin_includes:
-                if (path, prefix, hidden) not in self.includes_stored:
-                    if prefix and hidden: line = "__include__.hidden.as.{0}={1}".format(prefix, path)
-                    elif prefix and not hidden: line = "__include__.as.{0}={1}".format(prefix, path)
-                    elif not prefix and hidden: line = "__include__.hidden={0}".format(path)
-                    else: line = "__include__={0}".format(path)
-                    self.lines.append(line)
-                    self.lines.append("")
-                    self.includes_stored.append( (path, prefix, hidden) )
-
-        def storesrc(self):
-            """
-            Prepares data which came with source for storing.
-            """
-            for i in range(len(self.source)):
-                if self.source[i] == "" or self.source[i].isspace(): self.lines.append("")
-                elif self.source[i][0] == "#": self.lines.append("{0}".format(self.source[i]))
-                elif getlinekey(self.source[i], strict=self.properties.strict) != "": self.storeprop(getlinekey(self.source[i], strict=self.properties.strict))
-
-        def storegroups(self):
-            """
-            Generates lines for groups not found in source.
-            """
-            if self.lines != [] and self.lines[-1] != "": self.lines.append("")
-            for identifier in self.properties.getgroups():
-                previous_len = len(self.lines)
-                keys = [ key for key in self.properties.gets(identifier) ]
-                for key in sorted(keys): self.storeprop(key)
-                if len(self.lines) > previous_len: self.lines.append("")
-
-        def storesingles(self):
-            """
-            Generates lines for single properties not found in source.
-            """
-            for key in sorted(self.origin_properties.keys()): self.storeprop(key)
-
-        def storecomment(self, key):
-            """
-            Appends comment of a property of given key to self.lines
-            """
-            [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key].split("\n") ]
-
-        def dump(self, path):
-            """
-            Dumps generated lines to file given in path and clears 
-            variables defined by store() and its subemthods. 
-            """
-            file = open(path, "w")
-            for line in self.lines: file.write("{0}\n".format(line))
-            file.close()
-            self.lines, self.stored = ([], [])
-
-        def store(self, path="", force=False, no_dump=False, drop_source=False):
-            """
-            Writes properties to given 'path'.
-            'path' defaults to path set if given properties.
-
-            If store will encounter some unsaved changes it will
-            raise UnsavedChangesError.
-            You can explicitly silence it by passing force as True.
-
-            If 'no_dump' is passed as True lines will be generated 
-            but not written to file.
-            """
-            if self.properties.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
-            if path == "": path = self.properties.path    # this line defaults the value
-            if path == "" or path.isspace(): raise StoreError("no path specified")
-            if path and not self.properties.path: self.properties.path = path
-                
-            if not drop_source: self.storesrc()
-            self.storegroups()
-            self.storesingles()
-            self.storeincludes()
-            try:
-                while self.lines[-1] == "": self.lines = self.lines[:-1]
-            except IndexError: pass
-            finally:
-                if not no_dump: self.dump(path)
-
     class JSON():
+        """
+        This class provides functionality for storing properties in JSON format. 
+        
+        **IMPORTANT NOTE**
+        During conversion all information about included files, comments and 
+        properties' status (hidden/not-hidden) is lost.
+        Only data is exported.
+        """
         def __init__(self, properties):
-            self._properties = properties
-            self._path = "{0}.json".format(os.path.splitext(self._properties.path)[0])
-            self._json = {}
-            self.json = ""
+            self._properties, self._path = (properties, "{0}.json".format(os.path.splitext(properties.path)[0]))
+            if self._path == ".json": self._path = ""
+            
+            self._origin_properties = self._properties.origin_properties
+            self._origin_propcomments = self._properties.origin_propcomments
+            self._origin_hidden = self._properties.origin_hidden
+            self._json, self.json = ({}, "")
 
-        def encode(self):
+        def encode(self, pretty=False):
             """
             **JSON Writer version**
             This method encode generated Python dict to JSON.
             """
-            s = json.dumps(self._json)
-            print(s)
-            self.json = s
+            if pretty:
+                self.json = json.dumps(self._json, sort_keys=True, indent=4)
+                self.json = [line.rstrip() for line in self.json.splitlines()]
+            else:
+                self.json = json.dumps(self._json)
             
         def storeprop(self, key):
             """
@@ -437,21 +341,34 @@ class Writer:
             would not get stored.
             """
             self._json[key] = self._properties.get(key)
-            self._json["{0}.comment".format(key)] = self._properties.getcomment(key)
-            self._json["{0}.hidden".format(key)] = key in self._properties.hidden
             
-            
+        def storegroups(self):
+            """
+            Generates lines for groups not found in source.
+            """
+            for identifier in self._properties.getgroups():
+                keys = [ key for key in dict(self._properties.gets(identifier)) ]
+                for key in sorted(keys): 
+                    print("--> ", end="")
+                    self.storeprop(key)
+
+        def storesingles(self):
+            """
+            Generates lines for single properties not found in source.
+            """
+            for key in sorted(self._origin_properties.keys()): self.storeprop(key)
+
         def dump(self, path):
             """
             Dumps generated lines to file given in path and clears 
             variables defined by store() and its subemthods. 
             """
             file = open(path, "w")
-            for line in self.lines: file.write("{0}\n".format(line))
+            if type(self.json) == list: [file.write("{0}\n".format(line)) for line in self.json]
+            else: file.write(self.json)
             file.close()
-            self.lines, self.stored = ([], [])
 
-        def store(self, path="", force=False, no_dump=False, drop_source=False):
+        def store(self, path="", force=False, no_dump=False, pretty=False):
             """
             **JSON Writer version**
             Writes properties to given 'path'.
@@ -463,20 +380,143 @@ class Writer:
 
             If 'no_dump' is passed as True lines will be generated 
             but not written to file.
+            
+            **WARNING!**
+            During conversion to JSON information about includes are lost.
             """
             if self._properties.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
-            if path == "": path = self._properties.path    # this line defaults the value
+            if path == "": path = self._path
             if path == "" or path.isspace(): raise StoreError("no path specified")
-            if path and not self._properties.path: self._properties.path = path
-                
-            #   self.storegroups()
-            #   self.storesingles()
-            #   self.storeincludes()
-            try:
-                while self.lines[-1] == "": self.lines = self.lines[:-1]
-            except IndexError: pass
-            finally:
-                if not no_dump: self.dump(path)
+            
+            self.storesingles()
+            self.storegroups()
+            self.encode(pretty=pretty)
+            if not no_dump: self.dump(path)
+
+
+class Writer:
+    """
+    This class utilizes methods for storing properties. 
+    When creating new instance of Writer pass a Properties() object to it.
+    
+    This class is written for storing edited properties. 
+    It can use original source as a template for new file but 
+    can also generate new file entirely on its own. 
+    Styling features of `Writer.Properties` can be handy at times. 
+    When you have to deal with badly formed and hard to read file `Writer` can act as a *cleaner*. 
+    It will parse properties and write new file which will have properties grouped and styled in 
+    human-readable way.
+    """
+    def __init__(self, properties):
+        self.properties = properties
+        self.stored, self.includes_stored, self.lines = ([], self.properties.includes_stored, [])
+        self.origin_properties, self.origin_includes = (self.properties.origin_properties, self.properties.origin_includes)
+        self.origin_propcomments, self.origin_hidden = (self.properties.origin_propcomments, self.properties.origin_hidden)
+        self.source = self.properties.origin_source
+    
+
+    def storeprop(self, key):
+        """
+        This method stores single property and takes responsibility of storing it's comment and 
+        possibly hiding the property itself. 
+        This method looks at the `stored` list and checks if the given key has already 
+        been stored to prevent storing it two times.
+        It will also check if the key is in `origin_properties` dict to ensure that unsaved properties 
+        would not get stored.
+        """
+        if key not in self.stored and key in self.origin_properties:
+            if key in self.origin_propcomments: self.storecomment(key)
+            if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.origin_properties[key]))
+            else: self.lines.append("#{0}={1}".format(key, self.origin_properties[key]))
+            self.stored.append(key)
+    
+
+    def storeincludes(self):
+        """
+        This method stores __include__ directives added via the library. 
+        Each directive is separated by a blank line.
+        """
+        if self.lines != [] and self.lines[-1] != "": self.lines.append("")
+        for path, prefix, hidden in self.origin_includes:
+            if (path, prefix, hidden) not in self.includes_stored:
+                if prefix and hidden: line = "__include__.hidden.as.{0}={1}".format(prefix, path)
+                elif prefix and not hidden: line = "__include__.as.{0}={1}".format(prefix, path)
+                elif not prefix and hidden: line = "__include__.hidden={0}".format(path)
+                else: line = "__include__={0}".format(path)
+                self.lines.append(line)
+                self.lines.append("")
+                self.includes_stored.append( (path, prefix, hidden) )
+    
+
+    def storesrc(self):
+        """
+        Prepares data which came with source for storing.
+        """
+        for i in range(len(self.source)):
+            if self.source[i] == "" or self.source[i].isspace(): self.lines.append("")
+            elif self.source[i][0] == "#": self.lines.append("{0}".format(self.source[i]))
+            elif getlinekey(self.source[i], strict=self.properties.strict) != "": self.storeprop(getlinekey(self.source[i], strict=self.properties.strict))
+    
+
+    def storegroups(self):
+        """
+        Generates lines for groups not found in source.
+        """
+        if self.lines != [] and self.lines[-1] != "": self.lines.append("")
+        for identifier in self.properties.getgroups():
+            previous_len = len(self.lines)
+            keys = [ key for key in self.properties.gets(identifier) ]
+            for key in sorted(keys): self.storeprop(key)
+            if len(self.lines) > previous_len: self.lines.append("")
+
+    def storesingles(self):
+        """
+        Generates lines for single properties not found in source.
+        """
+        for key in sorted(self.origin_properties.keys()): self.storeprop(key)
+
+    def storecomment(self, key):
+        """
+        Appends comment of a property of given key to self.lines
+        """
+        [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key].split("\n") ]
+
+    def dump(self, path):
+        """
+        Dumps generated lines to file given in path and clears 
+        variables defined by store() and its subemthods. 
+        """
+        file = open(path, "w")
+        for line in self.lines: file.write("{0}\n".format(line))
+        file.close()
+        self.lines, self.stored = ([], [])
+
+    def store(self, path="", force=False, no_dump=False, drop_source=False):
+        """
+        Writes properties to given 'path'.
+        'path' defaults to path set if given properties.
+
+        If store will encounter some unsaved changes it will
+        raise UnsavedChangesError.
+        You can explicitly silence it by passing force as True.
+
+        If 'no_dump' is passed as True lines will be generated 
+        but not written to file.
+        """
+        if self.properties.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
+        if path == "": path = self.properties.path    # this line defaults the value
+        if path == "" or path.isspace(): raise StoreError("no path specified")
+        if path and not self.properties.path: self.properties.path = path
+            
+        if not drop_source: self.storesrc()
+        self.storegroups()
+        self.storesingles()
+        self.storeincludes()
+        try:
+            while self.lines[-1] == "": self.lines = self.lines[:-1]
+        except IndexError: pass
+        finally:
+            if not no_dump: self.dump(path)
 
 
 class Properties():
@@ -759,7 +799,7 @@ class Properties():
         If 'no_dump' is passed as True lines will be generated 
         but not written to file.
         """
-        writer = Writer.Properties(self)
+        writer = Writer(self)
         writer.store(path, force, no_dump, drop_source)
         
     def get(self, key, parse=False, cast=False):
