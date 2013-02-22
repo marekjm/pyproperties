@@ -618,8 +618,68 @@ class PropertiesHider():
             if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
         for key in to_unhide: self.unhide(key)
 
+class PropertiesCommenter():
+    def __init__(self):
+        self.propcomment, self.origin_propcomments = ({}, {})
 
-class Properties(PropertiesHider, PropertiesIncluder):
+    def comment(self, key, comment):
+        """
+        Attaches comment to property. 
+        Comment can be passed as a string.
+
+            foo.comment("foo", "first\\npart")
+
+        Multiline comments are supported by passing a string containing newline characters '\\n'.
+
+        KeyError is raised if key is not available (not found or is hidden).
+        """
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
+
+        self.propcomments[key] = comment
+        self.unsaved = True
+
+    def comments(self, identifier, *comments):
+        """
+        Attaches comment to properties which will match the identifier. 
+        Comment can be passed as a string. 
+        Multiline comments are supported by passing a string containing newline characters '\\n'.
+
+        comments('foo.*.bar', 'first comment', 'multi\\nline')
+        """
+        keys = self.gets(identifier)
+        i = 0
+        for key in keys:
+            try: self.comment(key, comments[i])
+            except IndexError: self.comment(key, comments[-1])
+            finally: i += 1
+
+    def rmcomment(self, key):
+        """
+        Removes comment of property of given key. 
+        Does not raise KeyError when property is not found.
+        """
+        if key in self.propcomments: self.propcomments.pop(key)
+        self.unsaved = True
+
+    def getcomment(self, key, lines=False):
+        """
+        usage: getcomment(str key, bool lines=False) -> str
+        
+        Returns comment of given key. 
+        Returns empty string if the property has no comment. 
+        Returns empty list if the property has no comment and `lines` was passed as True. 
+        KeyError is raised if key is not available (not found or is hidden).
+        """
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
+        
+        if key in self.propcomments: comment = self.propcomments[key]
+        else: comment = ""
+        if lines and comment != "": comment = comment.split("\n")
+        elif lines and comment == "": comment = []
+        return comment
+
+
+class Properties(PropertiesCommenter, PropertiesHider, PropertiesIncluder):
     """
     This class provides methods for working with properties files. 
     """
@@ -1121,60 +1181,4 @@ class Properties(PropertiesHider, PropertiesIncluder):
             key = re.sub(re.compile("\.[0-9]+$"), ".*", key)
             if key not in groups: singles.append(key)
         return singles
-
-    def comment(self, key, comment):
-        """
-        Attaches comment to property. 
-        Comment can be passed as a string.
-
-            foo.comment("foo", "first\\npart")
-
-        Multiline comments are supported by passing a string containing newline characters '\\n'.
-
-        KeyError is raised if key is not available (not found or is hidden).
-        """
-        if key not in self.properties or key in self.hidden: self._notavailable(key)
-
-        self.propcomments[key] = comment
-        self.unsaved = True
-
-    def comments(self, identifier, *comments):
-        """
-        Attaches comment to properties which will match the identifier. 
-        Comment can be passed as a string. 
-        Multiline comments are supported by passing a string containing newline characters '\\n'.
-
-        comments('foo.*.bar', 'first comment', 'multi\\nline')
-        """
-        keys = self.gets(identifier)
-        i = 0
-        for key in keys:
-            try: self.comment(key, comments[i])
-            except IndexError: self.comment(key, comments[-1])
-            finally: i += 1
-
-    def rmcomment(self, key):
-        """
-        Removes comment of property of given key. 
-        Does not raise KeyError when property is not found.
-        """
-        if key in self.propcomments: self.propcomments.pop(key)
-        self.unsaved = True
-
-    def getcomment(self, key, lines=False):
-        """
-        usage: getcomment(str key, bool lines=False) -> str
-        
-        Returns comment of given key. 
-        Returns empty string if the property has no comment. 
-        Returns empty list if the property has no comment and `lines` was passed as True. 
-        KeyError is raised if key is not available (not found or is hidden).
-        """
-        if key not in self.properties or key in self.hidden: self._notavailable(key)
-        
-        if key in self.propcomments: comment = self.propcomments[key]
-        else: comment = ""
-        if lines and comment != "": comment = comment.split("\n")
-        elif lines and comment == "": comment = []
-        return comment
 

@@ -17,10 +17,14 @@
 * __fix__:  ,
 
 
-* __new__:  ,
+* __new__:  `PropertiesIncluder()` class which contains methods used by `__include__`,
+* __new__:  `PropertiesHider()` class which contains methods used to hide and unhide properties,
+* __new__:  `PropertiesCommenter()` class which contains methods used for commenting properties,
 
 
-* __rem__:  ,
+* __rem__:  `addinclude()`, `stripinclude()`, `rminclude()` and `purgeinclude()` no longer in main `Properties` class,
+* __rem__:  `_rmkeysof()` no longer in main `Properties` class,
+* __rem__:  `comment()`, `comments()`, `rmcomment()` and `getcomment()` no longer in main `Properties` class,
 
 
 ----
