@@ -412,7 +412,6 @@ class Writer:
         self.origin_propcomments, self.origin_hidden = (self.properties.origin_propcomments, self.properties.origin_hidden)
         self.source = self.properties.origin_source
     
-
     def storeprop(self, key):
         """
         This method stores single property and takes responsibility of storing it's comment and 
@@ -426,8 +425,7 @@ class Writer:
             if key in self.origin_propcomments: self.storecomment(key)
             if key not in self.origin_hidden: self.lines.append("{0}={1}".format(key, self.origin_properties[key]))
             else: self.lines.append("#{0}={1}".format(key, self.origin_properties[key]))
-            self.stored.append(key)
-    
+            self.stored.append(key) 
 
     def storeincludes(self):
         """
@@ -445,7 +443,6 @@ class Writer:
                 self.lines.append("")
                 self.includes_stored.append( (path, prefix, hidden) )
     
-
     def storesrc(self):
         """
         Prepares data which came with source for storing.
@@ -455,7 +452,6 @@ class Writer:
             elif self.source[i][0] == "#": self.lines.append("{0}".format(self.source[i]))
             elif getlinekey(self.source[i], strict=self.properties.strict) != "": self.storeprop(getlinekey(self.source[i], strict=self.properties.strict))
     
-
     def storegroups(self):
         """
         Generates lines for groups not found in source.
@@ -517,7 +513,70 @@ class Writer:
             if not no_dump: self.dump(path)
 
 
-class Properties():
+class PropertiesIncluder():
+    """
+    Class utilizing mechanisms used by `__include__` directive.
+    """
+    def __init__(self):
+        self.includes, self.origin_includes = ([], [])
+        self.includes_stored = ([])
+     
+    def addinclude(self, path, prefix="", hidden=False):
+        """
+        This method places __include__ directive in the properties.
+        """
+        if not os.path.isfile(path): warnings.warn("file for __include__ not found: '{0}'".format(path), IncludeWarning)
+        if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path".format(path))
+        
+        if (path, prefix, hidden) not in self.includes: self.includes.append( (path, prefix, hidden) )
+
+    def rminclude(self, path, prefix="", hidden=False):
+        """
+        Removes include directive from a list of directives. 
+        """
+        for _path, _prefix, _hidden in self.includes:
+            if path == _path and prefix == _prefix and hidden == _hidden: 
+                self.includes.remove( (path, prefix, hidden) )
+                break
+
+    def _rmkeysfrom(self, path, prefix=""):
+        """
+        Removes all properties present in file to which given path is pointing.
+        """
+        path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
+        reader = Reader(path=path)
+        reader.read()
+        for key in reader.keys():
+            if prefix: key = "{0}.{1}".format(prefix, key)
+            self.remove(key)
+
+    def purgeinclude(self, path, prefix="", hidden=False):
+        """
+        Removes include directive from a list of directives and all properties corresponding to it.
+        """
+        for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
+            if path == ipath and prefix == iprefix and hidden == ihidden:
+                self.rminclude(path, prefix, hidden)
+                self._rmkeysfrom(path=path, prefix=prefix)
+                break
+        if not self.unsaved: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden), IncludeWarning)
+
+    def stripinclude(self, path, prefix="", hidden=False):
+        """
+        This method removes all properties included from file of given path but 
+        leaves include tuple (it will be stored).
+        """
+        self.purgeinclude(path, prefix, hidden)
+        self.addinclude(path, prefix, hidden)
+
+    def listincludes(self):
+        """
+        Returns list of tuples containg information about `includes` of this properties.
+        """
+        return self.includes
+
+
+class Properties(PropertiesIncluder):
     """
     This class provides methods for working with properties files. 
     """
@@ -562,7 +621,7 @@ class Properties():
                 b = value[a:].find(")")
                 name = value[a+2: a+b]
                 if a == -1 or b == -1: break
-                value = value.replace("$({0})".format(name), str(self.properties[name]))
+                value = value.replace("$({0})".format(name), str(self.get(name)))
         return value
 
     def _appendsrc(self, props, prefix=""):
@@ -1111,7 +1170,7 @@ class Properties():
             if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
         for key in to_unhide: self.unhide(key)
     
-    def addinclude(self, path, prefix="", hidden=False):
+    def xaddinclude(self, path, prefix="", hidden=False):
         """
         This method places __include__ directive in the properties.
         """
@@ -1120,7 +1179,7 @@ class Properties():
         
         if (path, prefix, hidden) not in self.includes: self.includes.append( (path, prefix, hidden) )
 
-    def rminclude(self, path, prefix="", hidden=False):
+    def xrminclude(self, path, prefix="", hidden=False):
         """
         Removes include directive from a list of directives. 
         """
@@ -1129,7 +1188,7 @@ class Properties():
                 self.includes.remove( (path, prefix, hidden) )
                 break
 
-    def _rmkeysfrom(self, path, prefix=""):
+    def x_rmkeysfrom(self, path, prefix=""):
         """
         Removes all properties present in file to which given path is pointing.
         """
@@ -1140,18 +1199,18 @@ class Properties():
             if prefix: key = "{0}.{1}".format(prefix, key)
             self.remove(key)
 
-    def purgeinclude(self, path, prefix="", hidden=False):
+    def xpurgeinclude(self, path, prefix="", hidden=False):
         """
         Removes include directive from a list of directives and all properties corresponding to it.
         """
         for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
             if path == ipath and prefix == iprefix and hidden == ihidden:
-                self.rminclude( path, prefix, hidden )
+                self.rminclude(path, prefix, hidden)
                 self._rmkeysfrom(path=path, prefix=prefix)
                 break
         if not self.unsaved: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden), IncludeWarning)
 
-    def stripinclude(self, path, prefix="", hidden=False):
+    def xstripinclude(self, path, prefix="", hidden=False):
         """
         This method removes all properties included from file of given path but 
         leaves include tuple (it will be stored).
@@ -1159,7 +1218,7 @@ class Properties():
         self.purgeinclude(path, prefix, hidden)
         self.addinclude(path, prefix, hidden)
 
-    def listincludes(self):
+    def xlistincludes(self):
         """
         Returns list of tuples containg information about `includes` of this properties.
         """
