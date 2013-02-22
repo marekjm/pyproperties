@@ -576,7 +576,50 @@ class PropertiesIncluder():
         return self.includes
 
 
-class Properties(PropertiesIncluder):
+class PropertiesHider():
+    """
+    Class which implements mechanisms used for hiding properties.
+    """
+    def __init__(self):
+        self.hidden, self.origin_hidden = ([], [])
+
+    def hide(self, key):
+        """
+        When property is hidden it is no longer available for modifing. 
+        KeyError is raised if key is not available (not found or is hidden).
+        """
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
+        if key not in self.hidden: self.hidden.append(key)
+        self.unsaved = True
+        
+    def hides(self, identifier):
+        """
+        Hides every property which key will match given identifier. 
+        """
+        identifier = expandidentifier(identifier)
+        for key in self.keys():
+            if re.match(identifier, key): self.hide(key)
+
+    def unhide(self, key):
+        """
+        Remove property from `hidden` list to make it available for modifing. 
+        Does not raise any errors when key is not found.
+        """
+        if key in self.hidden: self.hidden.remove(key)
+        self.unsaved = True
+
+    def unhides(self, identifier):
+        """
+        Unhides every property which key will match given identifier.
+        """
+        identifier = expandidentifier(identifier)
+        to_unhide = []
+        for i in range(len(self.hidden)):
+            if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
+        for key in to_unhide: self.unhide(key)
+
+
+class Properties(PropertiesHider, PropertiesIncluder):
     """
     This class provides methods for working with properties files. 
     """
@@ -1134,39 +1177,4 @@ class Properties(PropertiesIncluder):
         if lines and comment != "": comment = comment.split("\n")
         elif lines and comment == "": comment = []
         return comment
-
-    def hide(self, key):
-        """
-        When property is hidden it is no longer available for modifing. 
-        KeyError is raised if key is not available (not found or is hidden).
-        """
-        if key not in self.properties or key in self.hidden: self._notavailable(key)
-        if key not in self.hidden: self.hidden.append(key)
-        self.unsaved = True
-        
-    def hides(self, identifier):
-        """
-        Hides every property which key will match given identifier. 
-        """
-        identifier = expandidentifier(identifier)
-        for key in self.keys():
-            if re.match(identifier, key): self.hide(key)
-
-    def unhide(self, key):
-        """
-        Remove property from `hidden` list to make it available for modifing. 
-        Does not raise any errors when key is not found.
-        """
-        if key in self.hidden: self.hidden.remove(key)
-        self.unsaved = True
-
-    def unhides(self, identifier):
-        """
-        Unhides every property which key will match given identifier.
-        """
-        identifier = expandidentifier(identifier)
-        to_unhide = []
-        for i in range(len(self.hidden)):
-            if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
-        for key in to_unhide: self.unhide(key)
 
