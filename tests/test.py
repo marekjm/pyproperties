@@ -1001,7 +1001,7 @@ class ParseTest(unittest.TestCase):
                     ("name.1", "Jack  "),
                     ("name.2", "\\  William  "),
                     ]
-        pbar = bar.parse()
+        pbar = pyproperties.Engine.parse(bar)
         self.assertEqual(parsed, sorted(pbar.gets("*")))
         self.assertEqual(pyproperties.Properties, type(pbar))
 
@@ -1028,7 +1028,7 @@ class ParseTest(unittest.TestCase):
                 ("true.part.0", "Tr"),
                 ("true.part.1", "ue"),
                 ]
-        pbar = bar.parse(cast=True)
+        pbar = pyproperties.Engine.parse(bar, cast=True)
         self.assertEqual(props, sorted(pbar.gets("*")))
         self.assertEqual(pyproperties.Properties, type(pbar))
 

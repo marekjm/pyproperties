@@ -535,6 +535,34 @@ class Engine:
         elif re.match(re.compile(guess_float_re), value): value = float(value)
         return value
 
+    def parsevalue(properties, value):
+        """
+        This method searches for every $(reference) string in given value and 
+        replaces it with value of corresponding property. 
+        """
+        if type(value) == str:
+            while "$(" in value and ")" in value:
+                a = value.find("$(")
+                b = value[a:].find(")")
+                key = value[a+2: a+b]
+                if a == -1 or b == -1: break
+                value = value.replace("$({0})".format(key), str(properties.get(key)))
+        return value
+
+    def parse(properties, cast=False):
+        """
+        Returns parsed properties which means every $(reference) in values 
+        is resolved.
+        Raises KeyError when reference cannot be resolved.
+        If `cast` is passed as True then every value is run through `Engine.convert()`.
+        """
+        parsed = Properties()
+        parsed.merge(properties)
+        for key in properties.keys(): parsed.set(key, parsed.get(key, parse=True))
+        if cast:
+            for key in properties.keys(): parsed.set(key, parsed.get(key, cast=True))
+        return parsed
+
 
     class Includer():
         """
@@ -727,20 +755,6 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
             self.blank(path, strict)
         self.save()
 
-    def _parseline(self, value):
-        """
-        This method searches for every $(reference) string in given line and 
-        replaces it with value of corresponding property. 
-        """
-        if type(value) == str:
-            while "$(" in value and ")" in value:
-                a = value.find("$(")
-                b = value[a:].find(")")
-                name = value[a+2: a+b]
-                if a == -1 or b == -1: break
-                value = value.replace("$({0})".format(name), str(self.get(name)))
-        return value
-
     def _appendsrc(self, props, prefix=""):
         """
         This methods appends source of given properties to the base. 
@@ -922,13 +936,7 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         """
         This method parses and returns parsed properties.
         """
-        parsed = Properties()
-        parsed.merge(self)
-        for key in parsed.keys(): parsed.set(key, parsed.get(key, parse=True))
-        parsed.save()
-        if cast: 
-            for key in parsed.keys(hidden=True): parsed.set(key, parsed.get(key, cast=True))
-        return parsed
+        return Engine.parse(self, cast=cast)
 
     def save(self):
         """
@@ -984,8 +992,8 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         """
         if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
         
-        if parse: value = self._parseline(self.properties[key])
-        else: value = self.properties[key]
+        value = self.properties[key]
+        if parse: value = Engine.parsevalue(self, value)
         if cast and type(value) == str: value = Engine.convert(value)
         return value
 

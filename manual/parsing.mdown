@@ -1,0 +1,62 @@
+#### Parsing properties
+###### _version: `0.2.5`_
+
+###### [Index](index.mdown)
+----
+
+Parsing functionality is provided by several methods in different forms. 
+It is possible to parse whole files or single entries.
+
+&nbsp;
+
+Parsing single entry is done by replacing every `$(reference)` found in value 
+with value of corresponding key. 
+If the reference cannot be resolved `KeyError` is raised. 
+
+Parsing whole files is done by parsing every single property.
+
+
+----
+
+##### Single entries
+----
+##### `get()` method
+
+This method is used to obtain single properties and returns value of key given 
+as an argument. 
+
+It also accepts `parse` argument which will tell the method to try to parse 
+the value before returning it.
+
+When `cast` and `parse` arguments are passed as `True` `parse` takes precedence. 
+
+
+----
+
+##### `Engine.parsevalue()`
+
+This is the method used to parse values of single properties. 
+It's arguments are: *properties object* and *value* that needs to be parsed.
+
+
+----
+
+##### `Engine.parse()`
+
+This is the function used to parse whole properties files. 
+It creates new object, merges it with given properties and parses the newly created 
+object. 
+
+If `cast` argument is passed as `True` every property of the new object is run through 
+`Engine.convert()`.
+
+Then new (parsed) object is returned.
+
+Parsed object is returned without path to avoid accidental overwrite of original file.
+
+
+----
+
+SEE ALSO:  
+[removers](removers.mdown)  
+[setters](setters.mdown)

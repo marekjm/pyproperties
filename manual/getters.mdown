@@ -21,7 +21,7 @@ It does not do anything more than that.
 You can pass `parse` argument as `True` if you want `get()` to 
 try to parse value before returning it.  
 You can pass `cast` argument as `True` if you want `get()` to 
-try to cast type of a property before returning its value.  
+try to convert type of a property before returning its value.  
 
 If both `parse` and `cast` are passed as `True` value is parsed 
 and then its type is casted if neccessary.
@@ -33,7 +33,18 @@ and then its type is casted if neccessary.
 
 Is designed to return groups of properties. It is achieved by passing keys like this one `customer.*.name`
 
-Every property in properties dictionary which key will match the pattern will be added to dict which will be returned by `gets()`
+Every property in properties dictionary which key will match the pattern will be added to list which will be returned by `gets()`.
+`gets()` returns list of tuples: `[('foo', 'Foo'), ('bar', 'Bar')]`. 
+
+Output of `gets()` can be easily converted to dictionary just by passing it to `dict()` builtin.
+
+    p = pyproperties.Properties()
+    
+    p.gets("foo.*")
+    [('foo.0':'Foo')]
+    
+    dict(p.gets("foo.*"))
+    {'foo.0':'Foo'}
 
 
 ----
@@ -42,7 +53,6 @@ Every property in properties dictionary which key will match the pattern will be
 
 The only difference between `getre()` and `gets()` is that the `getre()` accepts custom regular expression patterns and 
 will not modify them (see escaping dots and replacing `*` in `gets()`). 
-You can pass identifier as compiled regexp or a string - it will be then compiled. 
 
 ----
 
