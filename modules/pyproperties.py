@@ -515,9 +515,27 @@ class Writer():
 
 class Engine:
     """
-    Class containing mechanism-classes from which main `Properties` class
+    Class containing engine-classes from which main `Properties` class
     inherits. Used for more modularization and separation.
+    
+    Functions found in `Engine` can be used freely if needed.
+
+    WARNING!
+    Classes in `Engine` are intended to be used only by main `Properties` class via 
+    inheritance. On its own it can cause errors because it is sometime missing methods
+    present only in `Properties` class.
     """
+ 
+    def notavailable(properties, key):
+        """
+        Raises KeyError which will tell user that the property is not available eg. 
+        is not in currently used set of properties or is hidden.
+        """
+        if key in properties.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, properties)
+        else: message = "'{0}' is not available in {1}".format(key, properties) 
+        raise KeyError(message)
+
+
     class Includer():
         """
         Class utilizing mechanisms used by `__include__` directive.
@@ -525,7 +543,19 @@ class Engine:
         def __init__(self):
             self.includes, self.origin_includes = ([], [])
             self.includes_stored = ([])
+            self.unsaved = True
          
+        def _rmkeysfrom(self, path, prefix=""):
+            """
+            Removes all properties present in file to which given path is pointing.
+            """
+            path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
+            reader = Reader(path=path)
+            reader.read()
+            for key in reader.keys():
+                if prefix: key = "{0}.{1}".format(prefix, key)
+                self.remove(key)
+    
         def addinclude(self, path, prefix="", hidden=False):
             """
             This method places __include__ directive in the properties.
@@ -543,17 +573,6 @@ class Engine:
                 if path == _path and prefix == _prefix and hidden == _hidden: 
                     self.includes.remove( (path, prefix, hidden) )
                     break
-
-        def _rmkeysfrom(self, path, prefix=""):
-            """
-            Removes all properties present in file to which given path is pointing.
-            """
-            path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
-            reader = Reader(path=path)
-            reader.read()
-            for key in reader.keys():
-                if prefix: key = "{0}.{1}".format(prefix, key)
-                self.remove(key)
 
         def purgeinclude(self, path, prefix="", hidden=False):
             """
@@ -586,13 +605,14 @@ class Engine:
         """
         def __init__(self):
             self.hidden, self.origin_hidden = ([], [])
+            self.properties = []
 
         def hide(self, key):
             """
             When property is hidden it is no longer available for modifing. 
             KeyError is raised if key is not available (not found or is hidden).
             """
-            if key not in self.properties or key in self.hidden: self._notavailable(key)
+            if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
             if key not in self.hidden: self.hidden.append(key)
             self.unsaved = True
             
@@ -637,7 +657,7 @@ class Engine:
 
             KeyError is raised if key is not available (not found or is hidden).
             """
-            if key not in self.properties or key in self.hidden: self._notavailable(key)
+            if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
 
             self.propcomments[key] = comment
             self.unsaved = True
@@ -706,15 +726,6 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         else: 
             self.blank(path, strict)
         self.save()
-
-    def _notavailable(self, key):
-        """
-        Raises KeyError which will tell user that the property is not available eg. 
-        is not in currently used set of properties or is hidden.
-        """
-        if key in self.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, self)
-        else: message = "'{0}' is not available in {1}".format(key, self)
-        raise KeyError(message)
 
     def _parseline(self, value):
         """
@@ -971,7 +982,7 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         If parsed is set to True value will be parsed before returning.
         KeyError is raised if key is not available (not found or is hidden).
         """
-        if key not in self.properties or key in self.hidden: self._notavailable(key)
+        if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
         
         if parse: value = self._parseline(self.properties[key])
         else: value = self.properties[key]

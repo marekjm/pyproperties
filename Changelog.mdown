@@ -11,20 +11,22 @@
 
 #### Version 0.2.6 ():
 
-* __upd__:  ,
+* __upd__:  `Properties._notavailable()` moved to `Engine.notavailable()`, now requires two arguments,
 
 
 * __fix__:  ,
 
 
-* __new__:  `PropertiesIncluder()` class which contains methods used by `__include__`,
-* __new__:  `PropertiesHider()` class which contains methods used to hide and unhide properties,
-* __new__:  `PropertiesCommenter()` class which contains methods used for commenting properties,
+* __new__:  `Engine` class,
+* __new__:  `Engine.Includer()` class which contains methods used to support `__include__`,
+* __new__:  `Engine.Hider()` class which contains methods used to hide and unhide properties,
+* __new__:  `Engine.Commenter()` class which contains methods used for commenting properties,
 
 
 * __rem__:  `addinclude()`, `stripinclude()`, `rminclude()` and `purgeinclude()` no longer in main `Properties` class,
 * __rem__:  `_rmkeysof()` no longer in main `Properties` class,
 * __rem__:  `comment()`, `comments()`, `rmcomment()` and `getcomment()` no longer in main `Properties` class,
+* __rem__:  `hide()`, `unhide()`, `hides()` and `unhides()` no linger in main `Properties` class,
 
 
 ----
