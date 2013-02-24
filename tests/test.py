@@ -1042,7 +1042,7 @@ class ConvertTest(unittest.TestCase):
                     ("-666324992", -666324992),
                     ("666324992", 666324992),
                     ]
-        for s, n in examples: self.assertEqual(pyproperties.convert(s), n)
+        for s, n in examples: self.assertEqual(pyproperties.Engine.convert(s), n)
 
     def testBinaryConversion(self):
         examples = [("0b0", 0),
@@ -1052,7 +1052,7 @@ class ConvertTest(unittest.TestCase):
                     ("-0b110101001", -425),
                     ("0b1010011010", 666),
                     ]
-        for s, n in examples: self.assertEqual(pyproperties.convert(s), n)
+        for s, n in examples: self.assertEqual(pyproperties.Engine.convert(s), n)
 
     def testOctalConversion(self):
         examples = [("0o0", 0),
@@ -1069,7 +1069,7 @@ class ConvertTest(unittest.TestCase):
                     ("0o726746425", 123456789),
                     ("-0o172116", -62542),
                     ]
-        for oct, dec in examples: self.assertEqual(pyproperties.convert(oct), dec)
+        for oct, dec in examples: self.assertEqual(pyproperties.Engine.convert(oct), dec)
     
     def testHexadecimalConversion(self):
         examples = [("0x0", 0),
@@ -1086,7 +1086,7 @@ class ConvertTest(unittest.TestCase):
                     ("0x75bcd15", 123456789),
                     ("-0xf44e", -62542),
                     ]
-        for hex, dec in examples: self.assertEqual(pyproperties.convert(hex), dec)
+        for hex, dec in examples: self.assertEqual(pyproperties.Engine.convert(hex), dec)
 
     def testFloatConversion(self):
         examples = [("3.14", 3.14),
@@ -1095,14 +1095,14 @@ class ConvertTest(unittest.TestCase):
                     ("6.02e-23", 6.02e-23),
                     ("6.02e23", 6.02e+23),
                     ]
-        for s, n in examples: self.assertEqual(pyproperties.convert(s), n)
+        for s, n in examples: self.assertEqual(pyproperties.Engine.convert(s), n)
 
     def testBooleanConversion(self):
-        self.assertEqual(pyproperties.convert("True"), True)
-        self.assertEqual(pyproperties.convert("False"), False)
+        self.assertEqual(pyproperties.Engine.convert("True"), True)
+        self.assertEqual(pyproperties.Engine.convert("False"), False)
     
     def testNoneConversion(self):
-        self.assertEqual(pyproperties.convert("None"), None)
+        self.assertEqual(pyproperties.Engine.convert("None"), None)
 
 
 class BlankTest(unittest.TestCase):

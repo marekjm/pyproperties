@@ -104,22 +104,6 @@ def getlinevalue(line, strict=True):
     if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
     return value
 
-def convert(value, strict=True):
-    """
-    Returns value with it's type converted. 
-    Can convert from str to: int, float, True/False and None.
-    """
-    value = str(value)
-    if value == "None": value = None
-    elif value == "True": value = True
-    elif value == "False": value = False
-    elif ishex(value): value = int(value, 16)
-    elif isoct(value): value = int(value, 8)
-    elif isbin(value): value = int(value, 2)
-    elif re.match(re.compile(guess_int_re), value): value = int(value)
-    elif re.match(re.compile(guess_float_re), value): value = float(value)
-    return value
-
 def expandidentifier(identifier):
     """
     Applies needed changes to identifier pattern (regular expression). 
@@ -535,6 +519,22 @@ class Engine:
         else: message = "'{0}' is not available in {1}".format(key, properties) 
         raise KeyError(message)
 
+    def convert(value, strict=True):
+        """
+        Returns value with it's type converted. 
+        Can convert from str to: int, float, True/False and None.
+        """
+        value = str(value)
+        if value == "None": value = None
+        elif value == "True": value = True
+        elif value == "False": value = False
+        elif ishex(value): value = int(value, 16)
+        elif isoct(value): value = int(value, 8)
+        elif isbin(value): value = int(value, 2)
+        elif re.match(re.compile(guess_int_re), value): value = int(value)
+        elif re.match(re.compile(guess_float_re), value): value = float(value)
+        return value
+
 
     class Includer():
         """
@@ -927,7 +927,7 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         for key in parsed.keys(): parsed.set(key, parsed.get(key, parse=True))
         parsed.save()
         if cast: 
-            for key in parsed.keys(hidden=True): parsed.set(key, convert(parsed.get(key)))
+            for key in parsed.keys(hidden=True): parsed.set(key, parsed.get(key, cast=True))
         return parsed
 
     def save(self):
@@ -986,7 +986,7 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         
         if parse: value = self._parseline(self.properties[key])
         else: value = self.properties[key]
-        if cast and type(value) == str: value = convert(value)
+        if cast and type(value) == str: value = Engine.convert(value)
         return value
 
     def gets(self, identifier, parse=False, cast=False, no_expand=False):
@@ -999,11 +999,8 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         if not no_expand: identifier = expandidentifier(identifier)
         
         matched = []
-        for key, value in self.properties.items():
-            if re.match(identifier, key) and parse: matched.append( (key, self._parseline(value)) )
-            elif re.match(identifier, key) and not parse: matched.append( (key, value) )
-        if cast:
-            matched = [ (key, convert(value)) for key, value in matched ]
+        for key in self.keys():
+            if re.match(identifier, key): matched.append( (key, self.get(key, parse=parse, cast=cast)) )
         return matched
 
     def getre(self, identifier, parse=False, cast=False):

@@ -12,6 +12,8 @@
 #### Version 0.2.6 ():
 
 * __upd__:  `Properties._notavailable()` moved to `Engine.notavailable()`, now requires two arguments,
+* __upd__:  `convert()` moved to `Engine.convert()`,
+* __upd__:  `Properties.gets()` refactored - is more simple and uses `Properties.get()` as backend,
 
 
 * __fix__:  ,
