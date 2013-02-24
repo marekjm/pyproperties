@@ -284,7 +284,7 @@ class ReaderTest(unittest.TestCase):
         self.assertEqual(comments, reader._comments)
     
 
-class IncludeTest(unittest.TestCase):
+class ReaderIncludeTest(unittest.TestCase):
     def testIncludeRaisesIncludeErrorWhenFileNotFound(self):
         """
         Method tested: `Reader._include()`
@@ -292,7 +292,6 @@ class IncludeTest(unittest.TestCase):
         """
         reader = pyproperties.Reader(path="")
         self.assertRaises(pyproperties.IncludeError, reader._include, path="./data/properties/include_test/nonexistent.properties", line_number=0)
-        self.assertRaises(pyproperties.IncludeError, reader._include, path="./data/properties/include_test/test_error.properties", line_number=0)
 
     def testIncludeRaisesIncludeErrorWhenPathIsEmpty(self):
         """
@@ -361,51 +360,53 @@ class IncludeTest(unittest.TestCase):
         self.assertEqual(test._properties, combined._properties)
         self.assertEqual(test._comments, combined._comments)
         self.assertEqual(test._hidden, combined._hidden)
-    
+
+
+class IncludeEngineTests(unittest.TestCase):
     def testSetIncludeRaisesIncludeErrorWhenPathEmpty(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer()
         self.assertRaises(pyproperties.IncludeError, p.addinclude, "")
 
     def testSetIncludeWarnsWhenFileNotFound(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer()
         self.assertWarns(pyproperties.IncludeWarning, p.addinclude, "./data/properties/include_test/no.properties")
 
     def testSetIncludeSimple(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer()
         p.addinclude("./data/properties/include_test/test.properties")
         self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "", False)])
 
     def testSetIncludePrefixed(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer()
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo")
         self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "foo", False)])
 
     def testSetIncludeHidden(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer()
         p.addinclude("./data/properties/include_test/test.properties", hidden=True)
         self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "", True)])
 
     def testSetIncludePrefixedAndHidden(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer()
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo", hidden=True)
         self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "foo", True)])
 
     def testRmIncludeSimple(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer() 
         p.addinclude("./data/properties/include_test/test.properties")
         p.rminclude("./data/properties/include_test/test.properties")
         
         self.assertEqual(p.includes, [])
 
     def testRmIncludePrefixed(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer() 
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo")
         p.addinclude("./data/properties/include_test/test.properties", prefix="bar")
         p.rminclude("./data/properties/include_test/test.properties", prefix="foo")
         self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "bar", False)])
 
     def testRmIncludeHidden(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer() 
         p.addinclude("./data/properties/include_test/test.properties", hidden=True)
         p.addinclude("./data/properties/include_test/test.properties")
         p.rminclude("./data/properties/include_test/test.properties", hidden=True)
@@ -413,7 +414,7 @@ class IncludeTest(unittest.TestCase):
         self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "", False)])
 
     def testRmIncludePrefixedAndHidden(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Engine.Includer() 
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo", hidden=True)
         p.addinclude("./data/properties/include_test/test.properties", prefix="bar", hidden=True)
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo", hidden=False)
@@ -427,7 +428,7 @@ class IncludeTest(unittest.TestCase):
         self.assertEqual(p.includes, includes)
 
     def testPurgeIncludeWarnsWhenNothingWasRemoved(self):
-        p = pyproperties.Properties()
+        p = pyproperties.Properties() 
         self.assertWarns(pyproperties.IncludeWarning, p.purgeinclude, "./data/properties/include_test/test.properties")
 
     def testPurgeIncludeSimple(self):
@@ -1103,6 +1104,7 @@ class ConvertTest(unittest.TestCase):
     def testNoneConversion(self):
         self.assertEqual(pyproperties.convert("None"), None)
 
+
 class BlankTest(unittest.TestCase):
     def testBlank(self):
         test = pyproperties.Properties("./foo.properties", no_read=True)
@@ -1111,6 +1113,7 @@ class BlankTest(unittest.TestCase):
         test.save()
         test.blank()
         self.assertEqual("./foo.properties", test.path)
+
 
 class ReadFromPropertiesTest(unittest.TestCase):
     def testNoRead(self):
@@ -1195,6 +1198,7 @@ class ReadFromPropertiesTest(unittest.TestCase):
                 ]
         self.assertEqual(test.path, os.path.abspath("./data/properties/bar.properties"))
         self.assertEqual(test.keys(), keys)
+
 
 class KeyAndValuesGetterTest(unittest.TestCase):
     def testGetKeysOf(self):
@@ -1347,6 +1351,7 @@ class SetterTest(unittest.TestCase):
         foo.sets("foo.*", "0", "1", "2", "3")
         for key, value in contents:
             self.assertEqual(value, foo.get(key))
+
 
 class RemoverTest(unittest.TestCase):
     def testRemove(self):
@@ -1836,7 +1841,6 @@ class AddcommentTest(unittest.TestCase):
         foo.comment("foo", "this\nis\na\ncomment")
         self.assertEqual("this\nis\na\ncomment", foo.propcomments["foo"])
         self.assertRaises(KeyError, foo.comment, "bar", "")
-
 
 
 class GetcommentTest(unittest.TestCase):

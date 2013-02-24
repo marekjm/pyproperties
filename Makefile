@@ -13,7 +13,7 @@ manual: ./manual/*.mdown
 	pandoc -o ./manual/manual.pdf ./manual/*.mdown
 
 test:
-	python3 -m unittest --catch --failfast --verbose test.py
+	python3 -m unittest --catch --failfast --verbose tests/test.py
 
 release: test doc tar
 
@@ -22,3 +22,7 @@ install:
 
 uninstall:
 	python3 ./modules/uninstall.py
+
+clean:
+	rm -rv ./__pycache__/
+	rm -rv ./modules/__pycache__/

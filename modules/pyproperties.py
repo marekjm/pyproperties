@@ -392,7 +392,7 @@ class Exporter:
             if not no_dump: self.dump(path)
 
 
-class Writer:
+class Writer():
     """
     This class utilizes methods for storing properties. 
     When creating new instance of Writer pass a Properties() object to it.
@@ -513,173 +513,176 @@ class Writer:
             if not no_dump: self.dump(path)
 
 
-class PropertiesIncluder():
+class Engine:
     """
-    Class utilizing mechanisms used by `__include__` directive.
+    Class containing mechanism-classes from which main `Properties` class
+    inherits. Used for more modularization and separation.
     """
-    def __init__(self):
-        self.includes, self.origin_includes = ([], [])
-        self.includes_stored = ([])
-     
-    def addinclude(self, path, prefix="", hidden=False):
+    class Includer():
         """
-        This method places __include__ directive in the properties.
+        Class utilizing mechanisms used by `__include__` directive.
         """
-        if not os.path.isfile(path): warnings.warn("file for __include__ not found: '{0}'".format(path), IncludeWarning)
-        if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path".format(path))
-        
-        if (path, prefix, hidden) not in self.includes: self.includes.append( (path, prefix, hidden) )
+        def __init__(self):
+            self.includes, self.origin_includes = ([], [])
+            self.includes_stored = ([])
+         
+        def addinclude(self, path, prefix="", hidden=False):
+            """
+            This method places __include__ directive in the properties.
+            """
+            if not os.path.isfile(path): warnings.warn("file for __include__ not found: '{0}'".format(path), IncludeWarning)
+            if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path".format(path))
+            
+            if (path, prefix, hidden) not in self.includes: self.includes.append( (path, prefix, hidden) )
 
-    def rminclude(self, path, prefix="", hidden=False):
-        """
-        Removes include directive from a list of directives. 
-        """
-        for _path, _prefix, _hidden in self.includes:
-            if path == _path and prefix == _prefix and hidden == _hidden: 
-                self.includes.remove( (path, prefix, hidden) )
-                break
+        def rminclude(self, path, prefix="", hidden=False):
+            """
+            Removes include directive from a list of directives. 
+            """
+            for _path, _prefix, _hidden in self.includes:
+                if path == _path and prefix == _prefix and hidden == _hidden: 
+                    self.includes.remove( (path, prefix, hidden) )
+                    break
 
-    def _rmkeysfrom(self, path, prefix=""):
-        """
-        Removes all properties present in file to which given path is pointing.
-        """
-        path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
-        reader = Reader(path=path)
-        reader.read()
-        for key in reader.keys():
-            if prefix: key = "{0}.{1}".format(prefix, key)
-            self.remove(key)
+        def _rmkeysfrom(self, path, prefix=""):
+            """
+            Removes all properties present in file to which given path is pointing.
+            """
+            path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
+            reader = Reader(path=path)
+            reader.read()
+            for key in reader.keys():
+                if prefix: key = "{0}.{1}".format(prefix, key)
+                self.remove(key)
 
-    def purgeinclude(self, path, prefix="", hidden=False):
-        """
-        Removes include directive from a list of directives and all properties corresponding to it.
-        """
-        for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
-            if path == ipath and prefix == iprefix and hidden == ihidden:
-                self.rminclude(path, prefix, hidden)
-                self._rmkeysfrom(path=path, prefix=prefix)
-                break
-        if not self.unsaved: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden), IncludeWarning)
+        def purgeinclude(self, path, prefix="", hidden=False):
+            """
+            Removes include directive from a list of directives and all properties corresponding to it.
+            """
+            for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
+                if path == ipath and prefix == iprefix and hidden == ihidden:
+                    self.rminclude(path, prefix, hidden)
+                    self._rmkeysfrom(path=path, prefix=prefix)
+                    break
+            if not self.unsaved: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden), IncludeWarning)
 
-    def stripinclude(self, path, prefix="", hidden=False):
-        """
-        This method removes all properties included from file of given path but 
-        leaves include tuple (it will be stored).
-        """
-        self.purgeinclude(path, prefix, hidden)
-        self.addinclude(path, prefix, hidden)
+        def stripinclude(self, path, prefix="", hidden=False):
+            """
+            This method removes all properties included from file of given path but 
+            leaves include tuple (it will be stored).
+            """
+            self.purgeinclude(path, prefix, hidden)
+            self.addinclude(path, prefix, hidden)
 
-    def listincludes(self):
-        """
-        Returns list of tuples containg information about `includes` of this properties.
-        """
-        return self.includes
+        def listincludes(self):
+            """
+            Returns list of tuples containg information about `includes` of this properties.
+            """
+            return self.includes
 
-
-class PropertiesHider():
-    """
-    Class which implements mechanisms used for hiding properties.
-    """
-    def __init__(self):
-        self.hidden, self.origin_hidden = ([], [])
-
-    def hide(self, key):
+    class Hider():
         """
-        When property is hidden it is no longer available for modifing. 
-        KeyError is raised if key is not available (not found or is hidden).
+        Class which implements mechanisms used for hiding properties.
         """
-        if key not in self.properties or key in self.hidden: self._notavailable(key)
-        if key not in self.hidden: self.hidden.append(key)
-        self.unsaved = True
-        
-    def hides(self, identifier):
-        """
-        Hides every property which key will match given identifier. 
-        """
-        identifier = expandidentifier(identifier)
-        for key in self.keys():
-            if re.match(identifier, key): self.hide(key)
+        def __init__(self):
+            self.hidden, self.origin_hidden = ([], [])
 
-    def unhide(self, key):
-        """
-        Remove property from `hidden` list to make it available for modifing. 
-        Does not raise any errors when key is not found.
-        """
-        if key in self.hidden: self.hidden.remove(key)
-        self.unsaved = True
+        def hide(self, key):
+            """
+            When property is hidden it is no longer available for modifing. 
+            KeyError is raised if key is not available (not found or is hidden).
+            """
+            if key not in self.properties or key in self.hidden: self._notavailable(key)
+            if key not in self.hidden: self.hidden.append(key)
+            self.unsaved = True
+            
+        def hides(self, identifier):
+            """
+            Hides every property which key will match given identifier. 
+            """
+            identifier = expandidentifier(identifier)
+            for key in self.keys():
+                if re.match(identifier, key): self.hide(key)
 
-    def unhides(self, identifier):
-        """
-        Unhides every property which key will match given identifier.
-        """
-        identifier = expandidentifier(identifier)
-        to_unhide = []
-        for i in range(len(self.hidden)):
-            if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
-        for key in to_unhide: self.unhide(key)
+        def unhide(self, key):
+            """
+            Remove property from `hidden` list to make it available for modifing. 
+            Does not raise any errors when key is not found.
+            """
+            if key in self.hidden: self.hidden.remove(key)
+            self.unsaved = True
 
-class PropertiesCommenter():
-    def __init__(self):
-        self.propcomment, self.origin_propcomments = ({}, {})
+        def unhides(self, identifier):
+            """
+            Unhides every property which key will match given identifier.
+            """
+            identifier = expandidentifier(identifier)
+            to_unhide = []
+            for i in range(len(self.hidden)):
+                if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
+            for key in to_unhide: self.unhide(key)
 
-    def comment(self, key, comment):
-        """
-        Attaches comment to property. 
-        Comment can be passed as a string.
+    class Commenter():
+        def __init__(self):
+            self.propcomment, self.origin_propcomments = ({}, {})
 
-            foo.comment("foo", "first\\npart")
+        def comment(self, key, comment):
+            """
+            Attaches comment to property. 
+            Comment can be passed as a string.
 
-        Multiline comments are supported by passing a string containing newline characters '\\n'.
+                foo.comment("foo", "first\\npart")
 
-        KeyError is raised if key is not available (not found or is hidden).
-        """
-        if key not in self.properties or key in self.hidden: self._notavailable(key)
+            Multiline comments are supported by passing a string containing newline characters '\\n'.
 
-        self.propcomments[key] = comment
-        self.unsaved = True
+            KeyError is raised if key is not available (not found or is hidden).
+            """
+            if key not in self.properties or key in self.hidden: self._notavailable(key)
 
-    def comments(self, identifier, *comments):
-        """
-        Attaches comment to properties which will match the identifier. 
-        Comment can be passed as a string. 
-        Multiline comments are supported by passing a string containing newline characters '\\n'.
+            self.propcomments[key] = comment
+            self.unsaved = True
 
-        comments('foo.*.bar', 'first comment', 'multi\\nline')
-        """
-        keys = self.gets(identifier)
-        i = 0
-        for key in keys:
-            try: self.comment(key, comments[i])
-            except IndexError: self.comment(key, comments[-1])
-            finally: i += 1
+        def comments(self, identifier, *comments):
+            """
+            Attaches comment to properties which will match the identifier. 
+            Comment can be passed as a string. 
+            Multiline comments are supported by passing a string containing newline characters '\\n'.
 
-    def rmcomment(self, key):
-        """
-        Removes comment of property of given key. 
-        Does not raise KeyError when property is not found.
-        """
-        if key in self.propcomments: self.propcomments.pop(key)
-        self.unsaved = True
+            comments('foo.*.bar', 'first comment', 'multi\\nline')
+            """
+            keys = self.gets(identifier)
+            i = 0
+            for key in keys:
+                try: self.comment(key, comments[i])
+                except IndexError: self.comment(key, comments[-1])
+                finally: i += 1
 
-    def getcomment(self, key, lines=False):
-        """
-        usage: getcomment(str key, bool lines=False) -> str
-        
-        Returns comment of given key. 
-        Returns empty string if the property has no comment. 
-        Returns empty list if the property has no comment and `lines` was passed as True. 
-        KeyError is raised if key is not available (not found or is hidden).
-        """
-        if key not in self.properties or key in self.hidden: self._notavailable(key)
-        
-        if key in self.propcomments: comment = self.propcomments[key]
-        else: comment = ""
-        if lines and comment != "": comment = comment.split("\n")
-        elif lines and comment == "": comment = []
-        return comment
+        def rmcomment(self, key):
+            """
+            Removes comment of property of given key. 
+            Does not raise KeyError when property is not found.
+            """
+            if key in self.propcomments: self.propcomments.pop(key)
+            self.unsaved = True
 
+        def getcomment(self, key, lines=False):
+            """
+            usage: getcomment(str key, bool lines=False) -> str
+            
+            Returns comment of given key. 
+            Returns empty string if the property has no comment. 
+            Returns empty list if the property has no comment and `lines` was passed as True. 
+            KeyError is raised if key is not available (not found or is hidden).
+            """
+            if key not in self.properties or key in self.hidden: self._notavailable(key)
+            
+            if key in self.propcomments: comment = self.propcomments[key]
+            else: comment = ""
+            if lines and comment != "": comment = comment.split("\n")
+            elif lines and comment == "": comment = []
+            return comment
 
-class Properties(PropertiesCommenter, PropertiesHider, PropertiesIncluder):
+class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
     """
     This class provides methods for working with properties files. 
     """
