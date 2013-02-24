@@ -1,5 +1,5 @@
 #### Storing properties
-###### _version: `0.2.5`_
+###### _version: `0.2.6`_
 
 ###### [Index](index.mdown)
 ----
@@ -89,7 +89,7 @@ Second argument related to source is `no_dump` (also of `bool` type). If you wan
 
 ##### Storing in different format
 
-From version `0.2.5` `pyproperties` can [export](exporting.mdown) properties into 
+From version `0.2.6` `pyproperties` can [export](exporting.mdown) properties into 
 different format using `Exporter` classes.
 
 ----

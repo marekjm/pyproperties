@@ -1,7 +1,8 @@
 VERSION = 0.2.6
+OLD=0.2.5
 TAGNAME = pyproperties-$(VERSION)
 
-.PHONY: test release install uninstall
+.PHONY: test release install uninstall manual
 
 tar: DOC LICENSE README.mdown RELEASE.mdown Changelog.mdown test.py modules/pyproperties.py Makefile data/* manual/*
 	tar --xz -cvf ./releases/$(TAGNAME).tar.xz DOC LICENSE README.mdown RELEASE.mdown Changelog.mdown Roadmap.mdown test.py modules/pyproperties.py Makefile data/* manual/*.mdown
@@ -9,8 +10,9 @@ tar: DOC LICENSE README.mdown RELEASE.mdown Changelog.mdown test.py modules/pypr
 doc: ./modules/pyproperties.py
 	pydoc3 ./modules/pyproperties.py > DOC
 
-manual: ./manual/*.mdown
-	pandoc -o ./manual/manual.pdf ./manual/*.mdown
+manual:
+	sed -i -e s/${OLD}/${VERSION}/ manual/*.mdown
+	#pandoc -o ./manual/manual.pdf ./manual/*.mdown
 
 test:
 	python3 -m unittest --catch --failfast --verbose tests/test.py

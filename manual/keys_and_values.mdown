@@ -1,5 +1,5 @@
 #### Keys and values
-###### _version: `0.2.5`_
+###### _version: `0.2.6`_
 
 ###### [Index](index.mdown)
 ----
