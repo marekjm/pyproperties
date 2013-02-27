@@ -15,10 +15,68 @@ CLASSES
         IncludeWarning
         MultipleDeclarationWarning
     builtins.object
+        Engine
         Exporter
-        Properties
         Reader
         Writer
+    Commenter(builtins.object)
+        Properties(Commenter, Hider, Includer)
+    Hider(builtins.object)
+        Properties(Commenter, Hider, Includer)
+    Includer(builtins.object)
+        Properties(Commenter, Hider, Includer)
+    
+    class Engine(builtins.object)
+     |  Class containing engine-classes from which main `Properties` class
+     |  inherits. Used for more modularization and separation.
+     |  
+     |  Functions found in `Engine` can be used freely if needed.
+     |  
+     |  WARNING!
+     |  Classes in `Engine` are intended to be used only by main `Properties` class via 
+     |  inheritance. On its own it can cause errors because it is sometime missing methods
+     |  present only in `Properties` class.
+     |  
+     |  Methods defined here:
+     |  
+     |  convert(value, strict=True)
+     |      Returns value with it's type converted. 
+     |      Can convert from str to: int, float, True/False and None.
+     |  
+     |  notavailable(properties, key)
+     |      Raises KeyError which will tell user that the property is not available eg. 
+     |      is not in currently used set of properties or is hidden.
+     |  
+     |  parse(properties, cast=False)
+     |      Returns parsed properties which means every $(reference) in values 
+     |      is resolved.
+     |      Raises KeyError when reference cannot be resolved.
+     |      If `cast` is passed as True then every value is run through `Engine.convert()`.
+     |  
+     |  parsevalue(properties, value)
+     |      This method searches for every $(reference) string in given value and 
+     |      replaces it with value of corresponding property.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  Commenter = <class 'pyproperties.Engine.Commenter'>
+     |  
+     |  
+     |  Hider = <class 'pyproperties.Engine.Hider'>
+     |      Class which implements mechanisms used for hiding properties.
+     |  
+     |  Includer = <class 'pyproperties.Engine.Includer'>
+     |      Class utilizing mechanisms used by `__include__` directive.
     
     class Exporter(builtins.object)
      |  This class conatins engines for exporting properties to different formats.
@@ -247,8 +305,15 @@ CLASSES
      |  
      |  args
     
-    class Properties(builtins.object)
+    class Properties(Commenter, Hider, Includer)
      |  This class provides methods for working with properties files.
+     |  
+     |  Method resolution order:
+     |      Properties
+     |      Commenter
+     |      Hider
+     |      Includer
+     |      builtins.object
      |  
      |  Methods defined here:
      |  
@@ -262,29 +327,9 @@ CLASSES
      |      To create a blank instance with path specified you can run:
      |          pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
      |  
-     |  addinclude(self, path, prefix='', hidden=False)
-     |      This method places __include__ directive in the properties.
-     |  
      |  blank(self, path='', strict=True)
      |      Creates blank properties object. 
      |      Can be used to erase contents of your `pyproperties` object.
-     |  
-     |  comment(self, key, comment)
-     |      Attaches comment to property. 
-     |      Comment can be passed as a string.
-     |      
-     |          foo.comment("foo", "first\npart")
-     |      
-     |      Multiline comments are supported by passing a string containing newline characters '\n'.
-     |      
-     |      KeyError is raised if key is not available (not found or is hidden).
-     |  
-     |  comments(self, identifier, *comments)
-     |      Attaches comment to properties which will match the identifier. 
-     |      Comment can be passed as a string. 
-     |      Multiline comments are supported by passing a string containing newline characters '\n'.
-     |      
-     |      comments('foo.*.bar', 'first comment', 'multi\nline')
      |  
      |  complete(self, props, prefix='')
      |      This method completes base dictionary with properties of the given one. 
@@ -308,14 +353,6 @@ CLASSES
      |  get(self, key, parse=False, cast=False)
      |      Returns value of given key. 
      |      If parsed is set to True value will be parsed before returning.
-     |      KeyError is raised if key is not available (not found or is hidden).
-     |  
-     |  getcomment(self, key, lines=False)
-     |      usage: getcomment(str key, bool lines=False) -> str
-     |      
-     |      Returns comment of given key. 
-     |      Returns empty string if the property has no comment. 
-     |      Returns empty list if the property has no comment and `lines` was passed as True. 
      |      KeyError is raised if key is not available (not found or is hidden).
      |  
      |  getgroups(self)
@@ -359,13 +396,6 @@ CLASSES
      |  getsingles(self)
      |      Returns list of properties which do not belong to any group.
      |  
-     |  hide(self, key)
-     |      When property is hidden it is no longer available for modifing. 
-     |      KeyError is raised if key is not available (not found or is hidden).
-     |  
-     |  hides(self, identifier)
-     |      Hides every property which key will match given identifier.
-     |  
      |  join(self, path, prefix=' ')
      |      Loads external properties and completes base. 
      |      You can pass `prefix` as empty string to add properties without prefix. 
@@ -376,9 +406,6 @@ CLASSES
      |      Returns sorted list of the non-hidden properties names. 
      |      If `hidden` is passed as `True` returns sorted list 
      |      of including names of hidden properties.
-     |  
-     |  listincludes(self)
-     |      Returns list of tuples containg information about `includes` of this properties.
      |  
      |  merge(self, properties)
      |      Completes and merges properties with the base. 
@@ -395,9 +422,6 @@ CLASSES
      |  
      |  pops(self, identifier, cast=False)
      |      This method removes properties matching given pattern from interal dictionary and returns a dict created from them.
-     |  
-     |  purgeinclude(self, path, prefix='', hidden=False)
-     |      Removes include directive from a list of directives and all properties corresponding to it.
      |  
      |  read(self, path='', cast=False, no_includes=False, strict=True)
      |      You can pass `cast` as True to tell pyproperties that it should guess the type of the property 
@@ -422,13 +446,6 @@ CLASSES
      |  revert(self)
      |      Drops changes made in properties object by reverting it's variables
      |      to the state in which they were during last save().
-     |  
-     |  rmcomment(self, key)
-     |      Removes comment of property of given key. 
-     |      Does not raise KeyError when property is not found.
-     |  
-     |  rminclude(self, path, prefix='', hidden=False)
-     |      Removes include directive from a list of directives.
      |  
      |  save(self)
      |      Saves changes made in object's variables.
@@ -461,17 +478,6 @@ CLASSES
      |      If 'no_dump' is passed as True lines will be generated 
      |      but not written to file.
      |  
-     |  stripinclude(self, path, prefix='', hidden=False)
-     |      This method removes all properties included from file of given path but 
-     |      leaves include tuple (it will be stored).
-     |  
-     |  unhide(self, key)
-     |      Remove property from `hidden` list to make it available for modifing. 
-     |      Does not raise any errors when key is not found.
-     |  
-     |  unhides(self, identifier)
-     |      Unhides every property which key will match given identifier.
-     |  
      |  update(self, props, prefix='')
      |      This method updates base properties with the given one. 
      |      If a property does not exist in base it will not be added. 
@@ -494,13 +500,81 @@ CLASSES
      |      including values of hidden properties.
      |  
      |  ----------------------------------------------------------------------
-     |  Data descriptors defined here:
+     |  Methods inherited from Commenter:
+     |  
+     |  comment(self, key, comment)
+     |      Attaches comment to property. 
+     |      Comment can be passed as a string.
+     |      
+     |          foo.comment("foo", "first\npart")
+     |      
+     |      Multiline comments are supported by passing a string containing newline characters '\n'.
+     |      
+     |      KeyError is raised if key is not available (not found or is hidden).
+     |  
+     |  comments(self, identifier, *comments)
+     |      Attaches comment to properties which will match the identifier. 
+     |      Comment can be passed as a string. 
+     |      Multiline comments are supported by passing a string containing newline characters '\n'.
+     |      
+     |      comments('foo.*.bar', 'first comment', 'multi\nline')
+     |  
+     |  getcomment(self, key, lines=False)
+     |      usage: getcomment(str key, bool lines=False) -> str
+     |      
+     |      Returns comment of given key. 
+     |      Returns empty string if the property has no comment. 
+     |      Returns empty list if the property has no comment and `lines` was passed as True. 
+     |      KeyError is raised if key is not available (not found or is hidden).
+     |  
+     |  rmcomment(self, key)
+     |      Removes comment of property of given key. 
+     |      Does not raise KeyError when property is not found.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from Commenter:
      |  
      |  __dict__
      |      dictionary for instance variables (if defined)
      |  
      |  __weakref__
      |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from Hider:
+     |  
+     |  hide(self, key)
+     |      When property is hidden it is no longer available for modifing. 
+     |      KeyError is raised if key is not available (not found or is hidden).
+     |  
+     |  hides(self, identifier)
+     |      Hides every property which key will match given identifier.
+     |  
+     |  unhide(self, key)
+     |      Remove property from `hidden` list to make it available for modifing. 
+     |      Does not raise any errors when key is not found.
+     |  
+     |  unhides(self, identifier)
+     |      Unhides every property which key will match given identifier.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from Includer:
+     |  
+     |  addinclude(self, path, prefix='', hidden=False)
+     |      This method places __include__ directive in the properties.
+     |  
+     |  listincludes(self)
+     |      Returns list of tuples containg information about `includes` of this properties.
+     |  
+     |  purgeinclude(self, path, prefix='', hidden=False)
+     |      Removes include directive from a list of directives and all properties corresponding to it.
+     |  
+     |  rminclude(self, path, prefix='', hidden=False)
+     |      Removes include directive from a list of directives.
+     |  
+     |  stripinclude(self, path, prefix='', hidden=False)
+     |      This method removes all properties included from file of given path but 
+     |      leaves include tuple (it will be stored).
     
     class ReadError(builtins.OSError)
      |  Method resolution order:
@@ -846,10 +920,6 @@ CLASSES
      |      list of weak references to the object (if defined)
 
 FUNCTIONS
-    convert(value, strict=True)
-        Returns value with it's type converted. 
-        Can convert from str to: int, float, True/False and None.
-    
     expandidentifier(identifier)
         Applies needed changes to identifier pattern (regular expression).
     
@@ -884,7 +954,7 @@ FUNCTIONS
         Checks if the line contains a key.
 
 DATA
-    __vertuple__ = (0, 2, 5)
+    __vertuple__ = (0, 2, 6)
     guess_bin_re = '^-?0b[0-1]+$'
     guess_float_re = r'^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$'
     guess_hex_re = '^-?0x[0-9a-fA-F]+$'
@@ -893,7 +963,7 @@ DATA
     wildcart_re = '[a-zA-Z0-9_.-]+'
 
 VERSION
-    0.2.5
+    0.2.6
 
 FILE
     /home/marek/Development/Python3/pyproperties/modules/pyproperties.py

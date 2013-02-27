@@ -4,8 +4,8 @@ TAGNAME = pyproperties-$(VERSION)
 
 .PHONY: test release install uninstall manual
 
-tar: DOC LICENSE README.mdown RELEASE.mdown Changelog.mdown test.py modules/pyproperties.py Makefile data/* manual/*
-	tar --xz -cvf ./releases/$(TAGNAME).tar.xz DOC LICENSE README.mdown RELEASE.mdown Changelog.mdown Roadmap.mdown test.py modules/pyproperties.py Makefile data/* manual/*.mdown
+tar: DOC LICENSE README.mdown RELEASE.mdown Changelog.mdown tests/test.py modules/pyproperties.py Makefile data/* manual/*
+	tar --xz -cvf ./releases/$(TAGNAME).tar.xz DOC LICENSE README.mdown RELEASE.mdown Changelog.mdown tests/test.py modules/pyproperties.py Makefile data/* manual/*.mdown
 
 doc: ./modules/pyproperties.py
 	pydoc3 ./modules/pyproperties.py > DOC
