@@ -24,12 +24,6 @@ class IncludeError(Exception): pass
 class IncludeWarning(UserWarning): pass
 class MultipleDeclarationWarning(UserWarning): pass
 
-def expandidentifier(identifier):
-    """
-    Applies needed changes to identifier pattern (regular expression). 
-    """
-    return "^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re))
-
 
 class Reader():
     """
@@ -201,7 +195,6 @@ class Reader():
         """
         return list(self._properties.keys())
 
-
 class Exporter:
     """
     This class conatins engines for exporting properties to different formats.
@@ -294,7 +287,6 @@ class Exporter:
             self.storegroups()
             self.encode(pretty=pretty)
             if not no_dump: self.dump(path)
-
 
 class Writer():
     """
@@ -544,6 +536,12 @@ class Engine:
         if key in properties.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, properties)
         else: message = "'{0}' is not available in {1}".format(key, properties) 
         raise KeyError(message)
+
+    def expandidentifier(identifier):
+        """
+        Applies needed changes to identifier pattern (regular expression). 
+        """
+        return "^{0}$".format(identifier.replace(".", "\.").replace("*", wildcart_re))
 
     def parsevalue(properties, value):
         """
@@ -845,30 +843,11 @@ class Properties():
         If `cast` is set to True values will be casted before returning.
         """
         if type(identifier) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
-        if not no_expand: identifier = expandidentifier(identifier)
+        if not no_expand: identifier = Engine.expandidentifier(identifier)
         
         matched = []
         for key in self.keys():
             if re.match(identifier, key): matched.append( (key, self.get(key, parse=parse, cast=cast)) )
-        return matched
-
-    def getre(self, identifier, parse=False, cast=False):
-        """
-        Returns dict of properties which names matched given pattern.
-        If parsed is set to True values will be parsed before returning. 
-        If cast is passed as True pyproperties will try to cast types of properties.
-        """
-        matched = {}
-        if type(identifier) == str: identifier = re.compile(identifier)
-        else: raise TypeError("identifer must be 'str' but was '{0}'".format(str(type(identifier))[8:-2]))
-
-        warnings.warn("`getre()` will be removed in 0.2.4: use `gets()` with `no_expand` argument set to True")
-
-        for key, value in self.properties.items():
-            if re.match(identifier, key) and parse: matched[key] = self._parseline(value)
-            elif re.match(identifier, key) and not parse: matched[key] = value
-        if cast:
-            for key, value in matched.items(): matched[key] = convert(value)
         return matched
 
     def set(self, key, value=""):
@@ -895,13 +874,15 @@ class Properties():
         If you want to keyword a property which name contains a dot character "." you should use __DOT__ 
         as a substitute for this character - 'foo__DOT__bar' will be converted to 'foo.bar'.
         """
+        if kwargs: warnings.warn("**kwargs will be removed in version 0.3.1: refactor your code: use set() with names already converted to string", DeprecationWarning)
+
         keys = []
         _kwargs = {}
         for key, value in kwargs.items(): _kwargs[key.replace("_DOT_", ".")] = value
         kwargs = _kwargs
         
-        identifier = re.compile(expandidentifier(identifier))
-        for key, x in self.properties.items():
+        identifier = re.compile(Engine.expandidentifier(identifier))
+        for key in self.keys():
             if re.match(identifier, key): keys.append(key)
         keys.sort()
         i = 0
@@ -930,7 +911,7 @@ class Properties():
         Removed properties will be not saved using store().
         """
         to_remove = []
-        identifier = re.compile(expandidentifier(identifier))
+        identifier = re.compile(Engine.expandidentifier(identifier))
         for key in self.properties.keys():
             if re.match(identifier, key): to_remove.append(key)
         for key in to_remove: self.remove(key)
@@ -1112,7 +1093,7 @@ class Properties():
         """
         Hides every property which key will match given identifier. 
         """
-        identifier = expandidentifier(identifier)
+        identifier = Engine.expandidentifier(identifier)
         for key in self.keys():
             if re.match(identifier, key): self.hide(key)
 
@@ -1128,7 +1109,7 @@ class Properties():
         """
         Unhides every property which key will match given identifier.
         """
-        identifier = expandidentifier(identifier)
+        identifier = Engine.expandidentifier(identifier)
         to_unhide = []
         for i in range(len(self.hidden)):
             if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])

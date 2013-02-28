@@ -14,6 +14,7 @@
 * __upd__:  `isbin()`, `isoct()` and `ishex()` moved to `Engine.Converter`,
 * __upd__:  `Includer`, `Hider` and `Commenter` moved from `Engine` to `Properties`,
 * __upd__:  `linehaskey()`, `getlinekey()`, `getlinevalue()` and `iscomment()` moved to `Engine.LineParser`,
+* __upd__:  `sets()` will have `**kwargs` removed in version `0.3.1`,
 
 
 * __fix__:  
@@ -22,7 +23,7 @@
 * __new__:  
 
 
-* __rem__:  
+* __rem__:  `getre()` finally removed from `Properties` (removal was scheduled for `0.2.4`)
 
 
 ----
