@@ -7,7 +7,7 @@ import sys
 
 from modules import pyproperties
 
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 
 foo_path = "./data/properties/foo.properties"
 
@@ -875,7 +875,6 @@ class ValidatorsTest(unittest.TestCase):
                 ]
         for line, result in lines: self.assertEqual(pyproperties.getlinekey(line, strict=foo.strict), result)
 
-
     def testGetlinekeyStrict(self):
         foo = pyproperties.Properties()
         lines = [
@@ -911,7 +910,6 @@ class ValidatorsTest(unittest.TestCase):
                 ("   valid  : property", "property"),
                 ]
         for line, result in lines: self.assertEqual(pyproperties.getlinevalue(line, strict=foo.strict), result)
-
 
     def testGetlinevalueStrict(self):
         foo = pyproperties.Properties()

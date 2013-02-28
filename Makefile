@@ -1,5 +1,5 @@
-VERSION = 0.2.6
-OLD=0.2.5
+VERSION = 0.2.7
+OLD=0.2.6
 TAGNAME = pyproperties-$(VERSION)
 
 .PHONY: test release install uninstall manual
@@ -26,5 +26,5 @@ uninstall:
 	python3 ./modules/uninstall.py
 
 clean:
-	rm -rv ./__pycache__/
 	rm -rv ./modules/__pycache__/
+	rm -rv ./tests/__pycache__/
