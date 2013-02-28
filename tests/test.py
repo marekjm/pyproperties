@@ -362,59 +362,59 @@ class ReaderIncludeTest(unittest.TestCase):
         self.assertEqual(test._hidden, combined._hidden)
 
 
-class IncludeEngineTests(unittest.TestCase):
+class PropertiesIncludeTests(unittest.TestCase):
     def testSetIncludeRaisesIncludeErrorWhenPathEmpty(self):
-        p = pyproperties.Engine.Includer()
+        p = pyproperties.Properties()
         self.assertRaises(pyproperties.IncludeError, p.addinclude, "")
 
     def testSetIncludeWarnsWhenFileNotFound(self):
-        p = pyproperties.Engine.Includer()
+        p = pyproperties.Properties()
         self.assertWarns(pyproperties.IncludeWarning, p.addinclude, "./data/properties/include_test/no.properties")
 
     def testSetIncludeSimple(self):
-        p = pyproperties.Engine.Includer()
+        p = pyproperties.Properties()
         p.addinclude("./data/properties/include_test/test.properties")
-        self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "", False)])
+        self.assertEqual(p._includes, [("./data/properties/include_test/test.properties", "", False)])
 
     def testSetIncludePrefixed(self):
-        p = pyproperties.Engine.Includer()
+        p = pyproperties.Properties()
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo")
-        self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "foo", False)])
+        self.assertEqual(p._includes, [("./data/properties/include_test/test.properties", "foo", False)])
 
     def testSetIncludeHidden(self):
-        p = pyproperties.Engine.Includer()
+        p = pyproperties.Properties()
         p.addinclude("./data/properties/include_test/test.properties", hidden=True)
-        self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "", True)])
+        self.assertEqual(p._includes, [("./data/properties/include_test/test.properties", "", True)])
 
     def testSetIncludePrefixedAndHidden(self):
-        p = pyproperties.Engine.Includer()
+        p = pyproperties.Properties()
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo", hidden=True)
-        self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "foo", True)])
+        self.assertEqual(p._includes, [("./data/properties/include_test/test.properties", "foo", True)])
 
     def testRmIncludeSimple(self):
-        p = pyproperties.Engine.Includer() 
+        p = pyproperties.Properties() 
         p.addinclude("./data/properties/include_test/test.properties")
         p.rminclude("./data/properties/include_test/test.properties")
         
-        self.assertEqual(p.includes, [])
+        self.assertEqual(p._includes, [])
 
     def testRmIncludePrefixed(self):
-        p = pyproperties.Engine.Includer() 
+        p = pyproperties.Properties() 
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo")
         p.addinclude("./data/properties/include_test/test.properties", prefix="bar")
         p.rminclude("./data/properties/include_test/test.properties", prefix="foo")
-        self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "bar", False)])
+        self.assertEqual(p._includes, [("./data/properties/include_test/test.properties", "bar", False)])
 
     def testRmIncludeHidden(self):
-        p = pyproperties.Engine.Includer() 
+        p = pyproperties.Properties() 
         p.addinclude("./data/properties/include_test/test.properties", hidden=True)
         p.addinclude("./data/properties/include_test/test.properties")
         p.rminclude("./data/properties/include_test/test.properties", hidden=True)
         
-        self.assertEqual(p.includes, [("./data/properties/include_test/test.properties", "", False)])
+        self.assertEqual(p._includes, [("./data/properties/include_test/test.properties", "", False)])
 
     def testRmIncludePrefixedAndHidden(self):
-        p = pyproperties.Engine.Includer() 
+        p = pyproperties.Properties() 
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo", hidden=True)
         p.addinclude("./data/properties/include_test/test.properties", prefix="bar", hidden=True)
         p.addinclude("./data/properties/include_test/test.properties", prefix="foo", hidden=False)
@@ -425,7 +425,7 @@ class IncludeEngineTests(unittest.TestCase):
                     ]
         p.rminclude("./data/properties/include_test/test.properties", prefix="foo", hidden=True)
         p.rminclude("./data/properties/include_test/test.properties", prefix="bar", hidden=True)
-        self.assertEqual(p.includes, includes)
+        self.assertEqual(p._includes, includes)
 
     def testPurgeIncludeWarnsWhenNothingWasRemoved(self):
         p = pyproperties.Properties() 
@@ -436,7 +436,7 @@ class IncludeEngineTests(unittest.TestCase):
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.purgeinclude("./../../../data/properties/include_test/bar.properties")
         
-        self.assertEqual(test.includes, [("foo.properties", "", False)])
+        self.assertEqual(test._includes, [("foo.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
@@ -446,7 +446,7 @@ class IncludeEngineTests(unittest.TestCase):
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.purgeinclude("./../../../data/properties/include_test/bar.properties", prefix="bar")
         
-        self.assertEqual(test.includes, [("foo.properties", "", False)])
+        self.assertEqual(test._includes, [("foo.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
@@ -455,8 +455,8 @@ class IncludeEngineTests(unittest.TestCase):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.properties")
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.purgeinclude("./../../../data/properties/include_test/bar.properties", hidden=True)
-        
-        self.assertEqual(test.includes, [("foo.properties", "", False)])
+
+        self.assertEqual(test._includes, [("foo.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
@@ -466,7 +466,7 @@ class IncludeEngineTests(unittest.TestCase):
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.purgeinclude("./../../../data/properties/include_test/bar.properties", prefix="bar", hidden=True)
         
-        self.assertEqual(test.includes, [("foo.properties", "", False)])
+        self.assertEqual(test._includes, [("foo.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
@@ -476,7 +476,7 @@ class IncludeEngineTests(unittest.TestCase):
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.stripinclude("./../../../data/properties/include_test/bar.properties")
         
-        self.assertEqual(test.includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "", False)])
+        self.assertEqual(test._includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
@@ -486,7 +486,7 @@ class IncludeEngineTests(unittest.TestCase):
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.stripinclude("./../../../data/properties/include_test/bar.properties", prefix="bar")
         
-        self.assertEqual(test.includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "bar", False)])
+        self.assertEqual(test._includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "bar", False)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
@@ -496,7 +496,7 @@ class IncludeEngineTests(unittest.TestCase):
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.stripinclude("./../../../data/properties/include_test/bar.properties", hidden=True)
         
-        self.assertEqual(test.includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "", True)])
+        self.assertEqual(test._includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "", True)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
@@ -506,14 +506,14 @@ class IncludeEngineTests(unittest.TestCase):
         combined = pyproperties.Properties("./data/properties/include_test/combined_purge.properties")
         test.stripinclude("./../../../data/properties/include_test/bar.properties", prefix="bar", hidden=True)
         
-        self.assertEqual(test.includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "bar", True)])
+        self.assertEqual(test._includes, [("foo.properties", "", False), ("./../../../data/properties/include_test/bar.properties", "bar", True)])
         self.assertEqual(test.properties, combined.properties)
         self.assertEqual(test.propcomments, combined.propcomments)
         self.assertEqual(test.hidden, combined.hidden)
     
     def testListinlcudes(self):
         test = pyproperties.Properties("./data/properties/include_test/test_purge.hidden.prefixed.properties")
-        self.assertEqual( test.listincludes(), test.includes )
+        self.assertEqual( test.listincludes(), test._includes )
     
     def testRemovingKeysOfFile(self):
         test = pyproperties.Properties()
@@ -1236,34 +1236,29 @@ class KeyAndValuesGetterTest(unittest.TestCase):
         self.assertListEqual(["Bar", "Foo"], foo.values(hidden=True))
 
 
-class GetTest(unittest.TestCase):
+class GetterTest(unittest.TestCase):
     def testGet(self):
         foo = pyproperties.Properties(foo_path)
         self.assertEqual("Agent Smith", foo.get("customer.1.name"))
 
-
     def testGetException(self):
         foo = pyproperties.Properties(foo_path)
         self.assertRaises(KeyError, foo.get, "foo")
-
 
     def testGetCastedInteger(self):
         foo = pyproperties.Properties()
         foo.set("two", "2")
         self.assertEqual(2, foo.get("two", cast=True))
 
-
     def testGetCastedFloat(self):
         foo = pyproperties.Properties()
         foo.set("pi", "3.14")
         self.assertEqual(3.14, foo.get("pi", cast=True))
 
-
     def testGetCastedNegativeInteger(self):
         foo = pyproperties.Properties()
         foo.set("two", "-2")
         self.assertEqual(-2, foo.get("two", cast=True))
-
 
     def testGetCastedNegativeFloat(self):
         foo = pyproperties.Properties()
@@ -1280,14 +1275,11 @@ class GetTest(unittest.TestCase):
         foo.set("foo", "True")
         self.assertEqual(True, foo.get("foo", cast=True))
 
-
     def testGetCastedBooleanFalse(self):
         foo = pyproperties.Properties()
         foo.set("foo", "False")
         self.assertEqual(False, foo.get("foo", cast=True))
 
-
-class GetsTest(unittest.TestCase):
     def testGets(self):
         foo = pyproperties.Properties(foo_path)
         self.assertEqual([("customer.0.name", "John the Average."), ("customer.1.name", "Agent Smith")], sorted(foo.gets("customer.*.name")))
@@ -1776,10 +1768,10 @@ class SaveTest(unittest.TestCase):
         foo.addinclude("./data/properties/include_test/test.properties", prefix="foo")
         foo.addinclude("./data/properties/include_test/test.properties", hidden=True)
         foo.addinclude("./data/properties/include_test/test.properties", prefix="foo", hidden=True)
-        self.assertEqual(includes, foo.includes)
-        self.assertNotEqual(includes, foo.origin_includes)
+        self.assertEqual(includes, foo._includes)
+        self.assertNotEqual(includes, foo._origin_includes)
         foo.save()
-        self.assertEqual(includes, foo.origin_includes)
+        self.assertEqual(includes, foo._origin_includes)
 
 
 class RevertTest(unittest.TestCase):
@@ -1822,12 +1814,12 @@ class RevertTest(unittest.TestCase):
         foo.addinclude("./data/properties/include_test/test.properties", prefix="foo")
         foo.addinclude("./data/properties/include_test/test.properties", hidden=True)
         foo.addinclude("./data/properties/include_test/test.properties", prefix="foo", hidden=True)
-        self.assertEqual(includes, foo.includes)
+        self.assertEqual(includes, foo._includes)
         foo.revert()
-        self.assertEqual([], foo.includes)
+        self.assertEqual([], foo._includes)
 
 
-class AddcommentTest(unittest.TestCase):
+class CommentTest(unittest.TestCase):
     def testAddcommentTestSimpleString(self):
         foo = pyproperties.Properties()
         foo.set("foo", "")
@@ -1842,8 +1834,6 @@ class AddcommentTest(unittest.TestCase):
         self.assertEqual("this\nis\na\ncomment", foo.propcomments["foo"])
         self.assertRaises(KeyError, foo.comment, "bar", "")
 
-
-class GetcommentTest(unittest.TestCase):
     def testGetcomment(self):
         foo = pyproperties.Properties()
         foo.set("foo")

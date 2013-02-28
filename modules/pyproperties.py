@@ -391,8 +391,8 @@ class Writer():
     """
     def __init__(self, properties):
         self.properties = properties
-        self.stored, self.includes_stored, self.lines = ([], self.properties.includes_stored, [])
-        self.origin_properties, self.origin_includes = (self.properties.origin_properties, self.properties.origin_includes)
+        self.stored, self._includes_stored, self.lines = ([], self.properties._includes_stored, [])
+        self.origin_properties, self._origin_includes = (self.properties.origin_properties, self.properties._origin_includes)
         self.origin_propcomments, self.origin_hidden = (self.properties.origin_propcomments, self.properties.origin_hidden)
         self.source = self.properties.origin_source
     
@@ -417,15 +417,15 @@ class Writer():
         Each directive is separated by a blank line.
         """
         if self.lines != [] and self.lines[-1] != "": self.lines.append("")
-        for path, prefix, hidden in self.origin_includes:
-            if (path, prefix, hidden) not in self.includes_stored:
+        for path, prefix, hidden in self._origin_includes:
+            if (path, prefix, hidden) not in self._includes_stored:
                 if prefix and hidden: line = "__include__.hidden.as.{0}={1}".format(prefix, path)
                 elif prefix and not hidden: line = "__include__.as.{0}={1}".format(prefix, path)
                 elif not prefix and hidden: line = "__include__.hidden={0}".format(path)
                 else: line = "__include__={0}".format(path)
                 self.lines.append(line)
                 self.lines.append("")
-                self.includes_stored.append( (path, prefix, hidden) )
+                self._includes_stored.append( (path, prefix, hidden) )
     
     def storesrc(self):
         """
@@ -499,17 +499,16 @@ class Writer():
 
 class Engine:
     """
-    Class containing engine-classes from which main `Properties` class
-    inherits. Used for more modularization and separation.
-    
-    Functions found in `Engine` can be used freely if needed.
+    Functions found in `Engine` can be used freely if needed but they are intended as a backend for 
+    `Pyproperties` class. 
+    This class can gain or lose functions frequently so it is not a good idea to use the directly from `Engine`. 
+    Usually it is a better habit to avoid using functions in this class which have not stabilised eg. are not in 
+    the same place for at least two releases.
 
     WARNING!
-    Classes in `Engine` are intended to be used only by main `Properties` class via 
-    inheritance. On its own it can cause errors because it is sometime missing methods
-    present only in `Properties` class.
+    Refactoring of this class is could be unmentiond in Changelog so it may require some investigation if 
+    a release brakes your program.
     """
- 
     def notavailable(properties, key):
         """
         Raises KeyError which will tell user that the property is not available eg. 
@@ -563,178 +562,10 @@ class Engine:
             for key in properties.keys(): parsed.set(key, parsed.get(key, cast=True))
         return parsed
 
-
-    class Includer():
-        """
-        Class utilizing mechanisms used by `__include__` directive.
-        """
-        def __init__(self):
-            self.includes, self.origin_includes = ([], [])
-            self.includes_stored = ([])
-            self.unsaved = True
-         
-        def _rmkeysfrom(self, path, prefix=""):
-            """
-            Removes all properties present in file to which given path is pointing.
-            """
-            path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
-            reader = Reader(path=path)
-            reader.read()
-            for key in reader.keys():
-                if prefix: key = "{0}.{1}".format(prefix, key)
-                self.remove(key)
-    
-        def addinclude(self, path, prefix="", hidden=False):
-            """
-            This method places __include__ directive in the properties.
-            """
-            if not os.path.isfile(path): warnings.warn("file for __include__ not found: '{0}'".format(path), IncludeWarning)
-            if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path".format(path))
-            
-            if (path, prefix, hidden) not in self.includes: self.includes.append( (path, prefix, hidden) )
-
-        def rminclude(self, path, prefix="", hidden=False):
-            """
-            Removes include directive from a list of directives. 
-            """
-            for _path, _prefix, _hidden in self.includes:
-                if path == _path and prefix == _prefix and hidden == _hidden: 
-                    self.includes.remove( (path, prefix, hidden) )
-                    break
-
-        def purgeinclude(self, path, prefix="", hidden=False):
-            """
-            Removes include directive from a list of directives and all properties corresponding to it.
-            """
-            for i, (ipath, iprefix, ihidden) in enumerate(self.includes):
-                if path == ipath and prefix == iprefix and hidden == ihidden:
-                    self.rminclude(path, prefix, hidden)
-                    self._rmkeysfrom(path=path, prefix=prefix)
-                    break
-            if not self.unsaved: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden), IncludeWarning)
-
-        def stripinclude(self, path, prefix="", hidden=False):
-            """
-            This method removes all properties included from file of given path but 
-            leaves include tuple (it will be stored).
-            """
-            self.purgeinclude(path, prefix, hidden)
-            self.addinclude(path, prefix, hidden)
-
-        def listincludes(self):
-            """
-            Returns list of tuples containg information about `includes` of this properties.
-            """
-            return self.includes
-
-    class Hider():
-        """
-        Class which implements mechanisms used for hiding properties.
-        """
-        def __init__(self):
-            self.hidden, self.origin_hidden = ([], [])
-            self.properties = []
-
-        def hide(self, key):
-            """
-            When property is hidden it is no longer available for modifing. 
-            KeyError is raised if key is not available (not found or is hidden).
-            """
-            if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
-            if key not in self.hidden: self.hidden.append(key)
-            self.unsaved = True
-            
-        def hides(self, identifier):
-            """
-            Hides every property which key will match given identifier. 
-            """
-            identifier = expandidentifier(identifier)
-            for key in self.keys():
-                if re.match(identifier, key): self.hide(key)
-
-        def unhide(self, key):
-            """
-            Remove property from `hidden` list to make it available for modifing. 
-            Does not raise any errors when key is not found.
-            """
-            if key in self.hidden: self.hidden.remove(key)
-            self.unsaved = True
-
-        def unhides(self, identifier):
-            """
-            Unhides every property which key will match given identifier.
-            """
-            identifier = expandidentifier(identifier)
-            to_unhide = []
-            for i in range(len(self.hidden)):
-                if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
-            for key in to_unhide: self.unhide(key)
-
-    class Commenter():
-        def __init__(self):
-            self.propcomment, self.origin_propcomments = ({}, {})
-
-        def comment(self, key, comment):
-            """
-            Attaches comment to property. 
-            Comment can be passed as a string.
-
-                foo.comment("foo", "first\\npart")
-
-            Multiline comments are supported by passing a string containing newline characters '\\n'.
-
-            KeyError is raised if key is not available (not found or is hidden).
-            """
-            if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
-
-            self.propcomments[key] = comment
-            self.unsaved = True
-
-        def comments(self, identifier, *comments):
-            """
-            Attaches comment to properties which will match the identifier. 
-            Comment can be passed as a string. 
-            Multiline comments are supported by passing a string containing newline characters '\\n'.
-
-            comments('foo.*.bar', 'first comment', 'multi\\nline')
-            """
-            keys = self.gets(identifier)
-            i = 0
-            for key in keys:
-                try: self.comment(key, comments[i])
-                except IndexError: self.comment(key, comments[-1])
-                finally: i += 1
-
-        def rmcomment(self, key):
-            """
-            Removes comment of property of given key. 
-            Does not raise KeyError when property is not found.
-            """
-            if key in self.propcomments: self.propcomments.pop(key)
-            self.unsaved = True
-
-        def getcomment(self, key, lines=False):
-            """
-            usage: getcomment(str key, bool lines=False) -> str
-            
-            Returns comment of given key. 
-            Returns empty string if the property has no comment. 
-            Returns empty list if the property has no comment and `lines` was passed as True. 
-            KeyError is raised if key is not available (not found or is hidden).
-            """
-            if key not in self.properties or key in self.hidden: self._notavailable(key)
-            
-            if key in self.propcomments: comment = self.propcomments[key]
-            else: comment = ""
-            if lines and comment != "": comment = comment.split("\n")
-            elif lines and comment == "": comment = []
-            return comment
-
-class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
+class Properties():
     """
     This class provides methods for working with properties files. 
     """
-
     def __init__(self, path="", cast=False, no_read=False, no_includes=False, strict=True):
         """
         If you give a path as an argument it will be loaded and processed as properties file. 
@@ -779,7 +610,7 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         self.properties = reader._properties
         self.hidden = reader._hidden
         self.propcomments = reader._comments
-        self.includes = reader._included
+        self._includes = reader._included
         self.source = reader._source
 
     def setstrict(self, strict):
@@ -804,8 +635,7 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         self.properties, self.origin_properties = ({}, {})
         self.propcomments, self.origin_propcomments = ({}, {})
         self.hidden, self.origin_hidden = ([], [])
-        self.includes, self.origin_includes = ([], [])
-        self.includes_stored = ([])
+        self._includes, self._origin_includes, self._includes_stored = ([], [], [])
         self.unsaved = False
     
     def read(self, path="", cast=False, no_includes=False, strict=True):
@@ -950,7 +780,7 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         self.origin_propcomments = saved
         self.origin_source = [ line for line in self.source ]
         self.origin_hidden = [ key for key in self.hidden ]
-        self.origin_includes = [ key for key in self.includes ]
+        self._origin_includes = [ key for key in self._includes ]
         self.unsaved = False
 
     def revert(self):
@@ -966,7 +796,7 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
         self.propcomments = reverted
         self.source = [ line for line in self.origin_source ]
         self.hidden = [ key for key in self.origin_hidden ]
-        self.includes = [ key for key in self.origin_includes ]
+        self._includes = [ key for key in self._origin_includes ]
         self.unsaved = False
 
     def store(self, path="", force=False, no_dump=False, drop_source=False):
@@ -1201,3 +1031,147 @@ class Properties(Engine.Commenter, Engine.Hider, Engine.Includer):
             if key not in groups: singles.append(key)
         return singles
 
+    def comment(self, key, comment):
+        """
+        Attaches comment to property. 
+        Comment can be passed as a string.
+
+            foo.comment("foo", "first\\npart")
+
+        Multiline comments are supported by passing a string containing newline characters '\\n'.
+
+        KeyError is raised if key is not available (not found or is hidden).
+        """
+        if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
+
+        self.propcomments[key] = comment
+        self.unsaved = True
+
+    def comments(self, identifier, *comments):
+        """
+        Attaches comment to properties which will match the identifier. 
+        Comment can be passed as a string. 
+        Multiline comments are supported by passing a string containing newline characters '\\n'.
+
+        comments('foo.*.bar', 'first comment', 'multi\\nline')
+        """
+        keys = self.gets(identifier)
+        i = 0
+        for key in keys:
+            try: self.comment(key, comments[i])
+            except IndexError: self.comment(key, comments[-1])
+            finally: i += 1
+
+    def rmcomment(self, key):
+        """
+        Removes comment of property of given key. 
+        Does not raise KeyError when property is not found.
+        """
+        if key in self.propcomments: self.propcomments.pop(key)
+        self.unsaved = True
+
+    def getcomment(self, key, lines=False):
+        """
+        usage: getcomment(str key, bool lines=False) -> str
+        
+        Returns comment of given key. 
+        Returns empty string if the property has no comment. 
+        Returns empty list if the property has no comment and `lines` was passed as True. 
+        KeyError is raised if key is not available (not found or is hidden).
+        """
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
+        
+        if key in self.propcomments: comment = self.propcomments[key]
+        else: comment = ""
+        if lines and comment != "": comment = comment.split("\n")
+        elif lines and comment == "": comment = []
+        return comment
+
+    def hide(self, key):
+        """
+        When property is hidden it is no longer available for modifing. 
+        KeyError is raised if key is not available (not found or is hidden).
+        """
+        if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
+        if key not in self.hidden: self.hidden.append(key)
+        self.unsaved = True
+        
+    def hides(self, identifier):
+        """
+        Hides every property which key will match given identifier. 
+        """
+        identifier = expandidentifier(identifier)
+        for key in self.keys():
+            if re.match(identifier, key): self.hide(key)
+
+    def unhide(self, key):
+        """
+        Remove property from `hidden` list to make it available for modifing. 
+        Does not raise any errors when key is not found.
+        """
+        if key in self.hidden: self.hidden.remove(key)
+        self.unsaved = True
+
+    def unhides(self, identifier):
+        """
+        Unhides every property which key will match given identifier.
+        """
+        identifier = expandidentifier(identifier)
+        to_unhide = []
+        for i in range(len(self.hidden)):
+            if re.match(identifier, self.hidden[i]): to_unhide.append(self.hidden[i])
+        for key in to_unhide: self.unhide(key)
+
+    def addinclude(self, path, prefix="", hidden=False):
+        """
+        This method places __include__ directive in the properties.
+        """
+        if not os.path.isfile(path): warnings.warn("file for __include__ not found: '{0}'".format(path), IncludeWarning)
+        if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path".format(path))
+        
+        if (path, prefix, hidden) not in self._includes: self._includes.append( (path, prefix, hidden) )
+
+    def rminclude(self, path, prefix="", hidden=False):
+        """
+        Removes include directive from a list of directives. 
+        """
+        for _path, _prefix, _hidden in self._includes:
+            if path == _path and prefix == _prefix and hidden == _hidden: 
+                self._includes.remove( (path, prefix, hidden) )
+                break
+
+    def _rmkeysfrom(self, path, prefix=""):
+        """
+        Removes all properties present in file to which given path is pointing.
+        """
+        path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
+        reader = Reader(path=path)
+        reader.read()
+        for key in reader.keys():
+            if prefix: key = "{0}.{1}".format(prefix, key)
+            self.remove(key)
+
+    def purgeinclude(self, path, prefix="", hidden=False):
+        """
+        Removes include directive from a list of directives and all properties corresponding to it.
+        """
+        for i, (ipath, iprefix, ihidden) in enumerate(self._includes):
+            if path == ipath and prefix == iprefix and hidden == ihidden:
+                self.rminclude( path, prefix, hidden )
+                self._rmkeysfrom(path=path, prefix=prefix)
+                break
+        if not self.unsaved: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden), IncludeWarning)
+
+    def stripinclude(self, path, prefix="", hidden=False):
+        """
+        This method removes all properties included from file of given path but 
+        leaves include tuple (it will be stored).
+        """
+        self.purgeinclude(path, prefix, hidden)
+        self.addinclude(path, prefix, hidden)
+
+    def listincludes(self):
+        """
+        Returns list of tuples containg information about `includes` of this properties.
+        """
+        return self._includes
