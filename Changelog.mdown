@@ -9,6 +9,25 @@
 
 ----
 
+#### Version 0.3.0 ():
+
+* __upd__:  `isbin()`, `isoct()` and `ishex()` moved to `Engine.Converter`,
+* __upd__:  `Includer`, `Hider` and `Commenter` moved from `Engine` to `Properties`,
+* __upd__:  `linehaskey()`, `getlinekey()`, `getlinevalue()` and `iscomment()` moved to `Engine.LineParser`,
+
+
+* __fix__:  
+
+
+* __new__:  
+
+
+* __rem__:  
+
+
+----
+
+
 #### Version 0.2.6 ():
 
 * __upd__:  `Properties._notavailable()` moved to `Engine.notavailable()`, now requires two arguments,

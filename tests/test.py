@@ -7,7 +7,7 @@ import sys
 
 from modules import pyproperties
 
-__version__ = "0.2.7"
+__version__ = "0.3.0"
 
 foo_path = "./data/properties/foo.properties"
 
@@ -817,7 +817,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("  indented=property", False),
                 ("  some#string", False),
                 ]
-        for line, result in lines: self.assertEqual(pyproperties.iscomment(line), result)
+        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.iscomment(line), result)
     
     def testHaskeyNonStrict(self):
         lines = [
@@ -834,7 +834,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", True),
                 ("   valid  : property", True),
                 ]
-        for line, result in lines: self.assertEqual(pyproperties.linehaskey(line, strict=False), result)
+        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.linehaskey(line, strict=False), result)
 
     def testHaskeyStrict(self):
         foo = pyproperties.Properties()
@@ -855,7 +855,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("__include__.as.bar : ./foo.properties", True),
                 ("__include__.hidden.as.bar=./foo.properties", True),
                 ]
-        for line, result in lines: self.assertEqual(pyproperties.linehaskey(line, strict=True), result)
+        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.linehaskey(line, strict=True), result)
 
     def testGetlinekeyNonStrict(self):
         foo = pyproperties.Properties(strict=False)
@@ -873,7 +873,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "valid"),
                 ("   valid  : property", "valid"),
                 ]
-        for line, result in lines: self.assertEqual(pyproperties.getlinekey(line, strict=foo.strict), result)
+        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.getlinekey(line, strict=foo.strict), result)
 
     def testGetlinekeyStrict(self):
         foo = pyproperties.Properties()
@@ -891,7 +891,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "valid"),
                 ("   valid  : property", "valid"),
                 ]
-        for line, result in lines: self.assertEqual(pyproperties.getlinekey(line, strict=foo.strict), result)
+        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.getlinekey(line, strict=foo.strict), result)
 
     def testGetlinevalueNonStrict(self):
         foo = pyproperties.Properties(strict=False)
@@ -909,7 +909,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "property"),
                 ("   valid  : property", "property"),
                 ]
-        for line, result in lines: self.assertEqual(pyproperties.getlinevalue(line, strict=foo.strict), result)
+        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.getlinevalue(line, strict=foo.strict), result)
 
     def testGetlinevalueStrict(self):
         foo = pyproperties.Properties()
@@ -927,7 +927,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "property"),
                 ("   valid  : property", "property"),
                 ]
-        for line, result in lines: self.assertEqual(pyproperties.getlinevalue(line, strict=foo.strict), result)
+        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.getlinevalue(line, strict=foo.strict), result)
 
     def testHiddenPropertiesDetectionWhenStrict(self):
         r = pyproperties.Reader(path="")

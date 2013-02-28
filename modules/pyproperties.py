@@ -7,7 +7,7 @@ import re
 import warnings
 import json
 
-__version__ = "0.2.7"
+__version__ = "0.3.0"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
 wildcart_re = "[a-zA-Z0-9_.-]+"
@@ -23,86 +23,6 @@ class UnsavedChangesError(BaseException): pass
 class IncludeError(Exception): pass
 class IncludeWarning(UserWarning): pass
 class MultipleDeclarationWarning(UserWarning): pass
-
-def isbin(s):
-    """
-    Returns True if given string contains valid binary number.
-    """
-    result = False
-    if re.match(re.compile(guess_bin_re), s): result = True
-    return result
-
-def isoct(s):
-    """
-    Returns True if given string contains valid octal number.
-    """
-    result = False
-    if re.match(re.compile(guess_oct_re), s): result = True
-    return result
-
-def ishex(s):
-    """
-    Returns True if given string contains valid hexadecimal number.
-    """
-    result = False
-    if re.match(re.compile(guess_hex_re), s): result = True
-    return result
-
-def linehaskey(line, strict=True):
-    """
-    Checks if the line contains a key. 
-    """
-    result = False
-    if ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
-    elif "=" in line[:line.find(":")]: key = line.split("=", 1)[0].strip()
-    else: key = None
-
-    if key != None and key[0] not in ["#", "!"]:
-        if strict and " " in key:
-            warnings.warn("space found in key '{0}'".format(key))
-            result = False
-        elif not strict and " " in key:
-            warnings.warn("space found in key: '{0}'".format(key))
-            result = True
-        else: 
-            result = True
-    return result
-
-def iscomment(line):
-    """
-    Checks if given line is a comment.
-    """
-    line = line.strip()
-    return line != "" and line[0] in ["#", "!"]
-
-def getlinekey(line, strict=True):
-    """
-    Extracts key from given line and returns it. 
-    If the line does not contain a key returns None. 
-    
-    If in strict mode (default) and find a whitespace in key it will 
-    complain with a warning and return None. 
-    If in non-strict mode (strict passed as `False`) it will only complain and 
-    do nothing else.
-    """
-    if not linehaskey(line, strict): key = None
-    elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
-    else: key = line.split("=", 1)[0].strip()
-    return key
-
-def getlinevalue(line, strict=True):
-    """
-    Extracts value from given line and returns it. 
-    If the line does not have a value returns None (remeber: empty string is returned when line has it as a value). 
-    It is done this way to distinguish properties with empty value 
-    from lines which do not carry a property.
-    """
-    if not linehaskey(line, strict): value = None
-    elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
-    else: value = line.split("=", 1)[1].lstrip()
-
-    if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
-    return value
 
 def expandidentifier(identifier):
     """
@@ -166,9 +86,9 @@ class Reader():
         if (path, prefix, hidden) not in self._included: self._included.append( (path, prefix, hidden) )
         
         for i, line in enumerate(file):
-            if linehaskey(line, strict=self._strict) and prefix: line = "{0}.{1}".format(prefix, line.lstrip())
+            if Engine.LineParser.linehaskey(line, strict=self._strict) and prefix: line = "{0}.{1}".format(prefix, line.lstrip())
             elif self._islinehiddenprop(line) and prefix: line = "#{0}.{1}".format(prefix, line[1:])
-            if linehaskey(line, strict=self._strict) and hidden: line = "#{0}".format(line.lstrip())
+            if Engine.LineParser.linehaskey(line, strict=self._strict) and hidden: line = "#{0}".format(line.lstrip())
             if line[-1] == "\n": line = line[:-1]
             file[i] = line
 
@@ -187,8 +107,8 @@ class Reader():
         """
         i = 0
         while i < len(self._source):
-            key = getlinekey(self._source[i])
-            value = getlinevalue(self._source[i])
+            key = Engine.LineParser.getlinekey(self._source[i])
+            value = Engine.LineParser.getlinevalue(self._source[i])
             if key == "__include__": self._include(i, value)
             elif key == "__include__.hidden": self._include(i, value, hidden=True)
             elif key != None and key[:15] == "__include__.as.": self._include(i, value, prefix=key[15:])
@@ -201,7 +121,7 @@ class Reader():
         Used to distinguish comments from commented properties during load.
         """
         # a little hack to not generate too many warnings when just checking if a line is hidden property
-        if iscomment(line) and line[1] != " ": result = linehaskey(line[1:], strict=self._strict)
+        if Engine.LineParser.iscomment(line) and line[1] != " ": result = Engine.LineParser.linehaskey(line[1:], strict=self._strict)
         else: result = False
         return result
 
@@ -214,7 +134,7 @@ class Reader():
         for line in self._source:
             if self._islinehiddenprop(line):
                 line = line[1:]
-                hidden.append( getlinekey(line) )
+                hidden.append( Engine.LineParser.getlinekey(line) )
             source.append(line)
         self._hidden = hidden
         self._source = source
@@ -225,7 +145,7 @@ class Reader():
         """
         properties = []
         for line in self._source:
-            if linehaskey(line=line, strict=self._strict): properties.append(line)
+            if Engine.LineParser.linehaskey(line=line, strict=self._strict): properties.append(line)
         self._properties = properties
 
     def extractcomments(self):
@@ -236,14 +156,14 @@ class Reader():
         i = 0
         while i < len(self._source):
             line = self._source[i]
-            if linehaskey(line=line, strict=self._strict):
+            if Engine.LineParser.linehaskey(line=line, strict=self._strict):
                 comment, n = ([], i-1)
-                while n >= 0 and iscomment(self._source[n]):
+                while n >= 0 and Engine.LineParser.iscomment(self._source[n]):
                     comment.append( self._source[n][1:].strip() )
                     n -= 1
                 if n != i-1:
                     comment.reverse()
-                    comments[ getlinekey(line) ] = "\n".join(comment)
+                    comments[ Engine.LineParser.getlinekey(line) ] = "\n".join(comment)
                     self._source = self._source[:n+1] + self._source[i:]
             i += 1
         self._comments = comments
@@ -254,8 +174,8 @@ class Reader():
         """
         properties = {}
         for line in self._properties:
-            key = getlinekey(line)
-            value = getlinevalue(line)
+            key = Engine.LineParser.getlinekey(line)
+            value = Engine.LineParser.getlinevalue(line)
             properties[key] = value
         self._properties = properties
     
@@ -432,9 +352,12 @@ class Writer():
         Prepares data which came with source for storing.
         """
         for i in range(len(self.source)):
-            if self.source[i] == "" or self.source[i].isspace(): self.lines.append("")
-            elif self.source[i][0] == "#": self.lines.append("{0}".format(self.source[i]))
-            elif getlinekey(self.source[i], strict=self.properties.strict) != "": self.storeprop(getlinekey(self.source[i], strict=self.properties.strict))
+            if self.source[i] == "" or self.source[i].isspace():
+                self.lines.append("")
+            elif self.source[i][0] == "#":
+                self.lines.append("{0}".format(self.source[i]))
+            elif Engine.LineParser.getlinekey(self.source[i], strict=self.properties.strict) != "":
+                self.storeprop(Engine.LineParser.getlinekey(self.source[i], strict=self.properties.strict))
     
     def storegroups(self):
         """
@@ -509,14 +432,93 @@ class Engine:
     Refactoring of this class is could be unmentiond in Changelog so it may require some investigation if 
     a release brakes your program.
     """
-    def notavailable(properties, key):
+    class Converter:
         """
-        Raises KeyError which will tell user that the property is not available eg. 
-        is not in currently used set of properties or is hidden.
+        Class containig functionality used for converting and detecting types of properties.
         """
-        if key in properties.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, properties)
-        else: message = "'{0}' is not available in {1}".format(key, properties) 
-        raise KeyError(message)
+        def isbin(s):
+            """
+            Returns True if given string contains valid binary number.
+            """
+            result = False
+            if re.match(re.compile(guess_bin_re), s): result = True
+            return result
+
+        def isoct(s):
+            """
+            Returns True if given string contains valid octal number.
+            """
+            result = False
+            if re.match(re.compile(guess_oct_re), s): result = True
+            return result
+
+        def ishex(s):
+            """
+            Returns True if given string contains valid hexadecimal number.
+            """
+            result = False
+            if re.match(re.compile(guess_hex_re), s): result = True
+            return result
+
+    class LineParser:
+        """
+        Class containig functionality for lowest-level parsing of single lines.
+        """
+        def linehaskey(line, strict=True):
+            """
+            Checks if the line contains a key. 
+            """
+            result = False
+            if ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
+            elif "=" in line[:line.find(":")]: key = line.split("=", 1)[0].strip()
+            else: key = None
+
+            if key != None and key[0] not in ["#", "!"]:
+                if strict and " " in key:
+                    warnings.warn("space found in key '{0}'".format(key))
+                    result = False
+                elif not strict and " " in key:
+                    warnings.warn("space found in key: '{0}'".format(key))
+                    result = True
+                else: 
+                    result = True
+            return result
+
+        def iscomment(line):
+            """
+            Checks if given line is a comment.
+            """
+            line = line.strip()
+            return line != "" and line[0] in ["#", "!"]
+
+        def getlinekey(line, strict=True):
+            """
+            Extracts key from given line and returns it. 
+            If the line does not contain a key returns None. 
+            
+            If in strict mode (default) and find a whitespace in key it will 
+            complain with a warning and return None. 
+            If in non-strict mode (strict passed as `False`) it will only complain and 
+            do nothing else.
+            """
+            if not Engine.LineParser.linehaskey(line, strict): key = None
+            elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
+            else: key = line.split("=", 1)[0].strip()
+            return key
+
+        def getlinevalue(line, strict=True):
+            """
+            Extracts value from given line and returns it. 
+            If the line does not have a value returns None (remeber: empty string is returned when line has it as a value). 
+            It is done this way to distinguish properties with empty value 
+            from lines which do not carry a property.
+            """
+            if not Engine.LineParser.linehaskey(line, strict): value = None
+            elif ":" in line[:line.find("=")]: value = line.split(":", 1)[1].lstrip()
+            else: value = line.split("=", 1)[1].lstrip()
+
+            if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
+            return value
 
     def convert(value, strict=True):
         """
@@ -527,12 +529,21 @@ class Engine:
         if value == "None": value = None
         elif value == "True": value = True
         elif value == "False": value = False
-        elif ishex(value): value = int(value, 16)
-        elif isoct(value): value = int(value, 8)
-        elif isbin(value): value = int(value, 2)
+        elif Engine.Converter.ishex(value): value = int(value, 16)
+        elif Engine.Converter.isoct(value): value = int(value, 8)
+        elif Engine.Converter.isbin(value): value = int(value, 2)
         elif re.match(re.compile(guess_int_re), value): value = int(value)
         elif re.match(re.compile(guess_float_re), value): value = float(value)
         return value
+
+    def notavailable(properties, key):
+        """
+        Raises KeyError which will tell user that the property is not available eg. 
+        is not in currently used set of properties or is hidden.
+        """
+        if key in properties.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, properties)
+        else: message = "'{0}' is not available in {1}".format(key, properties) 
+        raise KeyError(message)
 
     def parsevalue(properties, value):
         """
@@ -596,7 +607,7 @@ class Properties():
         for line in props.origin_source:
             if line == "": lines.append(line)
             elif line[0] in ["#", "!"] or line.isspace(): lines.append(line)
-            elif linehaskey(line, strict=self.strict) and not prefix: lines.append(line)
+            elif Engine.LineParser.linehaskey(line, strict=self.strict) and not prefix: lines.append(line)
             elif linehaskey(line, strict=self.strict) and prefix: lines.append("{0}.{1}".format(prefix, line))
             else: pass
         if self.source: self.source.append("")
@@ -1013,7 +1024,8 @@ class Properties():
         for key in names:
             identifier = ""
             for word in key:
-                if ishex(word) or isoct(word) or re.match(re.compile(guess_int_re), word): word = "*"
+                if Engine.Converter.ishex(word) or Engine.Converter.isoct(word) or re.match(re.compile(guess_int_re), word):
+                    word = "*"
                 identifier = "{}.{}".format(identifier, word)
             identifier = identifier[1:]
             if identifier not in groups and len(self.gets(identifier)) > 1: groups.append(identifier)
