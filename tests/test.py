@@ -1342,6 +1342,13 @@ class SetterTest(unittest.TestCase):
         for key, value in contents:
             self.assertEqual(value, foo.get(key))
 
+    def testAdd(self):
+        p = pyproperties.Properties()
+        for i in range(3): p.add("foo.*", i)
+        self.assertEqual(0, p.get("foo.0"))
+        self.assertEqual(1, p.get("foo.1"))
+        self.assertEqual(2, p.get("foo.2"))
+
 
 class RemoverTest(unittest.TestCase):
     def testRemove(self):
