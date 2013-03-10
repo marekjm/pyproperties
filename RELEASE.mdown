@@ -8,7 +8,7 @@ It is partly because I have little ideas what to add. I think this library reach
 additional stuff could (but not have to) be considered feature creep. 
 
 This said I decided that `pyproperties` is stable and advanced enough to release it not as *beta* but as a 
-stable, fully functional software. Version `0.2.6` was the last beta. Jump from `0.2.6` to `0.3.0` indicates 
+stable, fully functional software. Version `0.3.0` was the last beta. Jump from `0.3.0` to `0.3.0` indicates 
 similar jump from *beta* to *stable*.
 
 ----
