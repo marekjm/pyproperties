@@ -900,6 +900,25 @@ class Properties():
                 self.set(key, value)
         self.unsaved = True
 
+    def add(self, group, value):
+        """
+        Adds a property to given group. 
+        Creates first item if group is not present.
+        """
+        if len(group.split("*")) > 2: raise ArgumentError("group for add() can contain only one asterisk")
+        try:
+            n = len(self.gets(group))
+        except KeyError:
+            n = 0
+        finally:
+            self.set(group.replace("*", str(n)), value)
+
+    def adds(self, group, *values):
+        """
+        Adds multiple properties to a group.
+        """
+        for value in values: self.add(group, value)
+
     def remove(self, key):
         """
         This method removes specified property from interal dictionary. 

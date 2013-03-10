@@ -9,6 +9,23 @@
 
 ----
 
+#### Version 0.3.1 (2013.03.24):
+
+* __upd__:  ,
+
+
+* __fix__:  ,
+
+
+* __new__:  `add()` method (read `DOC` and manual for more),
+
+
+* __rem__:  `**kwargs` removed from `sets()`,
+
+
+----
+
+
 #### Version 0.3.0 (2013.03.10):
 
 * __upd__:  `isbin()`, `isoct()` and `ishex()` moved to `Engine.Converter`,
