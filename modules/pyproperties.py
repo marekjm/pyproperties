@@ -533,15 +533,6 @@ class Engine:
             return value
 
 
-    def notavailable(properties, key):
-        """
-        Raises KeyError which will tell user that the property is not available eg. 
-        is not in currently used set of properties or is hidden.
-        """
-        if key in properties.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, properties)
-        else: message = "'{0}' is not available in {1}".format(key, properties) 
-        raise KeyError(message)
-
     def expandidentifier(identifier):
         """
         Applies needed changes to identifier pattern (regular expression). 
@@ -599,6 +590,15 @@ class Properties():
         else: 
             self.blank(path, strict)
         self.save()
+
+    def _notavailable(self, key):
+        """
+        Raises KeyError which will tell user that the property is not available eg. 
+        is not in currently used set of properties or is hidden.
+        """
+        if key in self.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, self)
+        else: message = "'{0}' is not available in {1}".format(key, self) 
+        raise KeyError(message)
 
     def _appendsrc(self, props, prefix=""):
         """
@@ -834,7 +834,7 @@ class Properties():
         If parsed is set to True value will be parsed before returning.
         KeyError is raised if key is not available (not found or is hidden).
         """
-        if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
         
         value = self.properties[key]
         if parse: value = Engine.parsevalue(self, value)
@@ -1040,7 +1040,7 @@ class Properties():
 
         KeyError is raised if key is not available (not found or is hidden).
         """
-        if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
 
         self.propcomments[key] = comment
         self.unsaved = True
@@ -1090,7 +1090,7 @@ class Properties():
         When property is hidden it is no longer available for modifing. 
         KeyError is raised if key is not available (not found or is hidden).
         """
-        if key not in self.properties or key in self.hidden: Engine.notavailable(self, key)
+        if key not in self.properties or key in self.hidden: self._notavailable(key)
         if key not in self.hidden: self.hidden.append(key)
         self.unsaved = True
         
