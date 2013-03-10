@@ -9,12 +9,13 @@
 
 ----
 
-#### Version 0.3.0 ():
+#### Version 0.3.0 (2013.03.10):
 
 * __upd__:  `isbin()`, `isoct()` and `ishex()` moved to `Engine.Converter`,
 * __upd__:  `Includer`, `Hider` and `Commenter` moved from `Engine` to `Properties`,
 * __upd__:  `linehaskey()`, `getlinekey()`, `getlinevalue()` and `iscomment()` moved to `Engine.LineParser`,
 * __upd__:  `sets()` will have `**kwargs` removed in version `0.3.1`,
+* __upd__:  `Engine.convert()` moved to `Engine.Converter.convert()`
 
 
 * __fix__:  

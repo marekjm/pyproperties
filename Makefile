@@ -18,6 +18,7 @@ test:
 	python3 -m unittest --catch --failfast --verbose tests/test.py
 
 release: test doc tar
+	sed -i -e s/${OLD}/${VERSION}/ RELEASE.mdown
 
 install:
 	python3 ./modules/install.py

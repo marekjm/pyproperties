@@ -1,36 +1,43 @@
-#### Release `0.2.6` of `pyproperties`
+#### Release `0.3.0` of `pyproperties`
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 
 
-Version `0.2.5` gives you ability for exporting properties into JSON format. 
-Besides this, there were few small updates but they are not worth mentioning - 
-it was mostly minor refactoring and updates of unit tests and manuals. 
+Lately, `pyproperties` releases tended to be small and not on time. 
+It is partly because I have little ideas what to add. I think this library reached the point when 
+additional stuff could (but not have to) be considered feature creep. 
 
+This said I decided that `pyproperties` is stable and advanced enough to release it not as *beta* but as a 
+stable, fully functional software. Version `0.2.6` was the last beta. Jump from `0.2.6` to `0.3.0` indicates 
+similar jump from *beta* to *stable*.
 
 ----
 
 
 ##### This release brings you:
-*   0 update(s),
+*   5 update(s),
 *   0 fix(es),
-*   1 new feature(s),
-*   0 removal(s),
+*   0 new feature(s),
+*   1 removal(s),
 
 
-#### Version 0.2.5 (2013.02.17):
+#### Version 0.3.0 (2013.03.10):
 
-* __upd__:  ,
-
-
-* __fix__:  ,
-
-
-* __new__:  `Exporter` class,
-* __new__:  `Exporter.JSON()` class which provides functionality for exporting properties to JSON format,
+* __upd__:  `isbin()`, `isoct()` and `ishex()` moved to `Engine.Converter`,
+* __upd__:  `Includer`, `Hider` and `Commenter` moved from `Engine` to `Properties`,
+* __upd__:  `linehaskey()`, `getlinekey()`, `getlinevalue()` and `iscomment()` moved to `Engine.LineParser`,
+* __upd__:  `sets()` will have `**kwargs` removed in version `0.3.1`,
+* __upd__:  `Engine.convert()` moved to `Engine.Converter.convert()`
 
 
-* __rem__:  ,
+* __fix__:  
+
+
+* __new__:  
+
+
+* __rem__:  `getre()` finally removed from `Properties` (removal was scheduled for `0.2.4`)
+
 
 &nbsp;
 

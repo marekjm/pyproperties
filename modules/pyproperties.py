@@ -10,12 +10,14 @@ import json
 __version__ = "0.3.0"
 __vertuple__ = tuple( int(n) for n in __version__.split(".") )
 
+
 wildcart_re = "[a-zA-Z0-9_.-]+"
 guess_int_re = "^-?[0-9]+$"
 guess_bin_re = "^-?0b[0-1]+$"
 guess_oct_re = "^-?0o[0-7]+$"
 guess_hex_re = "^-?0x[0-9a-fA-F]+$"
 guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$"
+
 
 class ReadError(IOError): pass
 class StoreError(IOError): pass
@@ -29,7 +31,6 @@ class Reader():
     """
     This class utilizes methods for reading properties files.
     """
-    
     def __init__(self, path, includes=True, cast=False, strict=True):
         self._path = os.path.abspath(path)
         self._includes, self._cast, self._strict = (includes, cast, strict)
@@ -195,98 +196,6 @@ class Reader():
         """
         return list(self._properties.keys())
 
-class Exporter:
-    """
-    This class conatins engines for exporting properties to different formats.
-    """
-    class JSON():
-        """
-        This class provides functionality for storing properties in JSON format. 
-        
-        **IMPORTANT NOTE**
-        During conversion all information about included files, comments and 
-        properties' status (hidden/not-hidden) is lost.
-        Only data is exported.
-        """
-        def __init__(self, properties):
-            self._properties, self._path = (properties, "{0}.json".format(os.path.splitext(properties.path)[0]))
-            if self._path == ".json": self._path = ""
-            
-            self._origin_properties = self._properties.origin_properties
-            self._origin_propcomments = self._properties.origin_propcomments
-            self._origin_hidden = self._properties.origin_hidden
-            self._json, self.json = ({}, "")
-
-        def encode(self, pretty=False):
-            """
-            **JSON Writer version**
-            This method encode generated Python dict to JSON.
-            """
-            if pretty:
-                self.json = json.dumps(self._json, sort_keys=True, indent=4)
-                self.json = [line.rstrip() for line in self.json.splitlines()]
-            else:
-                self.json = json.dumps(self._json)
-            
-        def storeprop(self, key):
-            """
-            **JSON Writer version**
-            This method stores single property and takes responsibility of storing it's comment and status. 
-            This method looks at the `stored` list and checks if the given key has already 
-            been stored to prevent storing it two times.
-            It will also check if the key is in `origin_properties` dict to ensure that unsaved properties 
-            would not get stored.
-            """
-            self._json[key] = self._properties.get(key)
-            
-        def storegroups(self):
-            """
-            Generates lines for groups not found in source.
-            """
-            for identifier in self._properties.getgroups():
-                keys = [ key for key in dict(self._properties.gets(identifier)) ]
-                for key in sorted(keys): self.storeprop(key)
-
-        def storesingles(self):
-            """
-            Generates lines for single properties not found in source.
-            """
-            for key in sorted(self._origin_properties.keys()): self.storeprop(key)
-
-        def dump(self, path):
-            """
-            Dumps generated lines to file given in path and clears 
-            variables defined by store() and its subemthods. 
-            """
-            file = open(path, "w")
-            if type(self.json) == list: [file.write("{0}\n".format(line)) for line in self.json]
-            else: file.write(self.json)
-            file.close()
-
-        def store(self, path="", force=False, no_dump=False, pretty=False):
-            """
-            **JSON Writer version**
-            Writes properties to given 'path'.
-            'path' defaults to path set if given properties, but extension is set to '.json'.
-
-            If store will encounter some unsaved changes it will
-            raise UnsavedChangesError.
-            You can explicitly silence it by passing force as True.
-
-            If 'no_dump' is passed as True lines will be generated 
-            but not written to file.
-            
-            **WARNING!**
-            During conversion to JSON information about includes are lost.
-            """
-            if self._properties.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
-            if path == "": path = self._path
-            if path == "" or path.isspace(): raise StoreError("no path specified")
-            
-            self.storesingles()
-            self.storegroups()
-            self.encode(pretty=pretty)
-            if not no_dump: self.dump(path)
 
 class Writer():
     """
@@ -412,17 +321,111 @@ class Writer():
             if not no_dump: self.dump(path)
 
 
+class Exporter:
+    """
+    This class conatins engines for exporting properties to different formats.
+    """
+    class JSON():
+        """
+        This class provides functionality for storing properties in JSON format. 
+        
+        **IMPORTANT NOTE**
+        During conversion all information about included files, comments and 
+        status (hidden/not-hidden) is lost.
+        """
+        def __init__(self, properties):
+            self._properties, self._path = (properties, "{0}.json".format(os.path.splitext(properties.path)[0]))
+            if self._path == ".json": self._path = ""
+            
+            self._origin_properties = self._properties.origin_properties
+            self._origin_propcomments = self._properties.origin_propcomments
+            self._origin_hidden = self._properties.origin_hidden
+            self._json, self.json = ({}, "")
+
+        def encode(self, pretty=False):
+            """
+            **JSON Writer version**
+            This method encode generated Python dict to JSON.
+            """
+            if pretty:
+                self.json = json.dumps(self._json, sort_keys=True, indent=4)
+                self.json = [line.rstrip() for line in self.json.splitlines()]
+            else:
+                self.json = json.dumps(self._json)
+            
+        def storeprop(self, key):
+            """
+            **JSON Writer version**
+            This method stores single property and takes responsibility of storing it's comment and status. 
+            This method looks at the `stored` list and checks if the given key has already 
+            been stored to prevent storing it two times.
+            It will also check if the key is in `origin_properties` dict to ensure that unsaved properties 
+            would not get stored.
+            """
+            self._json[key] = self._properties.get(key)
+            
+        def storegroups(self):
+            """
+            Generates lines for groups not found in source.
+            """
+            for identifier in self._properties.getgroups():
+                keys = [ key for key in dict(self._properties.gets(identifier)) ]
+                for key in sorted(keys): self.storeprop(key)
+
+        def storesingles(self):
+            """
+            Generates lines for single properties not found in source.
+            """
+            for key in sorted(self._origin_properties.keys()): self.storeprop(key)
+
+        def dump(self, path):
+            """
+            Dumps generated lines to file given in path and clears 
+            variables defined by store() and its subemthods. 
+            """
+            file = open(path, "w")
+            if type(self.json) == list: [file.write("{0}\n".format(line)) for line in self.json]
+            else: file.write(self.json)
+            file.close()
+
+        def store(self, path="", force=False, no_dump=False, pretty=False):
+            """
+            **JSON Writer version**
+            Writes properties to given 'path'.
+            'path' defaults to path set if given properties, but extension is set to '.json'.
+
+            If store will encounter some unsaved changes it will
+            raise UnsavedChangesError.
+            You can explicitly silence it by passing force as True.
+
+            If 'no_dump' is passed as True lines will be generated 
+            but not written to file.
+            
+            **WARNING!**
+            During conversion to JSON information about includes are lost.
+            """
+            if self._properties.unsaved and not force: raise UnsavedChangesError("trying to store with unsaved changes")
+            if path == "": path = self._path
+            if path == "" or path.isspace(): raise StoreError("no path specified")
+            
+            self.storesingles()
+            self.storegroups()
+            self.encode(pretty=pretty)
+            if not no_dump: self.dump(path)
+
+
+
 class Engine:
     """
-    Functions found in `Engine` can be used freely if needed but they are intended as a backend for 
-    `Pyproperties` class. 
-    This class can gain or lose functions frequently so it is not a good idea to use the directly from `Engine`. 
-    Usually it is a better habit to avoid using functions in this class which have not stabilised eg. are not in 
+    Functions found in `Engine` can be used freely if needed but they are intended to be backend for 
+    `Properties` class. 
+    This class can gain or lose functions frequently so it is not a good idea to use them directly from `Engine`. 
+    Usually it is better habit to avoid using functions in this class which have not stabilised eg. are not in 
     the same place for at least two releases.
 
     WARNING!
-    Refactoring of this class is could be unmentiond in Changelog so it may require some investigation if 
-    a release brakes your program.
+    Refactoring of this class could be unmentiond in Changelog so it may require some investigation if 
+    a release breaks your program.
     """
     class Converter:
         """
@@ -451,6 +454,23 @@ class Engine:
             result = False
             if re.match(re.compile(guess_hex_re), s): result = True
             return result
+
+        def convert(value):
+            """
+            Returns value with it's type converted. 
+            Can convert from str to: int, float, True/False and None.
+            """
+            value = str(value)
+            if value == "None": value = None
+            elif value == "True": value = True
+            elif value == "False": value = False
+            elif Engine.Converter.ishex(value): value = int(value, 16)
+            elif Engine.Converter.isoct(value): value = int(value, 8)
+            elif Engine.Converter.isbin(value): value = int(value, 2)
+            elif re.match(re.compile(guess_int_re), value): value = int(value)
+            elif re.match(re.compile(guess_float_re), value): value = float(value)
+            return value
+
 
     class LineParser:
         """
@@ -512,21 +532,6 @@ class Engine:
             if line != "" and line[-1] == "\n": line = line[:-1]   # striping newline while preserving newlines in value and trailing whitespace
             return value
 
-    def convert(value, strict=True):
-        """
-        Returns value with it's type converted. 
-        Can convert from str to: int, float, True/False and None.
-        """
-        value = str(value)
-        if value == "None": value = None
-        elif value == "True": value = True
-        elif value == "False": value = False
-        elif Engine.Converter.ishex(value): value = int(value, 16)
-        elif Engine.Converter.isoct(value): value = int(value, 8)
-        elif Engine.Converter.isbin(value): value = int(value, 2)
-        elif re.match(re.compile(guess_int_re), value): value = int(value)
-        elif re.match(re.compile(guess_float_re), value): value = float(value)
-        return value
 
     def notavailable(properties, key):
         """
@@ -833,7 +838,7 @@ class Properties():
         
         value = self.properties[key]
         if parse: value = Engine.parsevalue(self, value)
-        if cast and type(value) == str: value = Engine.convert(value)
+        if cast and type(value) == str: value = Engine.Converter.convert(value)
         return value
 
     def gets(self, identifier, parse=False, cast=False, no_expand=False):

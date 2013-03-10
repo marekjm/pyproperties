@@ -1,5 +1,5 @@
 #### Removing properties
-###### _version: `0.2.6`_
+###### _version: `0.3.0`_
 
 ###### [Index](index.mdown)
 ----
