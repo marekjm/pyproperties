@@ -16,7 +16,7 @@ guess_int_re = "^-?[0-9]+$"
 guess_bin_re = "^-?0b[0-1]+$"
 guess_oct_re = "^-?0o[0-7]+$"
 guess_hex_re = "^-?0x[0-9a-fA-F]+$"
-guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$"
+guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]?)?[0-9]+$"
 
 
 class ReadError(IOError): pass
@@ -122,7 +122,7 @@ class Reader():
 
     def uncoverhidden(self):
         """
-        Unvoers hidden properties -- makes them available for `_extractprops()`.
+        Uncovers hidden properties -- makes them available for `_extractprops()`.
         """
         source = []
         hidden = []
@@ -179,7 +179,7 @@ class Reader():
         This method tries to cast values of loaded properties.
         """
         for key, value in self._properties.items():
-            self._properties[key] = convert(value)
+            self._properties[key] = Engine.Converter.convert(value)
     
     def read(self):
         self.loadf()
@@ -481,19 +481,9 @@ class Engine:
             Checks if the line contains a key. 
             """
             result = False
-            if ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
-            elif "=" in line[:line.find(":")]: key = line.split("=", 1)[0].strip()
-            else: key = None
-
-            if key != None and key[0] not in ["#", "!"]:
-                if strict and " " in key:
-                    warnings.warn("space found in key '{0}'".format(key))
-                    result = False
-                elif not strict and " " in key:
-                    warnings.warn("space found in key: '{0}'".format(key))
-                    result = True
-                else: 
-                    result = True
+            if strict: match = re.match("^ *[a-zA-Z0-9-._]+ *[:=].*$", line)
+            else: match = re.match("^ *[a-zA-Z0-9-._ ]+ *[:=].*$", line)
+            if match != None: result = True
             return result
 
         def iscomment(line):
@@ -513,7 +503,7 @@ class Engine:
             If in non-strict mode (strict passed as `False`) it will only complain and 
             do nothing else.
             """
-            if not Engine.LineParser.linehaskey(line, strict): key = None
+            if not Engine.LineParser.linehaskey(line=line, strict=strict): key = None
             elif ":" in line[:line.find("=")]: key = line.split(":", 1)[0].strip()
             else: key = line.split("=", 1)[0].strip()
             return key
@@ -611,7 +601,7 @@ class Properties():
             if line == "": lines.append(line)
             elif line[0] in ["#", "!"] or line.isspace(): lines.append(line)
             elif Engine.LineParser.linehaskey(line, strict=self.strict) and not prefix: lines.append(line)
-            elif linehaskey(line, strict=self.strict) and prefix: lines.append("{0}.{1}".format(prefix, line))
+            elif Engine.LineParser.linehaskey(line, strict=self.strict) and prefix: lines.append("{0}.{1}".format(prefix, line))
             else: pass
         if self.source: self.source.append("")
         self.source.extend(lines)

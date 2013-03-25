@@ -833,6 +833,8 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid:property", True),
                 ("valid      : property", True),
                 ("   valid  : property", True),
+                ("foo=", True),
+                ("foo:", True),
                 ]
         for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.linehaskey(line, strict=False), result)
 
@@ -854,11 +856,12 @@ class ValidatorsTest(unittest.TestCase):
                 ("__include__=./foo.properties", True),
                 ("__include__.as.bar : ./foo.properties", True),
                 ("__include__.hidden.as.bar=./foo.properties", True),
+                ("foo=", True),
+                ("foo:", True),
                 ]
         for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.linehaskey(line, strict=True), result)
 
     def testGetlinekeyNonStrict(self):
-        foo = pyproperties.Properties(strict=False)
         lines = [
                 ("#some comment", None),
                 ("#maybe=property", None),
@@ -873,7 +876,7 @@ class ValidatorsTest(unittest.TestCase):
                 ("valid      : property", "valid"),
                 ("   valid  : property", "valid"),
                 ]
-        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.getlinekey(line, strict=foo.strict), result)
+        for line, result in lines: self.assertEqual(pyproperties.Engine.LineParser.getlinekey(line, strict=False), result)
 
     def testGetlinekeyStrict(self):
         foo = pyproperties.Properties()
@@ -959,7 +962,6 @@ class ParselineTest(unittest.TestCase):
         self.assertEqual(2, foo.get("two.1", parse=True, cast=True))
         self.assertEqual("2", foo.get("two.1", parse=True, cast=False))
 
-
     def testParselineFloat(self):
         foo = pyproperties.Properties()
         foo.set("pi.0", 3.14)
@@ -969,14 +971,12 @@ class ParselineTest(unittest.TestCase):
         self.assertEqual(3.14, foo.get("pi.1", parse=True, cast=True))
         self.assertEqual("3.14", foo.get("pi.1", parse=True, cast=False))
 
-
     def testParselineString(self):
         foo = pyproperties.Properties()
         foo.set("greeting", "Hello $(name)!")
         foo.set("name", "World")
         self.assertEqual("Hello World!", foo.get("greeting", parse=True, cast=True))
         self.assertEqual("Hello World!", foo.get("greeting", parse=True, cast=False))
-
 
     def testParselineComplex(self):
         foo = pyproperties.Properties()
