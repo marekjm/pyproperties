@@ -1,42 +1,39 @@
-#### Release `0.3.0` of `pyproperties`
+#### Release `0.3.1` of `pyproperties`
 
 ###### [Changelog](./Changelog.mdown), [Manual](./manual/index.mdown)
 
 
-Lately, `pyproperties` releases tended to be small and not on time. 
-It is partly because I have little ideas what to add. I think this library reached the point when 
-additional stuff could (but not have to) be considered feature creep. 
+This release is mostly about two things: one annoying bug was fixed, 
+one useful feature was added. Besides, two things were removed.
 
-This said I decided that `pyproperties` is stable and advanced enough to release it not as *beta* but as a 
-stable, fully functional software. Version `0.3.0` was the last beta. Jump from `0.3.0` to `0.3.0` indicates 
-similar jump from *beta* to *stable*.
+This is important that when updating you will check your code for errors 
+as the `**kwargs` had been removed from `sets()` method.
+
+Also, the `__vertuple__` variable was removed.
 
 ----
 
 
 ##### This release brings you:
-*   5 update(s),
-*   0 fix(es),
-*   0 new feature(s),
-*   1 removal(s),
+*   0 update(s),
+*   1 fix(es),
+*   1 new feature(s),
+*   2 removal(s),
 
 
-#### Version 0.3.0 (2013.03.10):
+#### Version 0.3.1 (2013.04.05):
 
-* __upd__:  `isbin()`, `isoct()` and `ishex()` moved to `Engine.Converter`,
-* __upd__:  `Includer`, `Hider` and `Commenter` moved from `Engine` to `Properties`,
-* __upd__:  `linehaskey()`, `getlinekey()`, `getlinevalue()` and `iscomment()` moved to `Engine.LineParser`,
-* __upd__:  `sets()` will have `**kwargs` removed in version `0.3.1`,
-* __upd__:  `Engine.convert()` moved to `Engine.Converter.convert()`
+* __upd__:  ,
 
 
-* __fix__:  
+* __fix__:  fixed bug which caused `pyproperties` to not read keys which didn't have any value (were empty strings),
 
 
-* __new__:  
+* __new__:  `add()` method (read `DOC` and manual for more),
 
 
-* __rem__:  `getre()` finally removed from `Properties` (removal was scheduled for `0.2.4`)
+* __rem__:  `**kwargs` removed from `sets()`,
+* __rem__:  `__vertuple__` removed,
 
 
 &nbsp;

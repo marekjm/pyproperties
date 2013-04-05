@@ -7,8 +7,7 @@ import re
 import warnings
 import json
 
-__version__ = "0.3.0"
-__vertuple__ = tuple( int(n) for n in __version__.split(".") )
+__version__ = "0.3.1"
 
 
 wildcart_re = "[a-zA-Z0-9_.-]+"

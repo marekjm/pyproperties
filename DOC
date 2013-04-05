@@ -37,10 +37,6 @@ CLASSES
      |  expandidentifier(identifier)
      |      Applies needed changes to identifier pattern (regular expression).
      |  
-     |  notavailable(properties, key)
-     |      Raises KeyError which will tell user that the property is not available eg. 
-     |      is not in currently used set of properties or is hidden.
-     |  
      |  parse(properties, cast=False)
      |      Returns parsed properties which means every $(reference) in values 
      |      is resolved.
@@ -310,8 +306,15 @@ CLASSES
      |      To create a blank instance with path specified you can run:
      |          pyproperties.Properties("/home/user/some/path/foo.properties", no_read=True)
      |  
+     |  add(self, group, value)
+     |      Adds a property to given group. 
+     |      Creates first item if group is not present.
+     |  
      |  addinclude(self, path, prefix='', hidden=False)
      |      This method places __include__ directive in the properties.
+     |  
+     |  adds(self, group, *values)
+     |      Adds multiple properties to a group.
      |  
      |  blank(self, path='', strict=True)
      |      Creates blank properties object. 
@@ -668,7 +671,7 @@ CLASSES
      |      This method converts self.properties from list containing extracted lines to a dictionary.
      |  
      |  uncoverhidden(self)
-     |      Unvoers hidden properties -- makes them available for `_extractprops()`.
+     |      Uncovers hidden properties -- makes them available for `_extractprops()`.
      |  
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -889,16 +892,15 @@ CLASSES
      |      list of weak references to the object (if defined)
 
 DATA
-    __vertuple__ = (0, 3, 0)
     guess_bin_re = '^-?0b[0-1]+$'
-    guess_float_re = r'^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$'
+    guess_float_re = r'^-?[0-9]*\.[0-9]+(e[+-]?)?[0-9]+$'
     guess_hex_re = '^-?0x[0-9a-fA-F]+$'
     guess_int_re = '^-?[0-9]+$'
     guess_oct_re = '^-?0o[0-7]+$'
     wildcart_re = '[a-zA-Z0-9_.-]+'
 
 VERSION
-    0.3.0
+    0.3.1
 
 FILE
     /home/marek/Development/Python3/pyproperties/modules/pyproperties.py

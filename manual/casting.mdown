@@ -1,5 +1,5 @@
 #### Typecasting in `pyproperties`
-###### _version: `0.3.0`_
+###### _version: `0.3.1`_
 
 ###### [Index](index.mdown)
 ----

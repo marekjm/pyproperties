@@ -361,6 +361,12 @@ class ReaderIncludeTest(unittest.TestCase):
         self.assertEqual(test._comments, combined._comments)
         self.assertEqual(test._hidden, combined._hidden)
 
+    def testOverridingIncludes(self):
+        test = pyproperties.Properties(path="./data/properties/include_test/overwrite.test.properties")
+        desired = pyproperties.Properties(path="./data/properties/include_test/overwrite.desired.properties")
+        
+        self.assertEqual(test.get('foo'), desired.get('foo'))
+
 
 class PropertiesIncludeTests(unittest.TestCase):
     def testSetIncludeRaisesIncludeErrorWhenPathEmpty(self):
