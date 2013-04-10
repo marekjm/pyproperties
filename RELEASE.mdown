@@ -21,7 +21,7 @@ Also, the `__vertuple__` variable was removed.
 *   2 removal(s),
 
 
-#### Version 0.3.1 (2013.04.05):
+#### Version 0.3.1 (20.3.14.05):
 
 * __upd__:  ,
 

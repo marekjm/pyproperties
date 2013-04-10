@@ -264,6 +264,7 @@ class Writer():
         Generates lines for groups not found in source.
         """
         if self.lines != [] and self.lines[-1] != "": self.lines.append("")
+
         for identifier in self.properties.getgroups():
             previous_len = len(self.lines)
             keys = [ key for key in self.properties.gets(identifier) ]
@@ -274,13 +275,13 @@ class Writer():
         """
         Generates lines for single properties not found in source.
         """
-        for key in sorted(self.origin_properties.keys()): self.storeprop(key)
+        for key in sorted(self.properties.keys()): self.storeprop(key)
 
     def storecomment(self, key):
         """
         Appends comment of a property of given key to self.lines
         """
-        [ self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key].split("\n") ]
+        [self.lines.append("#   {0}".format(line)) for line in self.origin_propcomments[key].split("\n")]
 
     def dump(self, path):
         """
