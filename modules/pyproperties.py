@@ -7,15 +7,18 @@ import re
 import warnings
 import json
 
-__version__ = "0.3.1"
+try:
+    import sconvert
+except ImportError:
+    print('you have to download `sconvert` module required by `pyproperties`...')
+    print('https://github.com/marekjm/sconvert')
+    exit(1)
+
+
+__version__ = "0.3.2"
 
 
 wildcart_re = "[a-zA-Z0-9_.-]+"
-guess_int_re = "^-?[0-9]+$"
-guess_bin_re = "^-?0b[0-1]+$"
-guess_oct_re = "^-?0o[0-7]+$"
-guess_hex_re = "^-?0x[0-9a-fA-F]+$"
-guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]?)?[0-9]+$"
 
 
 class ReadError(IOError): pass
@@ -275,7 +278,7 @@ class Writer():
         """
         Generates lines for single properties not found in source.
         """
-        for key in sorted(self.properties.keys()): self.storeprop(key)
+        for key in sorted(self.origin_properties.keys()): self.storeprop(key)
 
     def storecomment(self, key):
         """
@@ -425,53 +428,7 @@ class Engine:
 
     WARNING!
     Refactoring of this class could be unmentiond in Changelog so it may require some investigation if 
-    a release breaks your program.
     """
-    class Converter:
-        """
-        Class containig functionality used for converting and detecting types of properties.
-        """
-        def isbin(s):
-            """
-            Returns True if given string contains valid binary number.
-            """
-            result = False
-            if re.match(re.compile(guess_bin_re), s): result = True
-            return result
-
-        def isoct(s):
-            """
-            Returns True if given string contains valid octal number.
-            """
-            result = False
-            if re.match(re.compile(guess_oct_re), s): result = True
-            return result
-
-        def ishex(s):
-            """
-            Returns True if given string contains valid hexadecimal number.
-            """
-            result = False
-            if re.match(re.compile(guess_hex_re), s): result = True
-            return result
-
-        def convert(value):
-            """
-            Returns value with it's type converted. 
-            Can convert from str to: int, float, True/False and None.
-            """
-            value = str(value)
-            if value == "None": value = None
-            elif value == "True": value = True
-            elif value == "False": value = False
-            elif Engine.Converter.ishex(value): value = int(value, 16)
-            elif Engine.Converter.isoct(value): value = int(value, 8)
-            elif Engine.Converter.isbin(value): value = int(value, 2)
-            elif re.match(re.compile(guess_int_re), value): value = int(value)
-            elif re.match(re.compile(guess_float_re), value): value = float(value)
-            return value
-
-
     class LineParser:
         """
         Class containig functionality for lowest-level parsing of single lines.
@@ -828,7 +785,7 @@ class Properties():
         
         value = self.properties[key]
         if parse: value = Engine.parsevalue(self, value)
-        if cast and type(value) == str: value = Engine.Converter.convert(value)
+        if cast and type(value) == str: value = sconvert.Converter(value).convert()
         return value
 
     def gets(self, identifier, parse=False, cast=False, no_expand=False):
@@ -955,7 +912,7 @@ class Properties():
         """
         Returns sorted list of the non-hidden properties names. 
         If `hidden` is passed as `True` returns sorted list 
-        of including names of hidden properties.
+        of names of hidden properties.
         """
         keys = []
         for key in list(self.properties.keys()):
@@ -1016,10 +973,11 @@ class Properties():
         """
         names = [ key.split(".") for key in self.keys() ]
         groups = []
+        converter = sconvert.Converter('')
         for key in names:
             identifier = ""
             for word in key:
-                if Engine.Converter.ishex(word) or Engine.Converter.isoct(word) or re.match(re.compile(guess_int_re), word):
+                if converter._ishex(word) or converter._isoct(word) or converter._isint(word):
                     word = "*"
                 identifier = "{}.{}".format(identifier, word)
             identifier = identifier[1:]

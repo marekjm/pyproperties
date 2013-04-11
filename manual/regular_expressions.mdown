@@ -19,10 +19,6 @@ with groups of properties:
 *   `getgroups()`
 *   `getsingles()`
 
-with type conversion:
-
-*   `convert()`
-
 ----
 
 
@@ -31,7 +27,7 @@ pattern. When you pass identifier of the property as a string it's being
 transformed in such way:
 
 
-        'customer.*.name'   ->  '^customer\.[a-z0-9_.]*\.name$'
+        'customer.*.name'   ->  '^customer\.[a-z0-9_.-]*\.name$'
 
 
 Every `*` character in identifier is replaced by `wildcart_re` string and every `.` in identifier 
@@ -47,12 +43,6 @@ is escaped. This is provided by `expandidentifier()`.
 ##### Regexp patterns used in `pyproperties`:
 
         wildcart_re = "[a-zA-Z0-9_.-]*"
-        guess_int_re = "^-?[0-9]+$"
-        guess_bin_re = "^-?0b[0-1]+$"
-        guess_oct_re = "^-?0o[0-7]+$"
-        guess_hex_re = "^-?0x[0-9a-fA-F]+$"
-        guess_float_re = "^-?[0-9]*\.[0-9]+(e[+-]{0,1})?[0-9]+$"
-
 
 ----
 
@@ -61,4 +51,3 @@ SEE ALSO:
 [setters](setters.mdown)  
 [getters](getters.mdown)  
 [removers](removers.mdown)
-&nbsp;

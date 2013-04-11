@@ -21,7 +21,9 @@ Numbers can be both positive and negative.
 
 ----
 
-**Implementation detail:** `convert()` is very strict. It will not convert a value even if it is only preceded or followed (or both) by a single whitespace.
+**Implementation detail:** `convert()` is very strict. It will not convert a value even if it is preceded or followed (or both) by only a single whitespace.
+
+Support for conversion in `pyproperties` is provided by [`sconvert`](https://github.com/marekjm/sconvert) module.
 
 ----
 

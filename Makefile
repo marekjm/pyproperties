@@ -1,5 +1,5 @@
-VERSION = 0.3.1
-OLD=0.3.0
+VERSION = 0.3.2
+OLD=0.3.1
 TAGNAME = pyproperties-$(VERSION)
 
 .PHONY: test release install uninstall manual

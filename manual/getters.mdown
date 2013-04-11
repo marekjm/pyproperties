@@ -9,7 +9,6 @@
 
 *   `get()`
 *   `gets()`,
-*   `getre()`,
 
 ----
 
@@ -46,13 +45,6 @@ Output of `gets()` can be easily converted to dictionary just by passing it to `
     dict(p.gets("foo.*"))
     {'foo.0':'Foo'}
 
-
-----
-
-##### `getre()`
-
-The only difference between `getre()` and `gets()` is that the `getre()` accepts custom regular expression patterns and 
-will not modify them (see escaping dots and replacing `*` in `gets()`). 
 
 ----
 

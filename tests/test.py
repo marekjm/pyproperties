@@ -7,7 +7,7 @@ import sys
 
 from modules import pyproperties
 
-__version__ = "0.3.0"
+__version__ = "0.3.2"
 
 foo_path = "./data/properties/foo.properties"
 
@@ -1035,78 +1035,6 @@ class ParseTest(unittest.TestCase):
         pbar = pyproperties.Engine.parse(bar, cast=True)
         self.assertEqual(props, sorted(pbar.gets("*")))
         self.assertEqual(pyproperties.Properties, type(pbar))
-
-
-class ConvertTest(unittest.TestCase):
-    def testIntegerConversion(self):
-        examples = [("3", 3),
-                    ("-1", -1),
-                    ("16", 16),
-                    ("-12648", -12648),
-                    ("-666324992", -666324992),
-                    ("666324992", 666324992),
-                    ]
-        for s, n in examples: self.assertEqual(pyproperties.Engine.Converter.convert(s), n)
-
-    def testBinaryConversion(self):
-        examples = [("0b0", 0),
-                    ("-0b1", -1),
-                    ("0b10", 2),
-                    ("0b11", 3),
-                    ("-0b110101001", -425),
-                    ("0b1010011010", 666),
-                    ]
-        for s, n in examples: self.assertEqual(pyproperties.Engine.Converter.convert(s), n)
-
-    def testOctalConversion(self):
-        examples = [("0o0", 0),
-                    ("-0o1", -1),
-                    ("0o26", 22),
-                    ("-0o242", -162),
-                    ("0o105", 69),
-                    ("0o1232", 666),
-                    ("-0o3713", -1995),
-                    ("0o3734", 2012),
-                    ("0o21270", 8888),
-                    ("0o2602", 1410),
-                    ("-0o2602", -1410),
-                    ("0o726746425", 123456789),
-                    ("-0o172116", -62542),
-                    ]
-        for oct, dec in examples: self.assertEqual(pyproperties.Engine.Converter.convert(oct), dec)
-    
-    def testHexadecimalConversion(self):
-        examples = [("0x0", 0),
-                    ("-0x1", -1),
-                    ("0x16", 22),
-                    ("-0xa2", -162),
-                    ("0x45", 69),
-                    ("0x29a", 666),
-                    ("-0x7cb", -1995),
-                    ("0x7dc", 2012),
-                    ("0x22b8", 8888),
-                    ("0x582", 1410),
-                    ("-0x582", -1410),
-                    ("0x75bcd15", 123456789),
-                    ("-0xf44e", -62542),
-                    ]
-        for hex, dec in examples: self.assertEqual(pyproperties.Engine.Converter.convert(hex), dec)
-
-    def testFloatConversion(self):
-        examples = [("3.14", 3.14),
-                    ("-1.43", -1.43),
-                    ("6.02e+23", 6.02e+23),
-                    ("6.02e-23", 6.02e-23),
-                    ("6.02e23", 6.02e+23),
-                    ]
-        for s, n in examples: self.assertEqual(pyproperties.Engine.Converter.convert(s), n)
-
-    def testBooleanConversion(self):
-        self.assertEqual(pyproperties.Engine.Converter.convert("True"), True)
-        self.assertEqual(pyproperties.Engine.Converter.convert("False"), False)
-    
-    def testNoneConversion(self):
-        self.assertEqual(pyproperties.Engine.Converter.convert("None"), None)
 
 
 class BlankTest(unittest.TestCase):
