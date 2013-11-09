@@ -5,7 +5,7 @@ import re
 import os
 import sys
 
-from modules import pyproperties
+import pyproperties
 
 __version__ = "0.3.2"
 
