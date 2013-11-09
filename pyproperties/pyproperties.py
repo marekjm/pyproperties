@@ -15,7 +15,7 @@ except ImportError:
     exit(1)
 
 
-__version__ = "0.3.2"
+__version__ = '0.4.0'
 
 
 wildcart_re = "[a-zA-Z0-9_.-]+"
@@ -39,8 +39,7 @@ class Reader():
         self._source, self._hidden, self._included, self._comments, self._properties = ([], [], [], {}, [])
 
     def loadf(self):
-        """
-        Loads file to which `_path` points, and 
+        """Loads file to which `_path` points, and 
         concatenates properties split into several lines. 
         Lines are loaded with trailing newlines characters and preceding whitespace stripped. 
         Comments which end with backslash (`\\`) are left untouched but a warning is raised.
@@ -67,8 +66,7 @@ class Reader():
         self._source = source
 
     def _include(self, line_number, path, prefix="", hidden=False):
-        """
-        This method is only run when a property file is being read. 
+        """This method is only run when a property file is being read. 
         It will dump another file in place specified by `__include__` directive.
         """
         if not os.path.isabs(path): tpath = os.path.join(os.path.split(self._path)[0], path)
@@ -92,8 +90,7 @@ class Reader():
         self._source = self._source[:line_number] + file + self._source[line_number+1:]
 
     def makeincludes(self):
-        """
-        This method runs during load and is kind of preprocessor. It will replace 
+        """This method runs during load and is kind of preprocessor. It will replace 
         every line which key begins with `__include__` with lines of file 
         it will try to read from the path specified in the value of the mentioned line. 
         
@@ -113,8 +110,7 @@ class Reader():
             i += 1
 
     def _islinehiddenprop(self, line):
-        """
-        Defines if commented line is commented property or casual comment.
+        """Defines if commented line is commented property or casual comment.
         Used to distinguish comments from commented properties during load.
         """
         # a little hack to not generate too many warnings when just checking if a line is hidden property
@@ -123,8 +119,7 @@ class Reader():
         return result
 
     def uncoverhidden(self):
-        """
-        Uncovers hidden properties -- makes them available for `_extractprops()`.
+        """Uncovers hidden properties -- makes them available for `_extractprops()`.
         """
         source = []
         hidden = []
@@ -137,8 +132,7 @@ class Reader():
         self._source = source
     
     def extractprops(self):
-        """
-        Extracts lines containing valid properties from `_source` to `_properties`.
+        """Extracts lines containing valid properties from `_source` to `_properties`.
         """
         properties = []
         for line in self._source:
@@ -146,8 +140,7 @@ class Reader():
         self._properties = properties
 
     def extractcomments(self):
-        """
-        Extracts comments from `_source` and attaches them to properties.
+        """Extracts comments from `_source` and attaches them to properties.
         """
         comments = {}
         i = 0
@@ -166,8 +159,7 @@ class Reader():
         self._comments = comments
 
     def splitprops(self):
-        """
-        This method converts self.properties from list containing extracted lines to a dictionary.
+        """This method converts self.properties from list containing extracted lines to a dictionary.
         """
         properties = {}
         for line in self._properties:
@@ -177,13 +169,14 @@ class Reader():
         self._properties = properties
     
     def castprops(self):
-        """
-        This method tries to cast values of loaded properties.
+        """This method tries to cast values of loaded properties.
         """
         for key, value in self._properties.items():
             self._properties[key] = Engine.Converter.convert(value)
     
     def read(self):
+        """Reads .properties file into memory.
+        """
         self.loadf()
         if self._includes: self.makeincludes()
         self.uncoverhidden()
@@ -193,11 +186,9 @@ class Reader():
         if self._cast: self.castprops()
     
     def keys(self):
-        """
-        Returns list of keys in read file.
+        """Returns list of keys in read file.
         """
         return list(self._properties.keys())
-
 
 class Writer():
     """
@@ -323,7 +314,6 @@ class Writer():
         finally:
             if not no_dump: self.dump(path)
 
-
 class Exporter:
     """
     This class conatins engines for exporting properties to different formats.
@@ -416,8 +406,6 @@ class Exporter:
             self.encode(pretty=pretty)
             if not no_dump: self.dump(path)
 
-
-
 class Engine:
     """
     Functions found in `Engine` can be used freely if needed but they are intended to be backend for 
@@ -427,7 +415,7 @@ class Engine:
     the same place for at least two releases.
 
     WARNING!
-    Refactoring of this class could be unmentiond in Changelog so it may require some investigation if 
+    Refactoring of this class could be unmentiond in Changelog.
     """
     class LineParser:
         """
@@ -519,8 +507,7 @@ class Properties():
     This class provides methods for working with properties files. 
     """
     def __init__(self, path="", cast=False, no_read=False, no_includes=False, strict=True):
-        """
-        If you give a path as an argument it will be loaded and processed as properties file. 
+        """If you give a path as an argument it will be loaded and processed as properties file. 
         If you call Properties() without an argument created object will be "blank" - in this case you will have to call 
         foo.read(path) to load some properties or you can use the blank properties to create completly new set of properties.
         You can pass cast as True to tell pyproperties that it should guess the type of the property 
@@ -539,8 +526,7 @@ class Properties():
         self.save()
 
     def _notavailable(self, key):
-        """
-        Raises KeyError which will tell user that the property is not available eg. 
+        """Raises KeyError which will tell user that the property is not available eg. 
         is not in currently used set of properties or is hidden.
         """
         if key in self.hidden: message = "'{0}' is not available in {1}: hidden property".format(key, self)
@@ -548,8 +534,7 @@ class Properties():
         raise KeyError(message)
 
     def _appendsrc(self, props, prefix=""):
-        """
-        This methods appends source of given properties to the base. 
+        """This methods appends source of given properties to the base. 
         If `source` already contains some lines a blank line is added before actual 
         source to avoid making comments accidentaly joined.
         """
@@ -564,8 +549,7 @@ class Properties():
         self.source.extend(lines)
         
     def _feed(self, reader):
-        """
-        Reads passed `Reader` object and tries to extract properties data out of it. 
+        """Reads passed `Reader` object and tries to extract properties data out of it. 
         Designed to use with native `Reader` objects but will accept any properly crafted object.
         """
         self.properties = reader._properties
@@ -575,14 +559,12 @@ class Properties():
         self.source = reader._source
 
     def setstrict(self, strict):
-        """
-        Sets parser mode to strict (True) or non-strict (False).
+        """Sets parser mode to strict (True) or non-strict (False).
         """
         self.strict = bool(strict)
 
     def blank(self, path="", strict=True):
-        """
-        Creates blank properties object. 
+        """Creates blank properties object. 
         Can be used to erase contents of your `pyproperties` object.
         """
         try: 
@@ -600,8 +582,7 @@ class Properties():
         self.unsaved = False
     
     def read(self, path="", cast=False, no_includes=False, strict=True):
-        """
-        You can pass `cast` as True to tell pyproperties that it should guess the type of the property 
+        """You can pass `cast` as True to tell pyproperties that it should guess the type of the property 
         and convert it accordingly.
         """
         self.blank(path=path, strict=strict)
@@ -610,15 +591,13 @@ class Properties():
         self._feed(reader)
         
     def reload(self):
-        """
-        Reloads properties from `self.path`. Parser mode for reloading will be taken from `self.strict`.
+        """Reloads properties from `self.path`. Parser mode for reloading will be taken from `self.strict`.
         """
         self.read(self.path, strict=self.strict)
         self.unsaved = True
 
     def refresh(self, overwrite=True):
-        """
-        Refreshes from file. Missing values are added.
+        """Refreshes from file. Missing values are added.
         If `overwrite` is set to True existing values are overwritten - `update()` is used.
         Values which are not found in file are not deleted.
         """
@@ -628,8 +607,7 @@ class Properties():
         self.unsaved = True
 
     def copy(self):
-        """
-        Returns exact copy of a pyproperties.Properties() object.
+        """Returns exact copy of a pyproperties.Properties() object.
         """
         copy = Properties(self.path, no_read=True)
         copy.merge(self)
@@ -637,8 +615,7 @@ class Properties():
         return copy
 
     def join(self, path, prefix=" "):
-        """
-        Loads external properties and completes base. 
+        """Loads external properties and completes base. 
         You can pass `prefix` as empty string to add properties without prefix. 
         Prefix defaluts to the name of joined file. 
         Source of joined properties is appended to base source.
@@ -650,8 +627,7 @@ class Properties():
         self.unsaved = True
 
     def complete(self, props, prefix=""):
-        """
-        This method completes base dictionary with properties of the given one. 
+        """This method completes base dictionary with properties of the given one. 
         If a property does not exist in base it will be added. 
         If a property exist in base it's value, comments and status (hidden/not-hidden) 
         will not be overwritten. 
@@ -681,8 +657,7 @@ class Properties():
         self.unsaved = True
 
     def update(self, props, prefix=""):
-        """
-        This method updates base properties with the given one. 
+        """This method updates base properties with the given one. 
         If a property does not exist in base it will not be added. 
         If a property exist in base it's value will be overwritten. 
 
@@ -712,8 +687,7 @@ class Properties():
         self.unsaved = True
 
     def merge(self, properties):
-        """
-        Completes and merges properties with the base. 
+        """Completes and merges properties with the base. 
         Source of merged properties is appended to base. 
         
         It's not possible to add prefix when merging.
@@ -724,14 +698,12 @@ class Properties():
         self.unsaved = True
 
     def parse(self, cast=False):
-        """
-        This method parses and returns parsed properties.
+        """This method parses and returns parsed properties.
         """
         return Engine.parse(self, cast=cast)
 
     def save(self):
-        """
-        Saves changes made in object's variables.
+        """Saves changes made in object's variables.
         """
         saved = {}
         for key, value in self.properties.items(): saved[key] = value
@@ -745,8 +717,7 @@ class Properties():
         self.unsaved = False
 
     def revert(self):
-        """
-        Drops changes made in properties object by reverting it's variables
+        """Drops changes made in properties object by reverting it's variables
         to the state in which they were during last save().
         """
         reverted = {}
@@ -761,8 +732,7 @@ class Properties():
         self.unsaved = False
 
     def store(self, path="", force=False, no_dump=False, drop_source=False):
-        """
-        Writes properties to given 'path'.
+        """Writes properties to given 'path'.
         'path' defaults to self.path
 
         If store will encounter some unsaved changes it will
@@ -776,8 +746,7 @@ class Properties():
         writer.store(path, force, no_dump, drop_source)
         
     def get(self, key, parse=False, cast=False):
-        """
-        Returns value of given key. 
+        """Returns value of given key. 
         If parsed is set to True value will be parsed before returning.
         KeyError is raised if key is not available (not found or is hidden).
         """
@@ -789,8 +758,7 @@ class Properties():
         return value
 
     def gets(self, identifier, parse=False, cast=False, no_expand=False):
-        """
-        Returns list of tuples containig (key, value) of properties which names matched pattern given as identifier.
+        """Returns list of tuples containig (key, value) of properties which names matched pattern given as identifier.
         If `parse` is set to True values will be parsed before returning.
         If `cast` is set to True values will be casted before returning.
         """
@@ -803,8 +771,7 @@ class Properties():
         return matched
 
     def set(self, key, value=""):
-        """
-        Sets key to value. 
+        """Sets key to value. 
         Raises TypeError if key is not if `str` type.
         """
         if type(key) is not str: raise TypeError("key must be 'str' but was '{0}'".format(str(type(key))[8:-2]))
@@ -816,8 +783,7 @@ class Properties():
         self.unsaved = True
 
     def sets(self, identifier, *values, **kwargs):
-        """
-        Sets every property which name matched pattern given as identifier to value. 
+        """Sets every property which name matched pattern given as identifier to value. 
         You can pass more than one value. If more keys are found than values passed 
         last value is passed to every key above number of values. 
 
@@ -848,8 +814,7 @@ class Properties():
         self.unsaved = True
 
     def add(self, group, value):
-        """
-        Adds a property to given group. 
+        """Adds a property to given group. 
         Creates first item if group is not present.
         """
         if len(group.split("*")) > 2: raise ArgumentError("group for add() can contain only one asterisk")
@@ -861,14 +826,12 @@ class Properties():
             self.set(group.replace("*", str(n)), value)
 
     def adds(self, group, *values):
-        """
-        Adds multiple properties to a group.
+        """Adds multiple properties to a group.
         """
         for value in values: self.add(group, value)
 
     def remove(self, key):
-        """
-        This method removes specified property from interal dictionary. 
+        """This method removes specified property from interal dictionary. 
         Removed property will be not saved using store(). 
         """
         if key in self.properties: self.properties.pop(key)
@@ -877,8 +840,7 @@ class Properties():
         self.unsaved = True
 
     def removes(self, identifier):
-        """
-        This method removes properties matching given pattern from interal dictionary. 
+        """This method removes properties matching given pattern from interal dictionary. 
         Removed properties will be not saved using store().
         """
         to_remove = []
@@ -888,8 +850,7 @@ class Properties():
         for key in to_remove: self.remove(key)
 
     def pop(self, key, cast=False):
-        """
-        This method removes specified property from interal dictionary and returns its value. 
+        """This method removes specified property from interal dictionary and returns its value. 
         KeyError is raised if key is not found or property is hidden.
         """
         if key not in self.properties or key in self.hidden: self._notavailable(key)
@@ -900,8 +861,7 @@ class Properties():
         return prop
 
     def pops(self, identifier, cast=False):
-        """
-        This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
+        """This method removes properties matching given pattern from interal dictionary and returns a dict created from them. 
         """
         popped = self.gets(identifier=identifier, cast=cast)
         self.removes(identifier=identifier)
@@ -909,8 +869,7 @@ class Properties():
         return popped
 
     def keys(self, hidden=False):
-        """
-        Returns sorted list of the non-hidden properties names. 
+        """Returns sorted list of the non-hidden properties names. 
         If `hidden` is passed as `True` returns sorted list 
         of names of hidden properties.
         """
@@ -921,8 +880,7 @@ class Properties():
         return sorted(keys)
 
     def values(self, hidden=False):
-        """
-        Returns list of values this object holds. 
+        """Returns list of values this object holds. 
         If `hidden` is passed as `True` returns list of values 
         including values of hidden properties.
         """
@@ -936,8 +894,7 @@ class Properties():
         return values
 
     def getkeysof(self, value, no_hidden=True):
-        """
-        Returns list of keys containing given value. 
+        """Returns list of keys containing given value. 
         Returns empty list if no key was matched. 
         If `no_hidden` was passed as `False` includes also 
         commented properties.
@@ -949,8 +906,7 @@ class Properties():
         return keys
 
     def getgroups(self):
-        """
-        Returns list of non-hidden properties groups in the internal dictionary. 
+        """Returns list of non-hidden properties groups in the internal dictionary. 
         Group is two or more properties which can be obtained with the same `gets()` identifier.
 
         For example:
@@ -966,8 +922,8 @@ class Properties():
         But:
             person.name=John
             person.surname=Average
-        will not form a group although `gets('person.*')` will return 
-        list of length greater than two.
+        will not form a group although `gets('person.*')` will return
+        both `person.name` and `person.surname`.
 
         This is because only digits are considered 'groupers'.
         """
@@ -985,8 +941,7 @@ class Properties():
         return groups
 
     def getsingles(self):
-        """
-        Returns list of properties which do not belong to any group.
+        """Returns list of properties which do not belong to any group.
         """
         groups = self.getgroups()
         singles = []
@@ -997,8 +952,7 @@ class Properties():
         return singles
 
     def comment(self, key, comment):
-        """
-        Attaches comment to property. 
+        """Attaches comment to property. 
         Comment can be passed as a string.
 
             foo.comment("foo", "first\\npart")
@@ -1013,8 +967,7 @@ class Properties():
         self.unsaved = True
 
     def comments(self, identifier, *comments):
-        """
-        Attaches comment to properties which will match the identifier. 
+        """Attaches comment to properties which will match the identifier. 
         Comment can be passed as a string. 
         Multiline comments are supported by passing a string containing newline characters '\\n'.
 
@@ -1028,16 +981,14 @@ class Properties():
             finally: i += 1
 
     def rmcomment(self, key):
-        """
-        Removes comment of property of given key. 
+        """Removes comment of property of given key. 
         Does not raise KeyError when property is not found.
         """
         if key in self.propcomments: self.propcomments.pop(key)
         self.unsaved = True
 
     def getcomment(self, key, lines=False):
-        """
-        usage: getcomment(str key, bool lines=False) -> str
+        """usage: getcomment(str key, bool lines=False) -> str
         
         Returns comment of given key. 
         Returns empty string if the property has no comment. 
@@ -1053,8 +1004,7 @@ class Properties():
         return comment
 
     def hide(self, key):
-        """
-        When property is hidden it is no longer available for modifing. 
+        """When property is hidden it is no longer available for modifing. 
         KeyError is raised if key is not available (not found or is hidden).
         """
         if key not in self.properties or key in self.hidden: self._notavailable(key)
@@ -1062,24 +1012,21 @@ class Properties():
         self.unsaved = True
         
     def hides(self, identifier):
-        """
-        Hides every property which key will match given identifier. 
+        """Hides every property which key will match given identifier. 
         """
         identifier = Engine.expandidentifier(identifier)
         for key in self.keys():
             if re.match(identifier, key): self.hide(key)
 
     def unhide(self, key):
-        """
-        Remove property from `hidden` list to make it available for modifing. 
+        """Remove property from `hidden` list to make it available for modifing. 
         Does not raise any errors when key is not found.
         """
         if key in self.hidden: self.hidden.remove(key)
         self.unsaved = True
 
     def unhides(self, identifier):
-        """
-        Unhides every property which key will match given identifier.
+        """Unhides every property which key will match given identifier.
         """
         identifier = Engine.expandidentifier(identifier)
         to_unhide = []
@@ -1088,8 +1035,7 @@ class Properties():
         for key in to_unhide: self.unhide(key)
 
     def addinclude(self, path, prefix="", hidden=False):
-        """
-        This method places __include__ directive in the properties.
+        """This method places __include__ directive in the properties.
         """
         if not os.path.isfile(path): warnings.warn("file for __include__ not found: '{0}'".format(path), IncludeWarning)
         if path.strip() == "": raise IncludeError("__include__ must point to a file: cannot accept empty path".format(path))
@@ -1097,8 +1043,7 @@ class Properties():
         if (path, prefix, hidden) not in self._includes: self._includes.append( (path, prefix, hidden) )
 
     def rminclude(self, path, prefix="", hidden=False):
-        """
-        Removes include directive from a list of directives. 
+        """Removes include directive from a list of directives. 
         """
         for _path, _prefix, _hidden in self._includes:
             if path == _path and prefix == _prefix and hidden == _hidden: 
@@ -1106,8 +1051,7 @@ class Properties():
                 break
 
     def _rmkeysfrom(self, path, prefix=""):
-        """
-        Removes all properties present in file to which given path is pointing.
+        """Removes all properties present in file to which given path is pointing.
         """
         path = os.path.abspath(os.path.join(os.path.split(self.path)[0], path))
         reader = Reader(path=path)
@@ -1117,8 +1061,7 @@ class Properties():
             self.remove(key)
 
     def purgeinclude(self, path, prefix="", hidden=False):
-        """
-        Removes include directive from a list of directives and all properties corresponding to it.
+        """Removes include directive from a list of directives and all properties corresponding to it.
         """
         for i, (ipath, iprefix, ihidden) in enumerate(self._includes):
             if path == ipath and prefix == iprefix and hidden == ihidden:
@@ -1128,15 +1071,13 @@ class Properties():
         if not self.unsaved: warnings.warn("purge failed: no such include-tuple found: ('{0}', '{1}', {2})".format(path, prefix, hidden), IncludeWarning)
 
     def stripinclude(self, path, prefix="", hidden=False):
-        """
-        This method removes all properties included from file of given path but 
+        """This method removes all properties included from file of given path but 
         leaves include tuple (it will be stored).
         """
         self.purgeinclude(path, prefix, hidden)
         self.addinclude(path, prefix, hidden)
 
     def listincludes(self):
-        """
-        Returns list of tuples containg information about `includes` of this properties.
+        """Returns list of tuples containg information about `includes` of this properties.
         """
         return self._includes

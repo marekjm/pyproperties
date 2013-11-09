@@ -1,3 +1,3 @@
 #!/usr/bin/python3
 
-from pyproperties import *
+from pyproperties.pyproperties import *
