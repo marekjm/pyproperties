@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import unittest
-import re
 import os
+import re
 import sys
+import unittest
+import warnings
 
 import pyproperties
 
@@ -283,6 +284,17 @@ class ReaderTest(unittest.TestCase):
         self.assertEqual(hidden, reader._hidden)
         self.assertEqual(comments, reader._comments)
     
+
+class SectionSupportTests(unittest.TestCase):
+    def testBasicSectionSupport(self):
+        desired = ['sectiona.foo',
+                   'sectionb.bar',
+                   'sectionb.baz',
+                   'sectionc.bac',
+                   ]
+        warnings.warn('implement me: ./data/properties/sections.properties')
+        input('Hit [Enter] to continue...')
+
 
 class ReaderIncludeTest(unittest.TestCase):
     def testIncludeRaisesIncludeErrorWhenFileNotFound(self):
